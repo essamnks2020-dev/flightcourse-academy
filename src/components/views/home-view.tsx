@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Compass, Gauge, BookOpen, CheckSquare, Award, Sparkles, ChevronRight, Plane, Cloud } from "lucide-react";
 import { useNav } from "@/lib/nav-store";
 import { useProgress } from "@/lib/progress-store";
 import { allModules, TOTAL_MODULES } from "@/lib/data/modules";
 import { glossary } from "@/lib/data/glossary";
-import { Aircraft3D } from "@/components/3d/aircraft-3d";
+import { InteractiveAircraft, type AircraftPart } from "@/components/3d/interactive-aircraft";
 import { GaugeRing } from "@/components/gauge-ring";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,7 @@ export function HomeView() {
   const xp = useProgress((s) => s.xp);
   const completedCount = useProgress((s) => s.getCompletedCount());
   const isCompleted = useProgress((s) => s.isModuleCompleted);
+  const [selectedPart, setSelectedPart] = React.useState<AircraftPart | null>(null);
 
   const firstFive = allModules.slice(0, 5);
 
@@ -144,7 +145,37 @@ export function HomeView() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative h-[300px] sm:h-[400px] lg:h-[500px]"
           >
-            <Aircraft3D className="w-full h-full" />
+            <InteractiveAircraft
+              className="w-full h-full"
+              autoRotate
+              showLabels
+              onPartClick={(part) => setSelectedPart(part)}
+              activePartId={selectedPart?.id}
+            />
+            {/* Interaction hint */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2 }}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 fp-glass rounded-full px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-cloud/70 pointer-events-none"
+            >
+              drag to orbit · click numbers to learn
+            </motion.div>
+            {/* Selected part info */}
+            <AnimatePresence>
+              {selectedPart && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-4 left-4 fp-glass rounded-xl p-3.5 max-w-[220px]"
+                >
+                  <div className="text-[9px] font-mono uppercase tracking-widest text-gold mb-1">Part</div>
+                  <div className="font-heading font-bold text-sm text-cloud mb-1">{selectedPart.name}</div>
+                  <div className="text-xs text-cloud/70 leading-relaxed">{selectedPart.description}</div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             {/* Floating gauge badges */}
             <motion.div
               animate={{ y: [0, -8, 0] }}

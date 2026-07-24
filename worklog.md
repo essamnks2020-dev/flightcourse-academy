@@ -154,3 +154,29 @@ Work Log:
 Agent Browser Testing: All 9 views verified, quiz awards XP, mobile responsive confirmed, 0 lint errors, no runtime errors
 
 Stage Summary: Complete working product. 16 modules with real content + quizzes, 76 glossary terms, 18 cockpit hotspots, 5 checklists, 14 FAQs, certificate generation, 3D aircraft, dark mode, responsive.
+
+---
+Task ID: V10-GLB-MODEL
+Agent: Main (Z.ai Code)
+Task: Replace hand-built 3D plane with real textured GLB model from Meshy AI
+
+Work Log:
+- Copied user-uploaded GLB file (6MB, Meshy AI generated Cessna 172 with textures) to /public/models/cessna172.glb
+- Rebuilt interactive-aircraft.tsx to use drei's useGLTF hook instead of hand-built geometry
+- Model loading: useGLTF("/models/cessna172.glb") with Suspense fallback ("Loading aircraft...")
+- Auto-scale and center: useMemo computes bounding box, scales to 3.5 units, centers on origin, offsets Y to sit on ground plane
+- Shadow enabled on all meshes via traverse
+- 8 numbered educational pins positioned around the model (positions adjusted for the GLB scale)
+- Invisible click targets (sphereGeometry) at each pin position for click handling
+- OrbitControls with damping, autoRotate, drag + zoom
+- 3-point lighting (warm key + cool fill + gold rim) with ACESFilmicToneMapping
+- ContactShadows for ground weight
+- Environment preset="sunset" for reflections
+- Fixed import: home-view.tsx was importing from old aircraft-3d.tsx instead of interactive-aircraft.tsx
+- Fixed lint: moved scale/position/shadow logic from useEffect into useMemo to avoid react-hooks/immutability error
+- Fixed page.tsx: restored mounted guard (was removed, causing SSR issues with useGLTF)
+- GLB confirmed loading: 5.7MB transferred, model renders with textures
+
+VLM RESULT: 8-9/10 ("highly detailed, textured 3D model of a Cessna 172 with realistic metallic paint, reflections, clear canopy glass, and numbered educational pins")
+
+Stage Summary: Real textured GLB model replaces hand-built primitives. 8-9/10 visual quality. Model loads via useGLTF with proper PBR materials, textures, shadows. Educational pins preserved. Lint clean.
