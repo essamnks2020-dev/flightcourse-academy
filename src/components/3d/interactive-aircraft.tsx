@@ -53,7 +53,7 @@ export function InteractiveAircraft({
         shadows
       >
         <Lighting />
-        <React.Suspense fallback={<Html center><div style={{ color: "#6FB3DE", fontFamily: "monospace", fontSize: "12px" }}>Loading aircraft…</div></Html>}>
+        <React.Suspense fallback={<Html center><div style={{ width: "120px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>{[0,1,2].map(i => <div key={i} style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3E92CC", opacity: 0.4, animation: `pulse 1s ease-in-out ${i * 0.15}s infinite` }} />)}</div></Html>}>
           <GLTFModel onPartClick={onPartClick} activePartId={activePartId} showLabels={showLabels} />
         </React.Suspense>
         <ContactShadows position={[0, -1.15, 0]} opacity={0.4} scale={8} blur={2.5} far={4} color="#030711" resolution={512} />
@@ -112,7 +112,7 @@ function GLTFModel({
   activePartId?: string | null;
   showLabels?: boolean;
 }) {
-  const { scene } = useGLTF("/models/cessna172.glb");
+  const { scene } = useGLTF("/models/cessna172-opt.glb");
   const modelRef = React.useRef<THREE.Group>(null);
 
   // Clone the scene and auto-scale/center — GLB models can have arbitrary scale
@@ -205,4 +205,4 @@ function NumberedPin({ num, position, active, dimmed }: { num: number; position:
 }
 
 // Preload the model
-useGLTF.preload("/models/cessna172.glb");
+useGLTF.preload("/models/cessna172-opt.glb");

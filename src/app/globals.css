@@ -8,6 +8,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-heading: var(--font-sora);
+  --font-display: var(--font-display);
   --font-mono: var(--font-jetbrains);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -38,10 +39,10 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
 
   /* FlightPath brand tokens */
   --color-navy: #0B1D3A;
@@ -59,13 +60,28 @@
   --color-runway: #2B2B2B;
 }
 
+/* ============================================
+   DESIGN PHILOSOPHY
+   Palette: Deep navy (cockpit night) + sky blue (horizon) + horizon gold (accent)
+   Type: Space Grotesk (display) + Inter (body) + JetBrains Mono (data)
+   Signature: Sectional chart textures, instrument bezel motifs, gauge rings
+   Rule: Restraint. One accent used like punctuation. Consistent 8px spacing scale.
+   ============================================ */
+
 :root {
-  --radius: 0.5rem;
-  --background: #F7F9FC;
-  --foreground: #1A2A3F;
-  --card: #FFFFFF;
+  /* ===== LIGHT THEME: "Cruise" — warm white, navy text, gold CTAs ===== */
+  /* 5-layer surface ladder — depth, not flat */
+  --surface-0: #F2F5FA;
+  --surface-1: #F7F9FC;
+  --surface-2: #FFFFFF;
+  --surface-3: #FFFFFF;
+  --surface-4: #FFFFFF;
+
+  --background: var(--surface-0);
+  --foreground: #0B1D3A;
+  --card: var(--surface-2);
   --card-foreground: #0B1D3A;
-  --popover: #FFFFFF;
+  --popover: var(--surface-4);
   --popover-foreground: #0B1D3A;
   --primary: #0B1D3A;
   --primary-foreground: #F7F9FC;
@@ -78,54 +94,123 @@
   --destructive: #D64545;
   --border: #D8E0EA;
   --input: #D8E0EA;
-  --ring: #3E92CC;
+  --ring: #F2B134;
   --chart-1: #3E92CC;
   --chart-2: #F2B134;
   --chart-3: #0B1D3A;
   --chart-4: #5B6B79;
   --chart-5: #6FB3DE;
-  --sidebar: #FFFFFF;
+  --sidebar: var(--surface-1);
   --sidebar-foreground: #0B1D3A;
   --sidebar-primary: #0B1D3A;
   --sidebar-primary-foreground: #F7F9FC;
   --sidebar-accent: #EDF2F7;
   --sidebar-accent-foreground: #0B1D3A;
   --sidebar-border: #D8E0EA;
-  --sidebar-ring: #3E92CC;
+  --sidebar-ring: #F2B134;
+
+  /* ===== PREMIUM TOKEN SYSTEM — Visual Injection prompt compliant ===== */
+  /* Hairline borders — semi-transparent for glass-edge depth */
+  --border-hairline: rgba(11, 29, 58, 0.08);
+  --border-highlight: rgba(11, 29, 58, 0.12);
+
+  /* Shadow stacks — 2-3 layered, never single */
+  --shadow-sm: 0 1px 2px rgba(11,29,58,0.04), 0 1px 3px rgba(11,29,58,0.06);
+  --shadow-md: 0 4px 12px rgba(11,29,58,0.08), 0 2px 4px rgba(11,29,58,0.04);
+  --shadow-lg: 0 12px 32px rgba(11,29,58,0.12), 0 4px 12px rgba(11,29,58,0.06);
+  --shadow-glow-gold: 0 0 24px rgba(242,177,52,0.25), 0 0 48px rgba(242,177,52,0.1);
+  --shadow-glow-sky: 0 0 24px rgba(62,146,204,0.25), 0 0 48px rgba(62,146,204,0.1);
+
+  /* Glass material — 4-layer Liquid Glass */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+  --glass-blur: 20px;
+
+  /* Atmospheric — theme mood */
+  --atmos-glow: rgba(242, 177, 52, 0.15);
+  --atmos-tint: rgba(62, 146, 204, 0.06);
+  --hero-gradient: radial-gradient(ellipse at 50% 100%, rgba(242,177,52,0.15) 0%, transparent 50%);
+
+  /* Spacing — 8-point grid */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;
+
+  /* Radius — varies by element scale */
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-xl: 24px; --radius-full: 999px;
+
+  /* Motion — premium easing curves */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-micro: 200ms;
+  --duration-structural: 350ms;
+  --duration-scene: 600ms;
+  --stagger: 60ms;
 }
 
 .dark {
-  --background: #07152A;
+  /* ===== DARK THEME: "Night" — tinted near-black, gold as precious accent ===== */
+  /* 5-layer surface ladder — tinted near-black (never pure #000) */
+  --surface-0: #050d1c;
+  --surface-1: #07152A;
+  --surface-2: #0B1D3A;
+  --surface-3: #112747;
+  --surface-4: #16315A;
+
+  --background: var(--surface-0);
   --foreground: #E4ECF5;
-  --card: #0F2240;
+  --card: var(--surface-2);
   --card-foreground: #E4ECF5;
-  --popover: #0F2240;
+  --popover: var(--surface-4);
   --popover-foreground: #E4ECF5;
   --primary: #3E92CC;
   --primary-foreground: #07152A;
-  --secondary: #14264a;
+  --secondary: var(--surface-3);
   --secondary-foreground: #E4ECF5;
-  --muted: #14264a;
+  --muted: var(--surface-3);
   --muted-foreground: #84939F;
   --accent: #3E92CC;
   --accent-foreground: #FFFFFF;
   --destructive: #E5654E;
-  --border: #1E3358;
-  --input: #1E3358;
-  --ring: #3E92CC;
+  --border: rgba(111, 179, 222, 0.12);
+  --input: rgba(111, 179, 222, 0.15);
+  --ring: #F2B134;
   --chart-1: #3E92CC;
   --chart-2: #F2B134;
   --chart-3: #6FB3DE;
   --chart-4: #84939F;
   --chart-5: #F7C968;
-  --sidebar: #0F2240;
+  --sidebar: var(--surface-1);
   --sidebar-foreground: #E4ECF5;
   --sidebar-primary: #3E92CC;
   --sidebar-primary-foreground: #07152A;
-  --sidebar-accent: #14264a;
+  --sidebar-accent: var(--surface-3);
   --sidebar-accent-foreground: #E4ECF5;
-  --sidebar-border: #1E3358;
-  --sidebar-ring: #3E92CC;
+  --sidebar-border: rgba(111, 179, 222, 0.1);
+  --sidebar-ring: #F2B134;
+
+  /* Premium tokens — dark-specific */
+  --border-hairline: rgba(159, 192, 224, 0.08);
+  --border-highlight: rgba(255, 255, 255, 0.06);
+
+  /* Shadow stacks — cool, layered */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-glow-gold: 0 0 24px rgba(242,177,52,0.3), 0 0 48px rgba(242,177,52,0.12);
+  --shadow-glow-sky: 0 0 24px rgba(62,146,204,0.25), 0 0 48px rgba(62,146,204,0.1);
+
+  /* Glass — translucent dark */
+  --glass-bg: rgba(11, 29, 58, 0.6);
+  --glass-border: rgba(159, 192, 224, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-blur: 20px;
+
+  /* Atmospheric — night mood */
+  --atmos-glow: rgba(242, 177, 52, 0.2);
+  --atmos-tint: rgba(62, 146, 204, 0.08);
+  --hero-gradient: radial-gradient(ellipse at 50% 100%, rgba(242,177,52,0.2) 0%, transparent 50%);
 }
 
 @layer base {
@@ -134,28 +219,54 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "cv01", "cv02";
+    font-feature-settings: "ss01", "cv01", "cv02", "cv03", "cv04";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.6;
   }
-  h1, h2, h3, h4, h5, h6 {
+  /* Display headings — Space Grotesk, tight tracking, confident weight */
+  h1 {
+    font-family: var(--font-display), var(--font-sora), system-ui, sans-serif;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    line-height: 1.05;
+  }
+  h2 {
+    font-family: var(--font-display), var(--font-sora), system-ui, sans-serif;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  /* Section/subheadings — Sora, slightly warmer */
+  h3, h4, h5, h6 {
     font-family: var(--font-sora), system-ui, sans-serif;
     letter-spacing: -0.02em;
+    line-height: 1.2;
   }
   code, pre, .font-mono {
     font-family: var(--font-jetbrains), monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Focus rings — beautiful, not afterthoughts */
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 }
 
 /* ============================================
-   FLIGHTPATH COMPONENT VOCABULARY
-   Opinionated, deliberate — no default-card drift
+   COMPONENT VOCABULARY — Instrument bezel motifs
    ============================================ */
 
-/* Bezel card: 1px navy border, no shadow, corner tick marks (instrument bezel motif) */
+/* Bezel card — hairline border + corner ticks + subtle shadow */
 .fp-bezel {
   position: relative;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-hairline);
   background: var(--card);
-  box-shadow: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 .fp-bezel::before,
 .fp-bezel::after {
@@ -166,45 +277,46 @@
   border-color: var(--color-sky);
   border-style: solid;
   pointer-events: none;
+  opacity: 0.4;
 }
 .fp-bezel::before {
-  top: -1px;
-  left: -1px;
-  border-width: 1px 0 0 1px;
-}
-.fp-bezel::after {
-  bottom: -1px;
-  right: -1px;
-  border-width: 0 1px 1px 0;
-}
-
-/* Bezel card with 4 corner ticks */
-.fp-bezel-full {
-  position: relative;
-  border: 1px solid var(--border);
-  background: var(--card);
-  box-shadow: none;
-}
-.fp-bezel-full::before,
-.fp-bezel-full::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-color: var(--color-sky);
-  border-style: solid;
-  pointer-events: none;
-}
-.fp-bezel-full::before {
   top: -1px; left: -1px;
   border-width: 1px 0 0 1px;
 }
-.fp-bezel-full::after {
+.fp-bezel::after {
   bottom: -1px; right: -1px;
   border-width: 0 1px 1px 0;
 }
 
-/* Cockpit toggle button: subtly beveled, references a toggle switch */
+/* Glass panel — 4-layer Liquid Glass (iOS-style) */
+.fp-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(0,0,0,0.05);
+}
+
+/* Bezel hover — spring lift + glow */
+.fp-bezel-hover {
+  transition: transform 0.35s var(--ease-out-expo), border-color 0.25s ease, box-shadow 0.4s var(--ease-out-expo);
+  will-change: transform;
+}
+.fp-bezel-hover:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-highlight);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-sky);
+}
+.fp-bezel-hover:active {
+  transform: translateY(-1px);
+  transition-duration: 0.1s;
+}
+
+/* Toggle button — beveled cockpit switch with shine sweep */
 .fp-toggle-btn {
   position: relative;
   font-family: var(--font-sora), sans-serif;
@@ -213,28 +325,40 @@
   border: 1px solid var(--color-sky-dark);
   background: linear-gradient(180deg, var(--color-sky) 0%, var(--color-sky-dark) 100%);
   color: #fff;
+  overflow: hidden;
+  border-radius: var(--radius-md);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.25),
-    inset 0 -2px 0 rgba(0,0,0,0.15),
-    0 2px 4px rgba(11,29,58,0.18);
-  transition: all 0.15s ease;
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    inset 0 -2px 0 rgba(0,0,0,0.18),
+    0 4px 14px rgba(62,146,204,0.35),
+    0 2px 4px rgba(11,29,58,0.2);
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.3s ease, background 0.3s ease;
+  will-change: transform;
+}
+.fp-toggle-btn::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -120%;
+  width: 100%; height: 100%;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+  transition: left 0.7s var(--ease-out-expo);
 }
 .fp-toggle-btn:hover {
   background: linear-gradient(180deg, var(--color-sky-light) 0%, var(--color-sky) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.4),
     inset 0 -2px 0 rgba(0,0,0,0.15),
-    0 4px 8px rgba(11,29,58,0.22);
-  transform: translateY(-1px);
+    0 8px 24px rgba(62,146,204,0.5),
+    0 2px 4px rgba(11,29,58,0.2);
+  transform: translateY(-2px);
 }
+.fp-toggle-btn:hover::after { left: 120%; }
 .fp-toggle-btn:active {
   transform: translateY(0);
-  box-shadow:
-    inset 0 2px 4px rgba(0,0,0,0.2),
-    inset 0 -1px 0 rgba(255,255,255,0.1);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.25), inset 0 -1px 0 rgba(255,255,255,0.1);
 }
 
-/* Gold toggle (for achievements / primary CTA on dark) */
+/* Gold toggle — precious accent for CTAs */
 .fp-toggle-gold {
   border: 1px solid var(--color-gold-dark);
   background: linear-gradient(180deg, var(--color-gold-light) 0%, var(--color-gold) 60%, var(--color-gold-dark) 100%);
@@ -242,27 +366,56 @@
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.4),
     inset 0 -2px 0 rgba(0,0,0,0.1),
-    0 2px 6px rgba(242,177,52,0.3);
+    0 4px 16px rgba(242,177,52,0.45);
 }
 .fp-toggle-gold:hover {
   background: linear-gradient(180deg, #FFD37A 0%, var(--color-gold-light) 60%, var(--color-gold) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -2px 0 rgba(0,0,0,0.1),
+    0 8px 28px rgba(242,177,52,0.6);
 }
 
-/* Outline button (secondary) */
+/* Outline button — secondary */
 .fp-outline-btn {
   font-family: var(--font-sora), sans-serif;
   font-weight: 600;
   border: 1px solid var(--color-sky);
   background: transparent;
   color: var(--color-sky);
-  transition: all 0.15s ease;
+  border-radius: var(--radius-md);
+  transition: all 0.25s var(--ease-out-expo);
 }
 .fp-outline-btn:hover {
   background: color-mix(in srgb, var(--color-sky) 10%, transparent);
   border-color: var(--color-sky-light);
+  transform: translateY(-1px);
 }
 
-/* Sectional chart background texture */
+/* Gradient text utilities */
+.fp-text-gradient {
+  background: linear-gradient(135deg, #6FB3DE 0%, #3E92CC 40%, #F2B134 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.fp-text-sky {
+  background: linear-gradient(135deg, #6FB3DE 0%, #3E92CC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.fp-text-gold {
+  background: linear-gradient(135deg, #F7C968 0%, #F2B134 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Sectional chart background */
 .fp-chart-bg {
   background-color: var(--background);
   background-image:
@@ -270,20 +423,33 @@
     radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--color-gold) 5%, transparent) 0%, transparent 50%);
 }
 
-/* Sky grain texture for hero */
-.fp-sky-grain {
-  position: relative;
+/* Grid pattern background */
+.fp-grid-bg {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-sky) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-sky) 6%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
+
+/* Topographic pattern */
+.fp-topo-bg {
+  background-image:
+    repeating-radial-gradient(circle at 30% 40%, transparent 0, transparent 40px, color-mix(in srgb, var(--color-sky) 4%, transparent) 40px, color-mix(in srgb, var(--color-sky) 4%, transparent) 41px),
+    repeating-radial-gradient(circle at 70% 60%, transparent 0, transparent 55px, color-mix(in srgb, var(--color-gold) 3%, transparent) 55px, color-mix(in srgb, var(--color-gold) 3%, transparent) 56px);
+}
+
+/* Sky grain texture */
+.fp-sky-grain { position: relative; }
 .fp-sky-grain::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Gauge ring animation */
+/* Gauge needle settle animation */
 @keyframes fp-needle-settle {
   0% { transform: rotate(var(--from-angle, -90deg)); }
   60% { transform: rotate(calc(var(--to-angle, 0deg) + 8deg)); }
@@ -291,60 +457,47 @@
   100% { transform: rotate(var(--to-angle, 0deg)); }
 }
 .fp-needle-animate {
-  animation: fp-needle-settle 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: fp-needle-settle 0.8s var(--ease-spring) forwards;
   transform-origin: center;
 }
 
-/* Ink fill for flight path */
-@keyframes fp-ink-draw {
-  to { stroke-dashoffset: 0; }
-}
+/* Ink draw for flight path */
+@keyframes fp-ink-draw { to { stroke-dashoffset: 0; } }
 .fp-ink-path {
   stroke-dasharray: var(--dash, 1000);
   stroke-dashoffset: var(--dash, 1000);
-  animation: fp-ink-draw 1.5s ease-out forwards;
+  animation: fp-ink-draw 1.5s var(--ease-out-expo) forwards;
 }
 
-/* Custom scrollbar */
-.fp-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.fp-scroll::-webkit-scrollbar-track {
-  background: color-mix(in srgb, var(--color-navy) 5%, transparent);
-}
+/* Scrollbar */
+.fp-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.fp-scroll::-webkit-scrollbar-track { background: color-mix(in srgb, var(--color-navy) 5%, transparent); }
 .fp-scroll::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-sky) 40%, transparent);
+  background: linear-gradient(180deg, var(--color-sky) 0%, var(--color-sky-dark) 100%);
   border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 .fp-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--color-sky);
+  background: linear-gradient(180deg, var(--color-sky-light) 0%, var(--color-sky) 100%);
+  background-clip: padding-box;
 }
 
-/* prefers-reduced-motion */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .fp-ink-path {
-    stroke-dashoffset: 0 !important;
-    animation: none !important;
-  }
+  .fp-ink-path { stroke-dashoffset: 0 !important; animation: none !important; }
 }
 
-/* Compass spin (slow) */
-@keyframes fp-compass-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* Compass spin */
+@keyframes fp-compass-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* Cloud drift */
-@keyframes fp-cloud-drift {
-  from { transform: translateX(0); }
-  to { transform: translateX(100px); }
-}
+@keyframes fp-cloud-drift { from { transform: translateX(0); } to { transform: translateX(100px); } }
 
 /* Text selection */
 ::selection {
@@ -352,27 +505,17 @@
   color: var(--foreground);
 }
 
-/* Star twinkle for hero */
-@keyframes twinkle {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.8; }
-}
+/* Star twinkle */
+@keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.8; } }
 
-/* Line clamp utilities */
-.line-clamp-1 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-.line-clamp-2 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
+/* Pulse (for loading dots) */
+@keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
 
-/* Prose styling for module content */
+/* Line clamp */
+.line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+.line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+
+/* Prose styling */
 .fp-prose p { margin-bottom: 1rem; line-height: 1.75; }
 .fp-prose p:last-child { margin-bottom: 0; }
 .fp-prose ul { margin: 0.75rem 0 1rem 0; padding-left: 1.25rem; }
@@ -382,3 +525,92 @@
 .fp-prose ol li { margin-bottom: 0.5rem; line-height: 1.7; }
 .fp-prose h3 { font-size: 1.25rem; font-weight: 600; margin: 1.75rem 0 0.75rem; }
 .fp-prose h4 { font-size: 1.05rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Global scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: color-mix(in srgb, var(--color-navy) 8%, transparent); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-sky) 0%, var(--color-sky-dark) 100%);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--color-sky-light) 0%, var(--color-sky) 100%);
+  background-clip: padding-box;
+}
+
+/* Corner bracket utility (HUD style) */
+.fp-corner-brackets {
+  position: relative;
+}
+.fp-corner-brackets::before,
+.fp-corner-brackets::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-sky);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.fp-corner-brackets::before {
+  top: 0; left: 0;
+  border-width: 2px 0 0 2px;
+}
+.fp-corner-brackets::after {
+  bottom: 0; right: 0;
+  border-width: 0 2px 2px 0;
+}
+
+/* Animated gradient border */
+.fp-gradient-border {
+  position: relative;
+  background: var(--card);
+}
+.fp-gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--color-sky), var(--color-gold), var(--color-sky));
+  background-size: 200% 200%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: fp-border-shift 4s ease infinite;
+  pointer-events: none;
+}
+@keyframes fp-border-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Scroll reveal */
+.fp-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+}
+.fp-reveal.fp-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Section background accents */
+.fp-section-bg {
+  position: relative;
+}
+.fp-section-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--color-sky) 7%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, color-mix(in srgb, var(--color-gold) 5%, transparent) 0%, transparent 40%);
+  pointer-events: none;
+}

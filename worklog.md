@@ -180,3 +180,35 @@ Work Log:
 VLM RESULT: 8-9/10 ("highly detailed, textured 3D model of a Cessna 172 with realistic metallic paint, reflections, clear canopy glass, and numbered educational pins")
 
 Stage Summary: Real textured GLB model replaces hand-built primitives. 8-9/10 visual quality. Model loads via useGLTF with proper PBR materials, textures, shadows. Educational pins preserved. Lint clean.
+
+---
+Task ID: V10-VISUAL-INJECTION
+Agent: Main (Z.ai Code)
+Task: Full visual overhaul using Visual Injection System prompt + research
+
+Work Log:
+RESEARCH:
+- Researched Kimi K3 (dark frontier AI, metric-driven hero), Claude Fable 5 (warm editorial, Anthropic rust #D97757, custom serif)
+- Researched Linear (#5E6AD2 indigo, Inter+Berkeley Mono, pills, restraint), Vercel (Geist, shadow-as-border, dark canonical), Raycast (dark glass cockpit), Arc (calm/personal), Cursor (minimal), Things 3 (white space), Cron (vintage-futurism)
+- Key findings: "restraint" is the premium word; ease-out-expo is the #1 premium easing; 2-3 fonts max; shadows-as-borders not gray lines; stagger 40-80ms at 400-600ms ease-out-expo; skeletons not spinners
+
+FIXES:
+1. GLB compressed from 6MB to 823KB (87% reduction via gltf-transform with WebP texture compression + mesh simplification). Load time: 72ms (was 5+ seconds).
+2. Loading skeleton: 3 pulsing dots instead of text fallback
+3. Design tokens completely rebuilt per Visual Injection prompt:
+   - 5-layer surface ladder (surface-0 deepest → surface-4 modals) for both themes
+   - Hairline borders (rgba semi-transparent) replace drop shadows on dark
+   - Layered shadow stacks (sm/md/lg + glow-gold/glow-sky) — never single shadow
+   - 4-layer Liquid Glass (backdrop blur 20px + saturate 180% + tint + border highlight + inner shadow)
+   - Atmospheric tokens (glow, tint, hero-gradient)
+   - 8-point spacing grid (4/8/12/16/24/32/48/64/96)
+   - Radius scale (6/10/16/24/999) — varies by element scale
+   - Motion tokens: ease-out-expo, ease-in-out-quart, ease-spring; durations micro(200ms)/structural(350ms)/scene(600ms); stagger 60ms
+4. Typography: h1 uses Space Grotesk at -0.04em tracking, line-height 1.05; h2 at -0.03em, 1.1; h3-h6 Sora at -0.02em, 1.2; body line-height 1.6; mono with tabular-nums
+5. Component vocabulary rebuilt: fp-glass (4-layer), fp-bezel (hairline+corners+shadow), fp-bezel-hover (spring lift+glow), fp-toggle-btn (shine sweep+spring), fp-corner-brackets (HUD style), fp-gradient-border (animated)
+6. Gold promoted to precious accent (ring, focus, CTAs) — <5% surface area
+7. Focus rings: 2px accent + 2px offset, visible only on keyboard nav
+
+VLM: 7.5/10 ("strong B+ execution, solid bones, needs motion design and button refinement for $50k look")
+
+Stage Summary: Foundation rebuilt. GLB loads in 72ms. Design tokens fully compliant with Visual Injection prompt. 4 of 35 todos complete. Next: apply tokens to all components (navbar, hero, cards, sections).
