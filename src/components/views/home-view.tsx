@@ -24,36 +24,122 @@ export function HomeView() {
   return (
     <div>
       {/* ===== HERO ===== */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden fp-sky-grain">
-        {/* Sky gradient layers */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1D3A] via-[#14264a] to-[#3E92CC]/30" />
-        <div className="absolute inset-0 dark:block hidden bg-gradient-to-b from-[#07152A] via-[#0B1D3A] to-[#14264a]" />
+      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+        {/* Cinematic sky background — multi-layer animated system */}
+        <div className="absolute inset-0">
+          {/* Base gradient — deep sky with horizon */}
+          <div className="absolute inset-0" style={{
+            background: "radial-gradient(ellipse at 50% 100%, #1a3a5c 0%, #0B1D3A 30%, #07152A 65%, #050d1c 100%)",
+          }} />
 
-        {/* Stars (dark mode) */}
-        <div className="absolute inset-0 dark:block hidden">
-          {Array.from({ length: 40 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full bg-white"
-              style={{
-                top: `${Math.random() * 50}%`,
-                left: `${Math.random() * 100}%`,
-                width: `${Math.random() * 2 + 1}px`,
-                height: `${Math.random() * 2 + 1}px`,
-                opacity: Math.random() * 0.6 + 0.2,
-                animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
-              }}
-            />
-          ))}
+          {/* Aurora mesh — slow drifting color blobs */}
+          <motion.div
+            className="absolute inset-0"
+            style={{
+              background: "radial-gradient(circle at 20% 30%, rgba(62,146,204,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(111,179,222,0.1) 0%, transparent 45%), radial-gradient(circle at 60% 70%, rgba(242,177,52,0.08) 0%, transparent 40%)",
+              filter: "blur(40px)",
+            }}
+            animate={{ backgroundPosition: ["0% 0%", "100% 50%", "0% 0%"] }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          />
+
+          {/* God rays — light beams from above */}
+          <div className="absolute inset-0 overflow-hidden">
+            {[15, 38, 58, 78].map((left, i) => (
+              <motion.div
+                key={i}
+                className="absolute"
+                style={{
+                  top: "-5%",
+                  left: `${left}%`,
+                  width: `${60 + i * 20}px`,
+                  height: "130%",
+                  background: `linear-gradient(180deg, ${i % 2 === 0 ? "rgba(242,177,52,0.06)" : "rgba(111,179,222,0.04)"} 0%, transparent 50%)`,
+                  transform: `rotate(${[-3, 2, -1, 4][i]}deg)`,
+                  transformOrigin: "top center",
+                  filter: "blur(20px)",
+                  mixBlendMode: "screen",
+                }}
+                animate={{ opacity: [0.3, 0.6, 0.3], scaleY: [0.95, 1, 0.95] }}
+                transition={{ duration: 8 + i, repeat: Infinity, ease: "easeInOut", delay: i * 1.5 }}
+              />
+            ))}
+          </div>
+
+          {/* Stars — deterministic positions, twinkling */}
+          <div className="absolute inset-0">
+            {STARS.map((star, i) => (
+              <div key={i} className="absolute" style={{ top: `${star.top}%`, left: `${star.left}%` }}>
+                <motion.div
+                  className="rounded-full"
+                  style={{
+                    width: `${star.size}px`, height: `${star.size}px`,
+                    backgroundColor: star.color,
+                    boxShadow: `0 0 ${star.size * 3}px ${star.color}`,
+                  }}
+                  animate={{ opacity: [star.minOpacity, star.maxOpacity, star.minOpacity] }}
+                  transition={{ duration: star.duration, repeat: Infinity, delay: star.delay, ease: "easeInOut" }}
+                />
+                {star.size > 2 && (
+                  <motion.div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      width: `${star.size * 6}px`, height: "1px",
+                      background: `linear-gradient(90deg, transparent, ${star.color}, transparent)`,
+                    }}
+                    animate={{ opacity: [0, 0.4, 0], scaleX: [0.5, 1, 0.5] }}
+                    transition={{ duration: star.duration * 1.5, repeat: Infinity, delay: star.delay + 1 }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Cloud layers — parallax drift */}
+          <CloudLayer speed={160} opacity={0.1} blur={10} className="top-[5%]" />
+          <CloudLayer speed={110} opacity={0.12} blur={6} className="top-[25%]" />
+          <CloudLayer speed={75} opacity={0.18} blur={3} className="top-[50%]" />
+
+          {/* Horizon glow — warm band */}
+          <div className="absolute bottom-0 left-0 right-0 h-56" style={{
+            background: "linear-gradient(to top, rgba(242,177,52,0.25) 0%, rgba(242,177,52,0.08) 40%, transparent 100%)",
+          }} />
+          {/* Light bloom at horizon center */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-40 rounded-full" style={{
+            background: "radial-gradient(ellipse at center, rgba(242,177,52,0.2) 0%, transparent 70%)",
+            filter: "blur(20px)",
+          }} />
+
+          {/* Terrain silhouette — mountains at horizon */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
+            <svg viewBox="0 0 1200 120" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0,120 L0,80 L80,60 L150,75 L220,45 L290,65 L360,50 L440,70 L520,40 L600,55 L680,35 L760,60 L840,45 L920,65 L1000,50 L1080,70 L1150,55 L1200,65 L1200,120 Z" fill="rgba(7,21,42,0.7)" />
+              {/* Runway approach lights */}
+              {[300, 350, 400, 450, 500, 550, 600].map((x, i) => (
+                <motion.circle key={i} cx={x} cy={95 - i * 3} r="1.5" fill="#F2B134"
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </svg>
+          </div>
+
+          {/* Atmospheric fog near horizon */}
+          <div className="absolute bottom-0 left-0 right-0 h-48" style={{
+            background: "linear-gradient(to top, rgba(91,107,121,0.12) 0%, transparent 100%)",
+          }} />
+
+          {/* Vignette */}
+          <div className="absolute inset-0" style={{
+            background: "radial-gradient(ellipse at center, transparent 35%, rgba(5,13,28,0.5) 100%)",
+          }} />
+
+          {/* Film grain */}
+          <div className="absolute inset-0 opacity-[0.035] mix-blend-overlay" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundSize: "256px 256px",
+          }} />
         </div>
-
-        {/* Drifting clouds (parallax layers) */}
-        <CloudLayer speed={60} opacity={0.06} className="top-[15%]" />
-        <CloudLayer speed={90} opacity={0.08} className="top-[35%]" />
-        <CloudLayer speed={120} opacity={0.05} className="top-[55%]" />
-
-        {/* Horizon glow */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F2B134]/15 to-transparent" />
 
         {/* Content */}
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 py-20 grid lg:grid-cols-2 gap-8 items-center w-full">
@@ -406,24 +492,46 @@ export function HomeView() {
 
 // ===== Sub-components =====
 
-function CloudLayer({ speed, opacity, className }: { speed: number; opacity: number; className?: string }) {
+function CloudLayer({ speed, opacity, className, blur = 0 }: { speed: number; opacity: number; className?: string; blur?: number }) {
   return (
     <div className={cn("absolute inset-x-0", className)} style={{ opacity }}>
       <motion.div
-        animate={{ x: ["-20%", "120%"] }}
+        animate={{ x: ["-35%", "135%"] }}
         transition={{ duration: speed, repeat: Infinity, ease: "linear" }}
-        className="relative"
+        style={{ filter: blur > 0 ? `blur(${blur}px)` : undefined }}
       >
-        <svg width="600" height="120" viewBox="0 0 600 120" className="opacity-70">
-          <ellipse cx="100" cy="60" rx="80" ry="25" fill="white" />
-          <ellipse cx="200" cy="55" rx="60" ry="30" fill="white" />
-          <ellipse cx="320" cy="60" rx="90" ry="28" fill="white" />
-          <ellipse cx="450" cy="55" rx="70" ry="25" fill="white" />
+        <svg width="700" height="160" viewBox="0 0 700 160" className="opacity-80">
+          <ellipse cx="80" cy="80" rx="60" ry="26" fill="white" />
+          <ellipse cx="160" cy="70" rx="50" ry="32" fill="white" />
+          <ellipse cx="240" cy="80" rx="65" ry="28" fill="white" />
+          <ellipse cx="330" cy="74" rx="55" ry="24" fill="white" />
+          <ellipse cx="420" cy="82" rx="60" ry="30" fill="white" />
+          <ellipse cx="510" cy="76" rx="52" ry="26" fill="white" />
+          <ellipse cx="590" cy="80" rx="45" ry="22" fill="white" />
+          <ellipse cx="160" cy="60" rx="38" ry="14" fill="white" opacity="0.6" />
+          <ellipse cx="420" cy="68" rx="44" ry="14" fill="white" opacity="0.6" />
         </svg>
       </motion.div>
     </div>
   );
 }
+
+// Deterministic star data (hydration-safe)
+const STARS = Array.from({ length: 60 }, (_, i) => {
+  const seed = i * 9301 + 49297;
+  const r1 = ((seed % 233280) / 233280);
+  const r2 = (((seed * 7) % 233280) / 233280);
+  const r3 = (((seed * 13) % 233280) / 233280);
+  const r4 = (((seed * 17) % 233280) / 233280);
+  const size = 0.6 + r1 * 2.4;
+  const colors = ["#ffffff", "#ffffff", "#ffffff", "#cfe8ff", "#fff4e0", "#e0f0ff"];
+  return {
+    top: r1 * 60, left: r2 * 100, size,
+    color: colors[Math.floor(r3 * colors.length)],
+    minOpacity: 0.12 + r4 * 0.2, maxOpacity: 0.65 + r4 * 0.35,
+    duration: 2.5 + r3 * 4.5, delay: r4 * 5,
+  };
+});
 
 function CockpitTeaserSVG() {
   return (

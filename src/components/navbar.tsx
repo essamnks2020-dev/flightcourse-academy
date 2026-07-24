@@ -153,22 +153,42 @@ export function Navbar() {
 export function FlightPathLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-      {/* Horizon circle */}
-      <circle cx="20" cy="20" r="18" fill="none" stroke="var(--color-navy)" strokeWidth="1.5" className="dark:stroke-[var(--color-sky)]" />
-      {/* Sky half */}
-      <path d="M 2 20 A 18 18 0 0 1 38 20 Z" fill="var(--color-sky)" opacity="0.2" />
+      <defs>
+        <linearGradient id="fp-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3E92CC" />
+          <stop offset="100%" stopColor="#F2B134" />
+        </linearGradient>
+        <linearGradient id="fp-sky-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#3E92CC" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#3E92CC" stopOpacity="0.1" />
+        </linearGradient>
+        <radialGradient id="fp-glow" cx="50%" cy="40%">
+          <stop offset="0%" stopColor="#F2B134" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#F2B134" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* Ambient glow */}
+      <circle cx="20" cy="20" r="18" fill="url(#fp-glow)" />
+      {/* Outer ring — gradient */}
+      <circle cx="20" cy="20" r="18" fill="none" stroke="url(#fp-ring-grad)" strokeWidth="1.5" />
+      {/* Sky half — gradient fill */}
+      <path d="M 2 20 A 18 18 0 0 1 38 20 Z" fill="url(#fp-sky-grad)" />
       {/* Ground half */}
-      <path d="M 2 20 A 18 18 0 0 0 38 20 Z" fill="var(--color-navy)" opacity="0.15" className="dark:fill-[var(--color-sky)] dark:opacity-10" />
-      {/* Horizon line */}
-      <line x1="2" y1="20" x2="38" y2="20" stroke="var(--color-gold)" strokeWidth="1.5" />
+      <path d="M 2 20 A 18 18 0 0 0 38 20 Z" fill="#0B1D3A" opacity="0.1" className="dark:fill-[#3E92CC] dark:opacity-[0.06]" />
+      {/* Horizon line — gold with subtle glow */}
+      <line x1="2" y1="20" x2="38" y2="20" stroke="#F2B134" strokeWidth="1.5" />
+      <line x1="2" y1="20" x2="38" y2="20" stroke="#F2B134" strokeWidth="3" opacity="0.2" />
       {/* Compass tick marks */}
-      <line x1="20" y1="3" x2="20" y2="7" stroke="var(--color-gold)" strokeWidth="1.5" />
-      <line x1="20" y1="33" x2="20" y2="37" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-      <line x1="3" y1="20" x2="7" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-      <line x1="33" y1="20" x2="37" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-      {/* Flight path arrow */}
-      <path d="M 12 24 Q 20 8 28 24" fill="none" stroke="var(--color-sky)" strokeWidth="2" strokeLinecap="round" className="dark:stroke-[var(--color-sky-light)]" />
-      <polygon points="28,24 25,20 28,21 31,20" fill="var(--color-sky)" className="dark:fill-[var(--color-sky-light)]" />
+      <line x1="20" y1="3" x2="20" y2="7" stroke="#F2B134" strokeWidth="1.5" />
+      <line x1="20" y1="33" x2="20" y2="37" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+      <line x1="3" y1="20" x2="7" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+      <line x1="33" y1="20" x2="37" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+      {/* Flight path arrow — gradient stroke */}
+      <path d="M 12 24 Q 20 8 28 24" fill="none" stroke="#3E92CC" strokeWidth="2" strokeLinecap="round" />
+      <path d="M 12 24 Q 20 8 28 24" fill="none" stroke="#6FB3DE" strokeWidth="3" strokeLinecap="round" opacity="0.2" />
+      {/* Arrow tip */}
+      <polygon points="28,24 25,20 28,21 31,20" fill="#3E92CC" />
+      <circle cx="28" cy="24" r="1.5" fill="#F2B134" />
     </svg>
   );
 }
