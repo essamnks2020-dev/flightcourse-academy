@@ -9,7 +9,7 @@ import { HomeView } from "@/components/views/home-view";
 import { LearningPathView } from "@/components/views/learning-path-view";
 import { ModuleView } from "@/components/views/module-view";
 import { GlossaryView } from "@/components/views/glossary-view";
-import { CockpitExplorerView } from "@/components/views/cockpit-explorer-view";
+import CockpitExplorerView from "@/components/views/cockpit-explorer-view";
 import { SetupGuideView } from "@/components/views/setup-guide-view";
 import { ChecklistsView } from "@/components/views/checklists-view";
 import { ProgressView } from "@/components/views/progress-view";
