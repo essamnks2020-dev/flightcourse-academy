@@ -1,6 +1,6 @@
 import type { ModuleContent } from "@/lib/content-types";
 
-// FlightPath Academy — Course Modules 9–16
+// FlightCourse Academy — Course Modules 9–16
 // Real, accurate aviation content written for total beginners.
 // Each module includes sections, a diagram, common mistake, sim exercise,
 // key takeaways, and a 5-question quiz with explanations.

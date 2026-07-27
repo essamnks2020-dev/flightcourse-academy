@@ -26,7 +26,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FlightPath Academy — From Zero to Wheels Up",
+  title: "FlightCourse Academy — From Zero to Wheels Up",
   description:
     "Learn to fly in a flight simulator (MSFS, X-Plane) from absolute zero. Cockpit basics, aerodynamics, controls, procedures, navigation, radio comms, weather, and emergencies — taught with patience and real aviation standards.",
   keywords: [
@@ -40,12 +40,12 @@ export const metadata: Metadata = {
     "VFR",
     "pilot training",
   ],
-  authors: [{ name: "FlightPath Academy" }],
+  authors: [{ name: "FlightCourse Academy" }],
   openGraph: {
-    title: "FlightPath Academy — From Zero to Wheels Up",
+    title: "FlightCourse Academy — From Zero to Wheels Up",
     description:
       "A flight simulation learning website for total beginners. 16 modules, 50+ terms, interactive cockpit, real checklists.",
-    siteName: "FlightPath Academy",
+    siteName: "FlightCourse Academy",
     type: "website",
   },
 };

@@ -1,13 +1,13 @@
 import type { FAQItem } from "../content-types";
 
-// Frequently Asked Questions for FlightPath Academy
+// Frequently Asked Questions for FlightCourse Academy
 // Categories in use: "Getting Started", "Simulators & Hardware", "Real Flying", "Course & Progress"
 
 export const faqItems: FAQItem[] = [
   {
     question: "Will this prepare me for a real pilot's license?",
     answer:
-      "Honestly: it will give you a serious head start, not a license. The course builds the same knowledge you'll meet in ground school — airspace, weather, aerodynamics, radio calls, procedures — and the simulator lets you rehearse flows until they're muscle memory. But real certification requires an actual Certified Flight Instructor (CFI), a flight school, an FAA medical certificate, the written knowledge test, and the practical checkride (oral + flight). Think of FlightPath as the book-and-chair phase done really well; the airwork still has to happen in a real airplane.",
+      "Honestly: it will give you a serious head start, not a license. The course builds the same knowledge you'll meet in ground school — airspace, weather, aerodynamics, radio calls, procedures — and the simulator lets you rehearse flows until they're muscle memory. But real certification requires an actual Certified Flight Instructor (CFI), a flight school, an FAA medical certificate, the written knowledge test, and the practical checkride (oral + flight). Think of FlightCourse as the book-and-chair phase done really well; the airwork still has to happen in a real airplane.",
     category: "Real Flying",
   },
   {

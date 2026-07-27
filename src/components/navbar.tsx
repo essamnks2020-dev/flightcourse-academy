@@ -35,18 +35,18 @@ export function Navbar() {
   React.useEffect(() => setMounted(true), []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
         <button
           onClick={() => navigate("home")}
-          className="flex items-center gap-2.5 group flex-shrink-0"
-          aria-label="FlightPath Academy home"
+          className="flex items-center gap-2.5 group flex-shrink-0 transition-transform hover:scale-[1.02]"
+          aria-label="FlightCourse Academy home"
         >
-          <FlightPathLogo className="w-9 h-9" />
+          <FlightCourseLogo className="w-9 h-9 transition-transform group-hover:rotate-6 duration-500" />
           <div className="hidden sm:block text-left">
             <div className="font-heading font-bold text-base leading-none tracking-tight">
-              FlightPath
+              FlightCourse
             </div>
             <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-sky leading-none mt-0.5">
               Academy
@@ -55,19 +55,26 @@ export function Navbar() {
         </button>
 
         {/* Desktop nav */}
-        <div className="hidden lg:flex items-center gap-1">
+        <div className="hidden lg:flex items-center gap-1 fp-glass rounded-full px-2 py-1">
           {NAV_ITEMS.slice(0, 6).map((item) => (
             <button
               key={item.view}
               onClick={() => navigate(item.view)}
               className={cn(
-                "px-3 py-1.5 text-sm font-medium transition-colors rounded-sm",
+                "relative px-3.5 py-1.5 text-sm font-medium transition-all rounded-full",
                 currentView === item.view
-                  ? "text-sky border-b-2 border-sky"
+                  ? "text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {item.label}
+              {currentView === item.view && (
+                <motion.span
+                  layoutId="nav-active"
+                  className="absolute inset-0 rounded-full bg-sky"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{item.label}</span>
             </button>
           ))}
         </div>
@@ -77,9 +84,9 @@ export function Navbar() {
           {/* XP indicator */}
           <button
             onClick={() => navigate("progress")}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 border border-border hover:border-gold/50 transition-colors group"
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 fp-glass rounded-full hover:border-gold/50 transition-all group"
           >
-            <Gauge className="w-4 h-4 text-gold group-hover:text-gold-light" />
+            <Gauge className="w-4 h-4 text-gold group-hover:text-gold-light transition-colors" />
             <div className="text-left">
               <div className="text-xs font-mono font-bold leading-none">
                 {(xp / 10).toFixed(1)}h
@@ -154,7 +161,7 @@ export function Navbar() {
   );
 }
 
-export function FlightPathLogo({ className }: { className?: string }) {
+export function FlightCourseLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
       <defs>

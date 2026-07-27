@@ -7,7 +7,7 @@ import { useNav } from "@/lib/nav-store";
 import { useProgress, BADGES, LICENSE_TIERS } from "@/lib/progress-store";
 import { allModules, TOTAL_MODULES } from "@/lib/data/modules";
 import { GaugeRing } from "@/components/gauge-ring";
-import { FlightPathLogo } from "@/components/navbar";
+import { FlightCourseLogo } from "@/components/navbar";
 import { cn } from "@/lib/utils";
 
 const BADGE_ICONS: Record<string, React.ElementType> = {
@@ -52,7 +52,7 @@ export function ProgressView() {
     setCertificateName(finalName);
     drawCertificate(canvas, finalName, completedCount, xp);
     const link = document.createElement("a");
-    link.download = `FlightPath-Academy-Certificate-${finalName.replace(/\s+/g, "-")}.png`;
+    link.download = `FlightCourse-Academy-Certificate-${finalName.replace(/\s+/g, "-")}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   }
@@ -323,16 +323,16 @@ function CertificatePreview({ name, hours, completedCount }: { name: string; hou
       <div className="absolute bottom-2 right-2 w-12 h-12 border-r-2 border-b-2 border-gold" />
 
       <div className="flex justify-center mb-4">
-        <FlightPathLogo className="w-16 h-16" />
+        <FlightCourseLogo className="w-16 h-16" />
       </div>
-      <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-sky mb-1">FlightPath Academy</div>
+      <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-sky mb-1">FlightCourse Academy</div>
       <div className="text-[8px] font-mono uppercase tracking-widest text-muted-foreground mb-6">From Zero to Wheels Up</div>
       <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-2">Certificate of Completion</div>
       <h2 className="font-heading font-bold text-2xl sm:text-3xl mb-4 text-navy dark:text-cloud">Private Pilot Simulation Track</h2>
       <p className="text-sm text-muted-foreground mb-2">This certifies that</p>
       <p className="font-heading font-bold text-2xl sm:text-3xl text-gold mb-4">{name}</p>
       <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-        has successfully completed all {completedCount} modules of the FlightPath Academy
+        has successfully completed all {completedCount} modules of the FlightCourse Academy
         curriculum, demonstrating proficiency in cockpit operations, aerodynamics,
         navigation, radio communications, weather, and emergency procedures
         in a flight simulation environment.
@@ -421,7 +421,7 @@ function drawCertificate(canvas: HTMLCanvasElement, name: string, completedCount
 
   ctx.fillStyle = "#5B6B79";
   ctx.font = "15px sans-serif";
-  const desc = `has successfully completed all ${completedCount} modules of the FlightPath Academy`;
+  const desc = `has successfully completed all ${completedCount} modules of the FlightCourse Academy`;
   const desc2 = "curriculum, demonstrating proficiency in cockpit operations, aerodynamics,";
   const desc3 = "navigation, radio communications, weather, and emergency procedures.";
   ctx.fillText(desc, W / 2, 445);

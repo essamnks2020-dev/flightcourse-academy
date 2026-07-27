@@ -1,4 +1,4 @@
-// Simulator setup guide for FlightPath Academy.
+// Simulator setup guide for FlightCourse Academy.
 // Honest, beginner-first guidance. No upselling, no aspirational mush.
 
 export interface SimPlatform {

@@ -295,7 +295,7 @@ export function HomeView() {
       <section className="py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12">
-            <div className="text-xs font-mono uppercase tracking-widest text-sky mb-2">Why FlightPath</div>
+            <div className="text-xs font-mono uppercase tracking-widest text-sky mb-2">Why FlightCourse</div>
             <h2 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight max-w-2xl">
               Built for the person who's never touched a yoke.
             </h2>
@@ -454,7 +454,7 @@ export function HomeView() {
             ))}
           </div>
           <p className="text-center text-xs text-muted-foreground mt-8 italic font-mono">
-            Sample content — representative of the FlightPath Academy experience.
+            Sample content — representative of the FlightCourse Academy experience.
           </p>
         </div>
       </section>
@@ -601,7 +601,7 @@ const VALUE_CARDS = [
 // Sample testimonials — marked as sample content
 const TESTIMONIALS = [
   {
-    quote: "I'd owned MSFS for two years and never made it past the startup checklist. FlightPath's Module 5 walked me through the C172 startup in plain English — now I'm flying circuits every evening.",
+    quote: "I'd owned MSFS for two years and never made it past the startup checklist. FlightCourse's Module 5 walked me through the C172 startup in plain English — now I'm flying circuits every evening.",
     name: "Marcus T.",
     role: "MSFS 2024 · 3 months in",
   },
@@ -611,7 +611,7 @@ const TESTIMONIALS = [
     role: "X-Plane 12 · 6 months in",
   },
   {
-    quote: "As a student pilot working toward my PPL, I use FlightPath to review concepts before lessons. The aerodynamics section explains lift correctly — unlike half the YouTube videos out there.",
+    quote: "As a student pilot working toward my PPL, I use FlightCourse to review concepts before lessons. The aerodynamics section explains lift correctly — unlike half the YouTube videos out there.",
     name: "Daniel R.",
     role: "Real-world student pilot",
   },

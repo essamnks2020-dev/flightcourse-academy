@@ -1,6 +1,6 @@
 import type { GlossaryTerm } from "@/lib/content-types";
 
-// FlightPath Academy — Aviation Glossary
+// FlightCourse Academy — Aviation Glossary
 // 76 terms across 7 categories, mapped to modules 1-16 where relevant.
 // Categories: Aerodynamics, Instruments, Navigation, Communications,
 //             Weather, Procedures, General

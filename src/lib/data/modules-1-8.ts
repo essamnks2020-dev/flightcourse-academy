@@ -26,7 +26,7 @@ export const modules18: ModuleContent[] = [
           },
           {
             type: "paragraph",
-            text: "FlightPath Academy is built around 'study-level' general aviation simulation — meaning the simulated airplane behaves like the real one. We're not pushing buttons on an autopilot; we're learning to actually fly a small propeller plane."
+            text: "FlightCourse Academy is built around 'study-level' general aviation simulation — meaning the simulated airplane behaves like the real one. We're not pushing buttons on an autopilot; we're learning to actually fly a small propeller plane."
           },
           {
             type: "callout",
@@ -103,7 +103,7 @@ export const modules18: ModuleContent[] = [
           },
           {
             type: "paragraph",
-            text: "FlightPath Academy focuses on GA. By the end of these modules, you'll be able to start up a Cessna 172, taxi to the runway, take off, fly a traffic pattern, and land. That's the foundation. Airliners come later — and they're easier once you understand how an airplane flies, not just how to program an FMC."
+            text: "FlightCourse Academy focuses on GA. By the end of these modules, you'll be able to start up a Cessna 172, taxi to the runway, take off, fly a traffic pattern, and land. That's the foundation. Airliners come later — and they're easier once you understand how an airplane flies, not just how to program an FMC."
           },
           {
             type: "callout",

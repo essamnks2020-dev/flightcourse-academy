@@ -1,4 +1,4 @@
-// Shared content type definitions for FlightPath Academy
+// Shared content type definitions for FlightCourse Academy
 
 export type Difficulty = "Beginner" | "Foundational" | "Intermediate" | "Advanced";
 

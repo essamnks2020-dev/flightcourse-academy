@@ -104,7 +104,7 @@ export function FaqView() {
         <div className="text-sm">
           <p className="font-heading font-semibold mb-1">A note on real certification</p>
           <p className="text-muted-foreground leading-relaxed">
-            FlightPath Academy teaches genuine aviation knowledge and builds
+            FlightCourse Academy teaches genuine aviation knowledge and builds
             real procedure muscle memory — but it is not a substitute for
             certified flight training. To earn a real pilot's license, you need
             a Certified Flight Instructor (CFI), a medical certificate, logged
