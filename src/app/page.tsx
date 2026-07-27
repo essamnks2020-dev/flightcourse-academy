@@ -14,6 +14,9 @@ import { SetupGuideView } from "@/components/views/setup-guide-view";
 import { ChecklistsView } from "@/components/views/checklists-view";
 import { ProgressView } from "@/components/views/progress-view";
 import { FaqView } from "@/components/views/faq-view";
+import { FlareTrainer } from "@/components/flare-game/flare-trainer";
+import { RadioBuilder } from "@/components/flightcourse/radio-builder/radio-builder";
+import { PatternPerfectGame } from "@/components/pattern-perfect/PatternPerfectGame";
 
 // ===== Premium loading screen =====
 // Full cinematic sequence: ambient sky → ring draws → horizon → compass → brand → fade
@@ -293,6 +296,9 @@ export default function Page() {
             {view === "checklists" && <ChecklistsView />}
             {view === "progress" && <ProgressView />}
             {view === "faq" && <FaqView />}
+            {view === "flare" && <FlareTrainer />}
+            {view === "radio" && <RadioBuilder />}
+            {view === "pattern" && <PatternPerfectGame />}
           </motion.div>
         </AnimatePresence>
       </main>

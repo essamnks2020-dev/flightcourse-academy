@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, X, Plane, Sun, Moon, Compass, Gauge } from "lucide-react";
+import { Plane, Compass, Gauge, Gamepad2, Radio, Map, Sun, Moon, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNav } from "@/lib/nav-store";
 import { useProgress } from "@/lib/progress-store";
@@ -15,6 +15,10 @@ const NAV_ITEMS: { label: string; view: ViewName; icon: React.ElementType }[] = 
   { label: "Glossary", view: "glossary", icon: Compass },
   { label: "Checklists", view: "checklists", icon: Compass },
   { label: "Setup", view: "setup", icon: Compass },
+  { label: "Progress", view: "progress", icon: Gauge },
+  { label: "Flare Trainer", view: "flare", icon: Gamepad2 },
+  { label: "Radio Builder", view: "radio", icon: Radio },
+  { label: "Pattern Perfect", view: "pattern", icon: Map },
   { label: "Progress", view: "progress", icon: Gauge },
   { label: "FAQ", view: "faq", icon: Compass },
 ];

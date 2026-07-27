@@ -12,7 +12,10 @@ export type ViewName =
   | "setup"
   | "checklists"
   | "progress"
-  | "faq";
+  | "faq"
+  | "flare"
+  | "radio"
+  | "pattern";
 
 interface NavState {
   view: ViewName;
