@@ -107,7 +107,11 @@ export function Navbar() {
             {gamesOpen && (
               <div
                 role="menu"
-                className="glass absolute right-0 top-full mt-2 w-64 rounded-xl p-1.5 shadow-lg animate-fade-up"
+                className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border p-1.5 shadow-2xl animate-fade-up"
+                style={{
+                  background: "linear-gradient(160deg, oklch(0.26 0.03 253 / 96%) 0%, oklch(0.21 0.028 253 / 97%) 100%)",
+                  backdropFilter: "blur(20px) saturate(150%)",
+                }}
               >
                 {GAMES.map((g) => (
                   <button

@@ -415,3 +415,32 @@ Stage Summary:
 - 5 of 9 views browser-verified rendering correctly with 0 errors. All 9 views + 3 games lint-clean.
 - Dev server stable with lazy loading + 2GB heap. HTTP 200.
 - The site is now visually restrained, premium, and instrument-panel-coherent — the aesthetic Fable 5 produces and Kimi K3 targets.
+
+---
+Task ID: V12-FIXES
+Agent: Main (Z.ai Code)
+Task: 5 user-requested fixes — logo detail, setup text fit, game prompts/snippets, hero clipping, dropdown readability
+
+Work Log:
+1. LOGO REDESIGN: Rebuilt brand/logo.tsx with a much more detailed attitude indicator — outer bezel ring with gradient, bank-angle tick marks (0/10/20/30 degrees with triangle pointers at ±30), pitch ladder lines parallel to horizon, bank pointer triangle at top, inner bezel ring, and a more refined aircraft symbol (swept wings + tail + center dot). 22 paths / 12 lines / 6 circles (up from ~5 elements). Still clean, still one metaphor, but reads as a real instrument.
+2. GAMES DROPDOWN: Changed from .glass (7% opacity, too transparent) to a 96% opaque navy gradient with 20px blur + border + shadow-2xl. Still glassy but now fully readable — text no longer bleeds through.
+3. SETUP PLATFORM CARDS: Restructured from 3-col grid with cramped justify-between name+price to 4-col (xl) / 2-col (md) grid with vertical card layout — name on its own line, curve badge pill, price on its own line (no more overflow), then realism/best-for/pros/cons. Long price strings like "$69.99 Standard Edition (also on Xbox Game Pass)" now fit.
+4. HERO CLIPPING FIX: Root cause was flexbox overflow — lg:w-3/5 (60%) + lg:w-2/5 (40%) + lg:gap-16 (4rem) = 100% + 4rem, clipped by section's overflow-hidden. Fixed by: removing overflow-hidden, using lg:flex-[3] / lg:flex-[2] with min-w-0 on both columns, adding relative z-index to content layer, reducing gap to lg:gap-12, capping right column at lg:max-w-sm. Verified: full headline "Learn to actually fly the aircraft" now visible with 0 clipping.
+5. GAME SOURCE DOWNLOADS + PROMPTS: Created public/game-sources/ with:
+   - README.md (10.7 KB) — contains all 3 improvement prompts with full Glass Cockpit design system reference
+   - flare-trainer-source.zip (84 KB) — all 9 flare-game files + globals.css + logo + progress-store
+   - radio-builder-source.zip (41 KB) — all 13 radio-builder files + globals.css + logo
+   - pattern-perfect-source.zip (41 KB) — all 11 pattern-perfect files + globals.css + logo
+   - all-games-source.zip (121 KB) — everything combined
+   All verified downloadable via HTTP 200.
+
+VERIFICATION (Agent Browser):
+- Hero: headline fully visible, no clipping, flight plan card present. 0 errors.
+- Games dropdown: all 3 games visible when opened, readable background.
+- Setup view: all 4 platforms visible (MSFS 2024, MSFS 2020, X-Plane 12, DCS World), prices fit.
+- Logo: 22 paths + 12 lines + 6 circles (detailed attitude indicator confirmed).
+- Game source downloads: all 5 files return HTTP 200.
+- Lint: 0 errors.
+
+Stage Summary:
+- All 5 user issues resolved. Logo is a detailed attitude indicator. Setup cards fit their text. Hero no longer clips. Games dropdown is readable. Game source zips + improvement prompts are downloadable at /game-sources/.

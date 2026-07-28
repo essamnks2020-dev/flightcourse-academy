@@ -38,26 +38,25 @@ export function SetupGuideView() {
         <h2 className="mb-5 text-xl font-semibold tracking-tight">
           Which simulator should I buy?
         </h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {setupGuide.platforms.map((p) => (
             <div
               key={p.name}
               className="glass flex flex-col gap-3 rounded-xl p-5"
             >
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="font-semibold tracking-tight">{p.name}</h3>
-                <span className="nums text-sm text-primary shrink-0">
-                  {p.price}
+              {/* Name + curve badge in a row */}
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold tracking-tight leading-tight">{p.name}</h3>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {p.learningCurve} curve
                 </span>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="label-instrument text-muted-foreground">
-                  Curve
-                </span>
-                <span className="nums text-xs text-muted-foreground">
-                  {p.learningCurve}
-                </span>
-              </div>
+              {/* Price on its own line — long strings need room */}
+              <p className="nums text-sm font-medium text-primary leading-relaxed">
+                {p.price}
+              </p>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 {p.realism}
               </p>

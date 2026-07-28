@@ -119,11 +119,11 @@ export function HomeView() {
       {/* ============================================================ */}
       {/* Section 1 — Hero                                              */}
       {/* ============================================================ */}
-      <section className="bg-horizon relative overflow-hidden">
+      <section className="bg-horizon relative">
         <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:flex-row lg:items-center lg:gap-16 lg:py-28">
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:flex-row lg:items-center lg:gap-12 lg:py-28">
           {/* Left column */}
-          <div className="flex w-full flex-col items-start gap-6 lg:w-3/5">
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-6 lg:flex-[3]">
             <span className="glass label-instrument text-primary inline-flex items-center gap-2 rounded-full px-3 py-1.5">
               <PlaneTakeoff className="size-3.5" aria-hidden="true" />
               Ground school to IFR
@@ -177,7 +177,7 @@ export function HomeView() {
           </div>
 
           {/* Right column — flight plan card */}
-          <div className="w-full lg:w-2/5">
+          <div className="min-w-0 w-full lg:flex-[2] lg:max-w-sm">
             <div className="glass glow-primary relative flex flex-col gap-5 rounded-2xl p-6">
               <div className="flex items-center justify-between">
                 <p className="label-instrument text-primary">Flight plan</p>
