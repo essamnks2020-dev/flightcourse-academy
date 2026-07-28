@@ -311,6 +311,7 @@ export function FlareTrainer({ className }: FlareTrainerProps) {
 
   const finalizeRef = React.useRef(finalizeAttempt)
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     finalizeRef.current = finalizeAttempt
   }, [finalizeAttempt])
 

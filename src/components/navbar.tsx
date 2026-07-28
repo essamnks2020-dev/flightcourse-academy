@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Plane, Compass, Gauge, Gamepad2, Radio, Map, Sun, Moon, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNav } from "@/lib/nav-store";

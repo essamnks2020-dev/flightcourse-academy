@@ -500,16 +500,34 @@ function CloudLayer({ speed, opacity, className, blur = 0 }: { speed: number; op
         transition={{ duration: speed, repeat: Infinity, ease: "linear" }}
         style={{ filter: blur > 0 ? `blur(${blur}px)` : undefined }}
       >
-        <svg width="700" height="160" viewBox="0 0 700 160" className="opacity-80">
-          <ellipse cx="80" cy="80" rx="60" ry="26" fill="white" />
-          <ellipse cx="160" cy="70" rx="50" ry="32" fill="white" />
-          <ellipse cx="240" cy="80" rx="65" ry="28" fill="white" />
-          <ellipse cx="330" cy="74" rx="55" ry="24" fill="white" />
-          <ellipse cx="420" cy="82" rx="60" ry="30" fill="white" />
-          <ellipse cx="510" cy="76" rx="52" ry="26" fill="white" />
-          <ellipse cx="590" cy="80" rx="45" ry="22" fill="white" />
-          <ellipse cx="160" cy="60" rx="38" ry="14" fill="white" opacity="0.6" />
-          <ellipse cx="420" cy="68" rx="44" ry="14" fill="white" opacity="0.6" />
+        <svg width="800" height="200" viewBox="0 0 800 200" className="opacity-70">
+          <defs>
+            <radialGradient id={`cloud-grad-${speed}`} cx="50%" cy="40%">
+              <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+              <stop offset="60%" stopColor="white" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </radialGradient>
+            <filter id={`cloud-noise-${speed}`}>
+              <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed={speed} />
+              <feDisplacementMap in="SourceGraphic" scale="15" />
+            </filter>
+          </defs>
+          {/* Cloud body — multiple overlapping organic blobs with gradient fill */}
+          <g filter={`url(#cloud-noise-${speed})`}>
+            <ellipse cx="100" cy="100" rx="70" ry="30" fill={`url(#cloud-grad-${speed})`} />
+            <ellipse cx="180" cy="90" rx="55" ry="35" fill={`url(#cloud-grad-${speed})`} />
+            <ellipse cx="260" cy="100" rx="70" ry="28" fill={`url(#cloud-grad-${speed})`} />
+            <ellipse cx="350" cy="95" rx="60" ry="26" fill={`url(#cloud-grad-${speed})`} />
+            <ellipse cx="440" cy="100" rx="65" ry="32" fill={`url(#cloud-grad-${speed})`} />
+            <ellipse cx="530" cy="95" rx="55" ry="28" fill={`url(#cloud-grad-${speed})`} />
+            <ellipse cx="610" cy="100" rx="50" ry="24" fill={`url(#cloud-grad-${speed})`} />
+          </g>
+          {/* Cloud highlights — lighter tops for volume */}
+          <ellipse cx="180" cy="75" rx="35" ry="12" fill="white" opacity="0.3" />
+          <ellipse cx="440" cy="80" rx="40" ry="14" fill="white" opacity="0.25" />
+          {/* Cloud shadows — darker bottoms for depth */}
+          <ellipse cx="260" cy="115" rx="55" ry="10" fill="#5B6B79" opacity="0.08" />
+          <ellipse cx="530" cy="110" rx="42" ry="8" fill="#5B6B79" opacity="0.06" />
         </svg>
       </motion.div>
     </div>

@@ -921,6 +921,7 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
       // === PARTICLES (smoke/dust/exhaust, soft, lit) ===
       const alive: Particle[] = []
       for (const p of particles.current) {
+        // eslint-disable-next-line react-hooks/immutability
         p.life += 1 / 60
         if (p.life >= p.max) continue
         p.x += p.vx / 60
