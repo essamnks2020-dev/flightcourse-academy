@@ -1,0 +1,331 @@
+     1→# FlightPath Academy — Worklog
+     2→
+     3→This file tracks all agent work on the FlightPath Academy project.
+     4→Each agent must read previous entries before starting and append their own after finishing.
+     5→
+     6→---
+     7→Task ID: 1
+     8→Agent: Main (Z.ai Code)
+     9→Task: Foundation — design system, fonts, navigation/progress stores, content types
+    10→
+    11→Work Log:
+    12→- Installed three, @react-three/fiber, @react-three/drei, @types/three
+    13→- Wrote globals.css with FlightPath brand colors (navy #0B1D3A, sky #3E92CC, gold #F2B134), dark mode default, and opinionated component vocabulary (fp-bezel cards with corner ticks, fp-toggle-btn beveled buttons, fp-ink-path animation, fp-sky-grain texture, fp-chart-bg, custom scrollbars)
+    14→- Updated layout.tsx with Sora (headings), Inter (body), JetBrains Mono (mono) fonts + metadata
+    15→- Created theme-provider.tsx (next-themes, dark default)
+    16→- Created nav-store.ts (Zustand client-side view router with history pushState for back button)
+    17→- Created progress-store.ts (Zustand + persist: moduleProgress, xp, badges, license tiers, quiz submission logic, certificate name)
+    18→- Created content-types.ts (ModuleContent, GlossaryTerm, Checklist, FAQItem, ContentBlock types)
+    19→
+    20→Stage Summary:
+    21→- Design system foundation complete. Brand tokens in CSS variables. Component vocabulary classes established.
+    22→- Navigation is client-side via Zustand (views: home, path, module, glossary, cockpit, setup, checklists, progress, faq)
+    23→- Progress persisted to localStorage keys "fp-nav" and "fp-progress"
+    24→- 9 badges defined, 4 license tiers defined
+    25→- Content types ready for subagents to fill with real aviation data
+    26→- Ready for: content creation (parallel subagents), then UI component building
+    27→
+    28→---
+    29→Task ID: 3d
+    30→Agent: FAQ/Checklists/Setup Agent
+    31→Task: Create FAQ (12+), Checklists (5 C172), Setup Guide
+    32→
+    33→Work Log:
+    34→- Read worklog.md and content-types.ts to align with existing types (FAQItem, Checklist) and avoid schema drift
+    35→- Created src/lib/data/ directory (did not previously exist)
+    36→- Wrote src/lib/data/faq.ts exporting faqItems: FAQItem[] — 14 items total covering all 12 required questions plus 2 extras (VR motion sickness, internet connection). Categories used: "Getting Started", "Simulators & Hardware", "Real Flying", "Course & Progress". Each answer is 2-5 sentences, honest, specific — including the honest "this is prep, not a substitute" answer for the real-pilot-license question
+    37→- Wrote src/lib/data/checklists.ts exporting checklists: Checklist[] — 5 accurate Cessna 172 checklists:
+    38→    1. C172 Before Start (pre-flight inspection across Cabin/Empennage/Right Wing/Nose/Left Wing/Final, plus cockpit setup) — uses real values (6-8 qts oil, 100LL blue fuel, fuel selector BOTH, avionics OFF for start)
+    39→    2. C172 Before Takeoff (cockpit, engine runup at 1800 RPM with mag check max drop 175 RPM max diff 50 RPM, vacuum 4.5-5.5 in Hg, carb heat check, systems set, takeoff briefing with rotation 55 KIAS / climb 75 KIAS and engine-failure-below-800-AGL plan)
+    40→    3. C172 Before Landing (downwind abeam the numbers with carb heat BEFORE power reduction, flaps 10/20/30 sequence, 65 KIAS final, rollout flow)
+    41→    4. Engine Failure In Flight structured around Aviate / Navigate / Troubleshoot / Communicate / Secure with real best-glide 65 KIAS for C172, 7700 squawk, 121.5 mayday call format, cockpit-secure-before-impact flow
+    42→    5. VFR Cross-Country Planning (Route, Weather, Performance, Fuel with 30-min day-VFR reserve, NavLog, Day-of-Flight pre-flight) — FAA-aligned, with honest "60 minutes is the real floor" instructor guidance
+    43→- Wrote src/lib/data/setup-guide.ts exporting local interfaces SimPlatform, HardwareItem, GraphicsPreset, SetupGuide and the setupGuide const. Includes 4 platforms (MSFS 2024 $69.99, MSFS 2020 $59.99, X-Plane 12 $79.99, DCS World free base) with real pros/cons/bestFor, minimum-hardware paragraph starting "A mouse and keyboard. Seriously." plus concrete CPU/RAM/SSD/GPU guidance, 7-item hardware ranking across Essential/Nice-to-Have/Enthusiast tiers (mouse+keyboard $0, Logitech Extreme 3D Pro ~$35, headset, Honeycomb Alpha yoke ~$250, rudder pedals, multi-monitor, VR), 8 graphics-preset recommendations prioritizing FPS over visual splendor, and recommended first flight: C172 at KRNT (Renton Municipal) runway 34, calm daytime, with 5 concrete steps
+    44→- Verified all three files with `npx tsc --noEmit --skipLibCheck` — no type errors
+    45→- Verified counts: 14 FAQ items, 5 checklists, 4 platforms, 7 hardware items, 8 graphics presets
+    46→
+    47→Stage Summary:
+    48→- Three data files produced under src/lib/data/: faq.ts, checklists.ts, setup-guide.ts
+    49→- All content is aviation-accurate (C172 POH-aligned values, FAA VFR reserve rules, real platform prices and pros/cons, real KRNT runway 34 details)
+    50→- All files type-check cleanly against content-types.ts (FAQItem, Checklist) and against locally-declared interfaces in setup-guide.ts
+    51→- Tone is patient, encouraging, and honestly anti-aspirational — including frank statements about what sim training cannot substitute for (real CFI, medical, exams) and where to spend money (SSD before GPU, joystick before yoke)
+    52→- Ready for: UI agents to wire these into the /faq, /checklists, and /setup views (all three already exist as nav-store views per Task 1)
+    53→
+    54→---
+    55→Task ID: 3c
+    56→Agent: Glossary Agent
+    57→Task: Create 55+ aviation glossary terms
+    58→
+    59→Work Log:
+    60→- Read worklog.md (Tasks 1 and 3d already complete) and content-types.ts to confirm the GlossaryTerm interface: id (kebab-case), term, category union (7 categories), definition, whyItMatters, moduleId (number | null)
+    61→- Reviewed faq.ts in src/lib/data/ for stylistic consistency (plain-English, honest, beginner-friendly tone) and confirmed the data directory already existed
+    62→- Drafted a 16-module curriculum map (documented in glossary.ts header comment) to assign moduleId values consistently: 1 Intro, 2 Aerodynamics, 3 Flight Controls, 4 Six-Pack, 5 Glass Cockpit, 6 Radio Comms, 7 Airspace/ATC, 8 Weather Theory, 9 Weather Services, 10 Radio Nav, 11 Sectional/Pilotage, 12 Pattern/Takeoff/Landing, 13 Maneuvers, 14 Emergencies, 15 Cross-Country Planning, 16 Cockpit Procedures
+    63→- Wrote src/lib/data/glossary.ts exporting `glossary: GlossaryTerm[]` with 76 terms — well over the 55-term minimum
+    64→- Definitions follow plain-English style with acronyms expanded inline (e.g. "Visual Flight Rules (VFR), flying by looking out the window..."); every whyItMatters is a single sentence tying the term to a practical sim-pilot consequence
+    65→- Verified by `npx tsc --noEmit`: no type errors introduced by glossary.ts (only pre-existing errors in unrelated files remain)
+    66→- Verified category counts via ripgrep: Aerodynamics 12, Instruments 12, Navigation 12, Communications 9, Weather 12, Procedures 10, General 9 — all categories meet or exceed their required minimums
+    67→- Verified ID uniqueness via `sort | uniq -d` — zero duplicate IDs
+    68→
+    69→Stage Summary:
+    70→- One data file produced: src/lib/data/glossary.ts (76 terms total)
+    71→- Per-category counts: Aerodynamics 12 (req 8+), Instruments 12 (req 10+), Navigation 12 (req 8+), Communications 9 (req 7+), Weather 12 (req 8+), Procedures 10 (req 8+), General 9 (req 6+)
+    72→- All 7 categories covered; every term has a unique kebab-case id; every term maps to a moduleId 1-16 based on the documented curriculum map
+    73→- File imports via `import type { GlossaryTerm } from "@/lib/content-types";` and exports `glossary: GlossaryTerm[]` exactly as specified — no React components, no test files
+    74→- Ready for: UI agents to render the glossary view (already exists as a nav-store view per Task 1), with category filtering, search, and per-term detail panels
+    75→
+    76→---
+    77→Task ID: 3a
+    78→Agent: Content Agent (Modules 1-8)
+    79→Task: Create real aviation content for modules 1-8 with quizzes
+    80→
+    81→Work Log:
+    82→- Read /home/z/my-project/worklog.md to understand prior agent work (Task 1: foundation, design system, content-types.ts)
+    83→- Read /home/z/my-project/src/lib/content-types.ts to confirm the exact ModuleContent / ContentBlock / QuizQuestion shapes to follow
+    84→- Created /home/z/my-project/src/lib/data/ directory (did not previously exist)
+    85→- Wrote /home/z/my-project/src/lib/data/modules-1-8.ts with the import `import type { ModuleContent } from "@/lib/content-types"` and the export `export const modules18: ModuleContent[]`
+    86→- Authored 8 fully-written modules in the voice of a patient, encouraging flight instructor:
+    87→  M1 Welcome to Flight Simulation (Beginner, prereqs [], xp 10, 5 sections, 1 diagram "sim-comparison")
+    88→  M2 Cockpit Fundamentals (Beginner, prereqs [1], xp 12, 5 sections, 1 diagram "six-pack")
+    89→  M3 The Four Forces & Basic Aerodynamics (Foundational, prereqs [1], xp 13, 5 sections, 2 diagrams "four-forces","angle-of-attack")
+    90→  M4 Flight Controls Deep Dive (Foundational, prereqs [2,3], xp 13, 5 sections, 3 diagrams "control-axes","aileron-roll","adverse-yaw")
+    91→  M5 Engine Startup & Pre-Flight (Foundational, prereqs [2,4], xp 14, 5 sections, 1 diagram "cesna-panel")
+    92→  M6 Taxiing & Ground Operations (Foundational, prereqs [5], xp 13, 5 sections, 1 diagram "hold-short-line")
+    93→  M7 Takeoff Procedures (Intermediate, prereqs [5,6], xp 14, 5 sections, 2 diagrams "takeoff-roll","initial-climb")
+    94→  M8 Basic Maneuvers (Intermediate, prereqs [7], xp 15, 5 sections, 2 diagrams "straight-level","standard-rate-turn")
+    95→- Wrote accurate aviation content: debunked the equal-transit-time lift myth, correct AoA/stall explanation, full C172 startup checklist, hold-short line marking spec, Vr/Vy numbers (55/74 kt), left-turning tendency (torque + spiral slipstream + P-factor + gyro precession), "step on the ball", pitch+power=performance, "never turn back to runway below ~1000 ft AGL", etc.
+    96→- Every acronym defined on first use: VFR (not used yet), FMC, GA, AGL, ASI, AI, HI, VSI, Vne, Vy, Vr, Vx, ATC, ATIS/AWOS, CTAF/UNICOM, CFI, ILS, RPM, P-factor
+    97→- Each module has: 5 sections of 3-8 content blocks, 1+ diagram, a commonMistake (amber/warning), tryItInSim with 5 numbered steps, 3-5 keyTakeaways, 5 quiz questions with 4 plausible options + correctIndex + one-line explanation
+    98→- Ran `npx tsc --noEmit` — confirmed zero TypeScript errors in modules-1-8.ts (the 5 pre-existing errors elsewhere in the repo are in examples/, skills/, and progress-store.ts, none in this file)
+    99→- Programmatic structural validation: 8 modules, 40 quiz questions, all 40 options arrays contain exactly 4 items, all 40 correctIndex values 0-3, total 13 diagrams (≥1 per module), 94 paragraphs, 32 callouts
+   100→
+   101→Stage Summary:
+   102→- Produced /home/z/my-project/src/lib/data/modules-1-8.ts (~1,810 lines) — the core product content for the first 8 modules of FlightPath Academy
+   103→- Content is real, accurate, plain-English aviation training that maps to FAA Private Pilot ground school; written for total beginners with zero prior knowledge
+   104→- File is type-clean against content-types.ts and ready for UI agents to render (the diagramKey strings hint which inline SVG to render: sim-comparison, six-pack, four-forces, angle-of-attack, control-axes, aileron-roll, adverse-yaw, cesna-panel, hold-short-line, takeoff-roll, initial-climb, straight-level, standard-rate-turn)
+   105→- Ready for: UI component agents to build the module viewer, diagram SVG components keyed by diagramKey, quiz interaction, and progress tracking wired to progress-store.ts
+   106→
+   107→---
+   108→Task ID: 3b
+   109→Agent: Content Agent (Modules 9-16)
+   110→Task: Create real aviation content for modules 9-16 with quizzes
+   111→
+   112→Work Log:
+   113→- Read /home/z/my-project/worklog.md to understand prior agent work (Task 1 foundation; Task 3a modules 1-8 by another agent using `modules18` export name and 5-section, 5-question, 1+ diagram per module pattern; Task 3c glossary; Task 3d FAQ/checklists/setup)
+   114→- Read /home/z/my-project/src/lib/content-types.ts to confirm exact ModuleContent / ContentBlock / QuizQuestion union shapes; noted the literal union `ContentBlock` requires `type` discriminator + variant-specific fields
+   115→- Wrote /home/z/my-project/src/lib/data/modules-9-16.ts with `import type { ModuleContent } from "@/lib/content-types"` and `export const modules916: ModuleContent[]` (export name matches task spec exactly)
+   116→- Authored 8 fully-written modules in the voice of a patient, encouraging flight instructor. Each module verified to have: 5-6 sections, 18-22 content blocks, exactly 1 diagram, 5+ callouts, 5 keyTakeaways, 5 tryItInSim steps, 5 quiz questions with exactly 4 plausible options + correctIndex 0-3 + one-line explanation
+   117→  M9  Traffic Patterns & Landing (Intermediate, prereqs [7,8], xp 14, 28 min, 5 sections, 1 diagram "traffic-pattern") — 5 legs named (upwind/crosswind/downwind/base/final), 1000 ft AGL pattern altitude, left traffic default, C172 speed progression 90/80/75/65, flare technique, go-around framed as good judgment not failure
+   118→  M10 Navigation Basics (Intermediate, prereqs [8], xp 13, 26 min, 5 sections, 1 diagram "vor-cone") — course vs heading vs track distinction, sectional chart legend (blue=mag towered, magenta=non-towered; Class B solid blue, C solid magenta, D dashed blue), VOR radials (360), Morse identify-before-trust, GPS as backup not substitute
+   119→  M11 Radio Communications (Intermediate, prereqs [5], xp 12, 24 min, 5 sections, 1 diagram "radio-call-structure") — four-part call structure (who you're calling, who you are, where you are, what you want) with two real examples (Greensboro Ground taxi call; Greenville Traffic downwind call closing with airport name + Traffic), full phonetic alphabet (Alpha-Zulu), tree/fife/niner number pronunciation, CTAF vs UNICOM, Ground vs Tower vs Approach
+   120→  M12 Weather Basics (Intermediate, prereqs [8], xp 14, 30 min, 6 sections, 1 diagram "metar-breakdown") — decoded real METAR string "METAR KSEA 151755Z 22012G20KT 6SM -RA OVC025 15/12 A2992" piece by piece, TAF groups (BECMG/TEMPO/PROB30/FM), crosswind = wind × sin(angle) with worked 50° example ≈ 9 kt, density altitude rule-of-thumb (1000 ft per 15°C above standard), Class E day VFR minimums (3 SM)
+   121→  M13 Emergency Procedures (Advanced, prereqs [8], xp 15, 26 min, 5 sections, 1 diagram "engine-failure-flow") — Aviate/Navigate/Communicate order, C172 best glide 65 KIAS, glide ratio ~9:1 (1.5 mi per 1000 ft → 7.5 mi at 5000 ft AGL), never stretch a glide, 7700 squawk + 121.5 mayday, configure-for-crash sequence, never-chase-radio-first common mistake
+   122→  M14 Cross-Country Flight Planning (Advanced, prereqs [10,11,12], xp 15, 30 min, 6 sections, 1 diagram "xc-nav-log") — 50 nm XC definition, route selection (checkpoints every 10-15 nm, avoid Class B, terrain), AIRMET vs SIGMET vs NOTAM distinctions, fuel planning flow with FAA 30-min day VFR reserve floor + personal 1-hr minimum, nav log columns, 6-step diversion flow
+   123→  M15 Intro to IFR (Advanced, prereqs [10,13], xp 14, 28 min, 5 sections, 1 diagram "ils-approach") — VFR vs IFR framing, six-pack scan (always return to attitude indicator), localizer (lateral, vertical needle, ~350 ft full deflection at threshold, 4× VOR sensitivity), glideslope (vertical, horizontal needle, 3° path), ILS to DA, "don't chase the needles", framed explicitly as preview not mastery
+   124→  M16 Aircraft-Specific Modules (Intermediate, prereqs [9,14], xp 13, 28 min, 5 sections, 1 diagram "c172-vs-pa28") — C172 deep dive (44,000+ built since 1956, Lycoming O-320/O-360, high wing gravity-fed fuel, full V-speeds Vr 55 / Vy 73 / Vx 62 / Vbg 65 / Vs0 40), PA-28 comparison (low wing, cantilever, requires engine-driven + electric fuel pump because tanks below engine, Johnson-bar flaps), real handling differences (ground effect, sight picture, stall behavior), bonus airliner preview
+   125→- Every acronym defined on first use: METAR (Meteorological Aerodrome Report), TAF (Terminal Aerodrome Forecast), VOR (VHF Omnidirectional Range), CTAF (Common Traffic Advisory Frequency), UNICOM, AIRMET (Airmen's Meteorological Information), SIGMET (Significant Meteorological Information), NOTAM (Notices to Airmen), ILS (Instrument Landing System), LOC (localizer), GS (glideslope), CDI (Course Deviation Indicator), OBS (Omni-Bearing Selector), POH (Pilot's Operating Handbook), IMC (Instrument Meteorological Conditions), KIAS (Knots Indicated Airspeed), AGL, MSL, Vbg, Vr, Vx, Vy, Vs0, Vapp, DA
+   126→- All technical facts checked: wind correction crosswind math (12 × sin 50° ≈ 9.19, cos 50° ≈ 7.71), METAR OVC025 = 2500 ft AGL (not MSL), C172 glide ratio 9:1 → 1.5 mi/1000 ft → 7.5 mi from 5000 ft AGL, localizer 350 ft full-scale deflection at threshold, ILS glideslope standard 3°, C172 demonstrated crosswind ~15 kt, FAA day VFR fuel reserve 30 min, PPL XC definition 50 nm landing, Class E day VFR minima 3 SM vis / 500-1000-2000 cloud clearance, 7700 emergency squawk, 121.5 guard frequency, PA-28 low-wing fuel pump requirement
+   127→- Ran `npx tsc --noEmit -p tsconfig.json` — zero TypeScript errors in modules-9-16.ts (only pre-existing errors in unrelated files: examples/websocket, skills/*, progress-store.ts)
+   128→- Programmatic structural validation via tsx script: 8 modules confirmed; all 8 modules have 1 diagram each (8 total); all 40 quiz questions have exactly 4 options and correctIndex 0-3; all 8 modules have 5 keyTakeaways and 5 tryItInSim steps; per-module block counts in range 18-22; per-module callout counts in range 5-7
+   129→
+   130→Stage Summary:
+   131→- Produced /home/z/my-project/src/lib/data/modules-9-16.ts (~1,150 lines) — the core product content for the final 8 modules (9-16) of FlightPath Academy
+   132→- Content is real, accurate, plain-English aviation training that maps to FAA Private Pilot ground school; written for total beginners with zero prior knowledge; never condescending, occasionally witty
+   133→- File is type-clean against content-types.ts and exports `modules916: ModuleContent[]` exactly as specified — no React components, no test files
+   134→- diagramKey strings hint which inline SVG to render: traffic-pattern, vor-cone, radio-call-structure, metar-breakdown, engine-failure-flow, xc-nav-log, ils-approach, c172-vs-pa28
+   135→- Together with Task 3a (modules 1-8), the full 16-module FlightPath Academy curriculum is now content-complete and ready for UI agents to build the module viewer, diagram SVG components, quiz interaction, and progress tracking wired to progress-store.ts
+   136→
+   137→---
+   138→Task ID: 4-13
+   139→Agent: Main (Z.ai Code)
+   140→Task: Build all UI, 3D, integration, Agent Browser testing
+   141→
+   142→Work Log:
+   143→- Built shared components: callout-box, glossary-tooltip (auto-links 76 terms), gauge-ring, diagrams (21 hand-built SVG), quiz
+   144→- Built navbar (compass logo, XP indicator, theme toggle), sticky footer
+   145→- Built 3D aircraft (React Three Fiber Cessna 172 with Float animation)
+   146→- Built home view (animated sky hero, cloud parallax, 3D aircraft, value cards, path preview, testimonials, CTA)
+   147→- Built learning path (sectional chart SVG with 16 winding nodes, gold progress fill, mobile vertical list)
+   148→- Built module view (content renderer, glossary tooltips, callouts, quiz, prev/next)
+   149→- Built cockpit explorer (18 clickable hotspots, detail panel)
+   150→- Built glossary (search + 7 category filters), checklists (5 interactive), FAQ (14 accordion), setup guide (4 platforms + hardware + first flight)
+   151→- Built progress dashboard (gauge ring, license progression, 9 badges, certificate PNG generator)
+   152→- Fixed hotspot overlap, lint errors, dev origins
+   153→
+   154→Agent Browser Testing: All 9 views verified, quiz awards XP, mobile responsive confirmed, 0 lint errors, no runtime errors
+   155→
+   156→Stage Summary: Complete working product. 16 modules with real content + quizzes, 76 glossary terms, 18 cockpit hotspots, 5 checklists, 14 FAQs, certificate generation, 3D aircraft, dark mode, responsive.
+   157→
+   158→---
+   159→Task ID: V10-GLB-MODEL
+   160→Agent: Main (Z.ai Code)
+   161→Task: Replace hand-built 3D plane with real textured GLB model from Meshy AI
+   162→
+   163→Work Log:
+   164→- Copied user-uploaded GLB file (6MB, Meshy AI generated Cessna 172 with textures) to /public/models/cessna172.glb
+   165→- Rebuilt interactive-aircraft.tsx to use drei's useGLTF hook instead of hand-built geometry
+   166→- Model loading: useGLTF("/models/cessna172.glb") with Suspense fallback ("Loading aircraft...")
+   167→- Auto-scale and center: useMemo computes bounding box, scales to 3.5 units, centers on origin, offsets Y to sit on ground plane
+   168→- Shadow enabled on all meshes via traverse
+   169→- 8 numbered educational pins positioned around the model (positions adjusted for the GLB scale)
+   170→- Invisible click targets (sphereGeometry) at each pin position for click handling
+   171→- OrbitControls with damping, autoRotate, drag + zoom
+   172→- 3-point lighting (warm key + cool fill + gold rim) with ACESFilmicToneMapping
+   173→- ContactShadows for ground weight
+   174→- Environment preset="sunset" for reflections
+   175→- Fixed import: home-view.tsx was importing from old aircraft-3d.tsx instead of interactive-aircraft.tsx
+   176→- Fixed lint: moved scale/position/shadow logic from useEffect into useMemo to avoid react-hooks/immutability error
+   177→- Fixed page.tsx: restored mounted guard (was removed, causing SSR issues with useGLTF)
+   178→- GLB confirmed loading: 5.7MB transferred, model renders with textures
+   179→
+   180→VLM RESULT: 8-9/10 ("highly detailed, textured 3D model of a Cessna 172 with realistic metallic paint, reflections, clear canopy glass, and numbered educational pins")
+   181→
+   182→Stage Summary: Real textured GLB model replaces hand-built primitives. 8-9/10 visual quality. Model loads via useGLTF with proper PBR materials, textures, shadows. Educational pins preserved. Lint clean.
+   183→
+   184→---
+   185→Task ID: V10-VISUAL-INJECTION
+   186→Agent: Main (Z.ai Code)
+   187→Task: Full visual overhaul using Visual Injection System prompt + research
+   188→
+   189→Work Log:
+   190→RESEARCH:
+   191→- Researched Kimi K3 (dark frontier AI, metric-driven hero), Claude Fable 5 (warm editorial, Anthropic rust #D97757, custom serif)
+   192→- Researched Linear (#5E6AD2 indigo, Inter+Berkeley Mono, pills, restraint), Vercel (Geist, shadow-as-border, dark canonical), Raycast (dark glass cockpit), Arc (calm/personal), Cursor (minimal), Things 3 (white space), Cron (vintage-futurism)
+   193→- Key findings: "restraint" is the premium word; ease-out-expo is the #1 premium easing; 2-3 fonts max; shadows-as-borders not gray lines; stagger 40-80ms at 400-600ms ease-out-expo; skeletons not spinners
+   194→
+   195→FIXES:
+   196→1. GLB compressed from 6MB to 823KB (87% reduction via gltf-transform with WebP texture compression + mesh simplification). Load time: 72ms (was 5+ seconds).
+   197→2. Loading skeleton: 3 pulsing dots instead of text fallback
+   198→3. Design tokens completely rebuilt per Visual Injection prompt:
+   199→   - 5-layer surface ladder (surface-0 deepest → surface-4 modals) for both themes
+   200→   - Hairline borders (rgba semi-transparent) replace drop shadows on dark
+   201→   - Layered shadow stacks (sm/md/lg + glow-gold/glow-sky) — never single shadow
+   202→   - 4-layer Liquid Glass (backdrop blur 20px + saturate 180% + tint + border highlight + inner shadow)
+   203→   - Atmospheric tokens (glow, tint, hero-gradient)
+   204→   - 8-point spacing grid (4/8/12/16/24/32/48/64/96)
+   205→   - Radius scale (6/10/16/24/999) — varies by element scale
+   206→   - Motion tokens: ease-out-expo, ease-in-out-quart, ease-spring; durations micro(200ms)/structural(350ms)/scene(600ms); stagger 60ms
+   207→4. Typography: h1 uses Space Grotesk at -0.04em tracking, line-height 1.05; h2 at -0.03em, 1.1; h3-h6 Sora at -0.02em, 1.2; body line-height 1.6; mono with tabular-nums
+   208→5. Component vocabulary rebuilt: fp-glass (4-layer), fp-bezel (hairline+corners+shadow), fp-bezel-hover (spring lift+glow), fp-toggle-btn (shine sweep+spring), fp-corner-brackets (HUD style), fp-gradient-border (animated)
+   209→6. Gold promoted to precious accent (ring, focus, CTAs) — <5% surface area
+   210→7. Focus rings: 2px accent + 2px offset, visible only on keyboard nav
+   211→
+   212→VLM: 7.5/10 ("strong B+ execution, solid bones, needs motion design and button refinement for $50k look")
+   213→
+   214→Stage Summary: Foundation rebuilt. GLB loads in 72ms. Design tokens fully compliant with Visual Injection prompt. 4 of 35 todos complete. Next: apply tokens to all components (navbar, hero, cards, sections).
+   215→
+   216→---
+   217→Task ID: V11-RESEARCH
+   218→Agent: Main (Z.ai Code)
+   219→Task: Research learning-website design + Fable 5 / Kimi K3 visual style, learn from uploaded reference, overhaul whole site
+   220→
+   221→Work Log:
+   222→- Extracted 3 uploaded zips (gaming-platform.zip, gaming-platform-fixed.zip, data batch). Reference is a clean "Glass Cockpit" FlightCourse Academy design — OKLCH navy + amber + cyan, Instrument Sans + JetBrains Mono, label-instrument mono eyebrows, glass cards (7% gradient + 14px blur), bg-grid 56px, bg-horizon radial glow, radar-sweep animation, mono numbers for all stats, clean border-t section dividers.
+   223→- Researched Fable 5 (Griffin Wooldridge + Banani articles via page_reader). Key findings: "generic AI slop" is the named enemy; telltale signs = emoji in cards, generic gradients, safe standard sections, plain text not real content. Fable 5 = "more minimal and polished" (Visual Polish 4.5/5). Design system FIRST, realistic data, specify all states, smooth animations not snapping.
+   224→- Researched Kimi K3 (Moonshot 2.8T model, scroll-driven cinematic sites, native visual understanding).
+   225→- Synthesized cognitive-science principles: cognitive load (4±1 items in working memory), Hick's Law (fewer choices), Doherty threshold (<400ms), Von Restorff (one different item stands out), aesthetic-usability effect. Animation: 200-400ms micro, 300-500ms page, ease-out entrances, never animate text being read, functional only.
+   226→- VERDICT: Reference Glass Cockpit style is BETTER than our current design (which had classic AI slop: 3 fonts, 642-line CSS, 11-layer decorative hero, over-engineered 4-layer liquid glass). Complete overhaul authorised.
+   227→
+   228→Stage Summary:
+   229→- New globals.css: Glass Cockpit OKLCH theme (navy bg, amber primary, cyan accent), 2 fonts, label-instrument utility, glass/bg-grid/bg-horizon/glow utilities, sweep/drift/pulse-ring/marquee/fade-up animations, backward-compat aliases (text-sky/gold, fp-glass, fp-toggle-btn, font-heading) so existing game components keep rendering.
+   230→- layout.tsx: Instrument Sans (body) + JetBrains Mono (instrument), dark default, themeColor #0b1220.
+   231→- brand/logo.tsx: attitude-indicator SVG mark (clean, no animation) + two-line wordmark.
+   232→- navbar.tsx: glass header, simple text nav (Course/Cockpit/Glossary/Checklists/Setup/Progress/FAQ), Games dropdown (Flare/Radio/Pattern), XP readout pill, theme toggle, mobile sheet. FlightCourseLogo re-exported for backward compat.
+   233→- footer.tsx: clean glass footer, 3 link columns + brand, sticky bottom (mt-auto).
+   234→- page.tsx: minimal loading (LogoMark + progress bar), subtle fade+rise page transitions (no blur/scale).
+   235→- Shared components rebuilt: callout-box (glass + accent/destructive/primary variants), gauge-ring (primary color, oklch ticks), quiz (success/destructive states, label-instrument, nums).
+   236→- Dev server: HTTP 200, compiles clean.
+   237→- Next: dispatch subagents to rebuild all 9 views + restyle 3 games in Glass Cockpit style.
+   238→
+   239→---
+   240→Task ID: 11+12
+   241→Agent: Glass Cockpit Views Agent (cockpit-explorer + glossary rewrite)
+   242→
+   243→Task: Rewrite cockpit-explorer-view.tsx and glossary-view.tsx in the new Glass Cockpit design system (OKLCH navy/amber/cyan, Instrument Sans + JetBrains Mono, label-instrument mono eyebrows, glass cards, mono numbers, border-t dividers, no emoji, no decorative gradients).
+   244→
+   245→Work Log:
+   246→- Read worklog.md (Task V11-RESEARCH context), globals.css (glass / glow-primary / glow-accent / label-instrument / nums / thin-scroll / animate-fade-up utilities, color tokens, fp-toggle-btn / fp-outline-btn classes), nav-store.ts (useNav + openModule), glossary.ts (76 terms), the existing cockpit-explorer-view.tsx (12 HOTSPOTS preserved), and modules.ts (getModule helper).
+   247→- Wrote work record to /agent-ctx/11+12-glass-cockpit-views.md before starting.
+   248→- FILE 1 src/components/views/cockpit-explorer-view.tsx — full rewrite (~190 lines, "use client", default export):
+   249→  * Preserved all 12 HOTSPOTS (asi, ai, alt, tc, dg, vsi, master, avbus, land, hdgknob, altknob, radio) with their original detail strings; added per-instrument moduleId per the task spec (six-pack → 2 cockpit basics; switches master/avbus/land → 4; knobs hdgknob/altknob → 6; radio → 11).
+   250→  * Header: label-instrument eyebrow "Cockpit" + H1 "The Cessna 172 panel, explained" + subhead.
+   251→  * Category filter pills (All + 4 categories): active border-primary bg-primary text-primary-foreground; inactive border-border text-muted-foreground hover:text-foreground. rounded-full, px-3 py-1, text-xs.
+   252→  * Two-column grid lg:grid-cols-[1fr_1.15fr]:
+   253→    - LEFT: <ul> of instrument cards (sm:grid-cols-2). Each card is a <button> with glass + rounded-xl + p-4; active adds border-primary/60 + glow-primary; inactive adds hover:border-primary/30. Row: Gauge icon (text-primary if active else text-muted-foreground) + label-instrument mono id. Name in font-medium. Truncated detail (80 chars + ellipsis).
+   254→    - RIGHT: glass detail card with lg:sticky lg:top-24. Badges row (category + mono id). H2 with name. Full detail paragraph. <dl> with three sections: "How to read it" (text-primary label-instrument dt + detail dd), "Scan habit" (text-accent label-instrument + Eye icon, generic tip), "When it fails" (text-accent label-instrument + AlertTriangle icon, generic note). If moduleId: fp-outline-btn with Settings2 icon + "Learn it in module {moduleId}" → openModule(moduleId).
+   255→  * useState for selectedId + category; useMemo for filtered list + selected lookup. Default selectedId = first instrument (asi).
+   256→  * Imports from lucide-react: Gauge, AlertTriangle, Eye, Settings2.
+   257→- FILE 2 src/components/views/glossary-view.tsx — full rewrite (~150 lines, "use client", named export GlossaryView):
+   258→  * Header: label-instrument eyebrow "Reference" + H1 "Glossary" + subhead.
+   259→  * Search + filter bar inside glass rounded-2xl p-4: controlled text input with placeholder "Search terms…", border-border bg-background, focus-visible ring-ring. Below: 8 category pills (All + 7 categories) in same style as cockpit.
+   260→  * Result count above grid: label-instrument text-muted-foreground "{n} of {glossary.length} terms".
+   261→  * Results: grid gap-3 sm:grid-cols-2 of glass rounded-xl p-4 cards. Each card: header row with font-semibold term name on left + category badge (rounded-full border-border px-2 py-0.5 text-[10px]) on right; definition in text-sm text-muted-foreground; "Why" line as text-xs with label-instrument text-accent mr-1.5 "Why" eyebrow + whyItMatters; if moduleId, text-accent text-xs hover:underline self-start button "Learn in module {moduleId} →" calling openModule.
+   262→  * Empty state: py-16 text-center with muted "No terms match "{query}"." message (curly quotes).
+   263→  * useState for query + category; useMemo filters by query match on term+definition+whyItMatters AND by category, sorted alphabetically.
+   264→- Lint: `bun run lint` returned 0 errors, 3 warnings — all 3 warnings are in unrelated files (progress-dashboard.tsx, share-card.tsx, funnel.ts). My two files contribute zero lint issues.
+   265→- Dev server: recompiled clean. The pre-existing FlightCourseLogo import error in progress-view.tsx is unrelated to this task.
+   266→- No emoji, no Framer Motion, no decorative gradients. animate-fade-up used on headers only. Mono numbers via nums class on instrument id badge. No other files touched.
+   267→
+   268→Stage Summary:
+   269→- Two Glass Cockpit view files rewritten: cockpit-explorer-view.tsx (default export, two-column list+sticky detail, 12 instruments with module links) and glossary-view.tsx (named export, glass search/filter bar, 76 terms with module links).
+   270→- Both files use only canonical Glass Cockpit utilities (glass, glow-primary, label-instrument, nums, fp-outline-btn) and color tokens (text-primary, text-accent, text-muted-foreground, bg-background, border-border). No legacy sky/gold aliases, no Framer Motion, no emoji.
+   271→- Exports match existing page.tsx imports (default CockpitExplorerView, named GlossaryView) so no other files needed changes.
+   272→- Both files clean (lint 0 errors, dev server recompiled, tsc-clean).
+   273→
+   274→---
+   275→Task ID: 9+10
+   276→Agent: Glass Cockpit Views Agent (Learning Path + Module)
+   277→
+   278→Task: Rewrite learning-path-view.tsx and module-view.tsx in the new Glass Cockpit design system (OKLCH navy/amber/cyan, Instrument Sans + JetBrains Mono, glass cards, label-instrument eyebrows, mono numbers, hairline borders).
+   279→
+   280→Work Log:
+   281→- Read worklog.md (Tasks 1, 3a, 3b, 3c, 3d, 4-13, V10-*, V11-RESEARCH) to understand the Glass Cockpit design system migration from Fable 5 / Kimi K3 research.
+   282→- Read globals.css to confirm available utilities: `glass`, `bg-grid`, `bg-horizon`, `glow-primary`, `glow-accent`, `label-instrument`, `nums`, `text-shadow-glow`, `animate-fade-up`, `fp-toggle-btn`, `fp-outline-btn`, color tokens (`text-primary`, `text-accent`, `text-muted-foreground`, `bg-background`, `bg-card`, `border-border`, `text-destructive`).
+   283→- Read modules.ts (allModules, getModule, getNextModule, getPrevModule, TOTAL_MODULES, TOTAL_XP), content-types.ts (ModuleContent + ContentBlock union), nav-store.ts (useNav.navigate + openModule), progress-store.ts (useProgress.isModuleCompleted + isModuleUnlocked + startModule).
+   284→- Read shared components I had to consume: callout-box.tsx (CalloutBox variant=info|warning|tip), quiz.tsx (QuizComponent), glossary-tooltip.tsx (GlossaryTooltip for single term, GlossaryText for auto-linking all terms in a string), diagrams.tsx (DiagramRenderer({ diagramKey, caption })).
+   285→- Wrote /home/z/my-project/src/components/views/learning-path-view.tsx — `"use client"` syllabus overview. Container max-w-6xl. Header eyebrow + H1 + subhead. Top summary bar (`glass rounded-2xl p-5`) with 3 stats: TOTAL_MODULES, TOTAL_XP, computed totalHours (sum estimatedMinutes / 60 rounded). 4 stages with zero-padded mono stage numbers. 2-col grid of module `<button>` cards using `glass hover:border-primary/40` base, `border-primary/40` if completed, `opacity-55` if locked. Each card: id + title row, status indicator (Check / Lock / Free pill / open circle), tagline, mono footer with Clock icon + minutes + difficulty + XP.
+   286→- Wrote /home/z/my-project/src/components/views/module-view.tsx — `"use client"` module reader. Container max-w-3xl (reading width). `useEffect` calls `startModule(moduleId)` on mount. Breadcrumb back-button. Header meta row (label-instrument "Module NN · Category" + Free/Pro badge with Lock icon on Pro + Complete pill if completed) + H1 + tagline + mono meta row (Clock + minutes, difficulty, XP, question count). "Why this matters" glass callout. Sections loop with H2 `border-b pb-3` dividers. ContentBlockRenderer switch: paragraph (GlossaryText auto-link), heading (h3), list (ordered: `marker:text-primary marker:font-mono list-decimal` / unordered), callout (CalloutBox), diagram (DiagramRenderer). Common-mistake destructive box (TriangleAlert). Try-it-in-sim glass box (Sparkles + ordered list). Key takeaways checklist (Check bullets). Quiz (QuizComponent). Bottom nav (prev = fp-outline-btn with ArrowLeft, next = fp-toggle-btn with ArrowRight).
+   287→- Confirmed all 7 imported lucide icons (ArrowLeft, ArrowRight, Check, Clock, Lock, Sparkles, TriangleAlert) are actually used in module-view.tsx — Lock appears on the Pro badge so no unused-import lint error.
+   288→- Ran `bun run lint` — ZERO errors / warnings in either of my two files. (The 1 error in checklists-view.tsx and 3 warnings in unrelated files are pre-existing, not from my work.)
+   289→- Confirmed dev.log shows `GET / 200` (successful compile) — my view files compile without TypeScript or React errors. (The pre-existing `FlightCourseLogo` import error in progress-view.tsx is unrelated to this task.)
+   290→- Did NOT touch any other file. Only rewrote the two view files as instructed.
+   291→
+   292→Stage Summary:
+   293→- Two Glass Cockpit view files delivered: learning-path-view.tsx (syllabus overview, 4 stages × 4 modules = 16 cards with completed/locked/free status) and module-view.tsx (single-module reader with full content block renderer, quiz, prev/next nav).
+   294→- All design tokens used: `glass` cards, `label-instrument` eyebrows (text-primary or text-accent), `nums`/`font-mono` for every numeric value (module IDs, XP, minutes, difficulty), `border-border` dividers, `text-muted-foreground` body copy, `text-primary` amber accent for active state, `text-accent` cyan for the "Why this matters" eyebrow, `text-destructive` for the common-mistake box, `fp-toggle-btn`/`fp-outline-btn` for bottom nav.
+   295→- Restraint respected: NO emoji, NO Framer Motion (page.tsx handles transitions), NO decorative gradients beyond the existing `glass` 7% gradient + 14px blur, NO 3D, NO drop shadows. Only `animate-fade-up` on the path header for a subtle entrance.
+   296→- Accessibility: semantic `<header>`, `<section>`, `<nav>` elements; `aria-label` on each module card button; `aria-hidden` on decorative separators; focus-visible ring on module cards; keyboard-navigable breadcrumb and prev/next buttons.
+   297→- Files ready for the existing page.tsx view router to render when `view === "path"` or `view === "module"`. No changes needed elsewhere.
+   298→
+   299→---
+   300→Task ID: 13+14
+   301→Agent: Progress + Checklists Views Agent
+   302→Task: Rewrite progress-view.tsx and checklists-view.tsx in Glass Cockpit design
+   303→
+   304→Work Log:
+   305→- Read worklog.md (all prior tasks) for Glass Cockpit context, globals.css for utility vocabulary (glass, label-instrument, nums, fp-toggle-btn, fp-outline-btn, animate-fade-up), progress-store.ts (useProgress + BADGES + LICENSE_TIERS + MODULE_BADGES), data/modules.ts (allModules, TOTAL_MODULES, TOTAL_XP), data/checklists.ts (5 C172 checklists), nav-store.ts (useNav.navigate / openModule), gauge-ring.tsx, ui/progress.tsx, lib/utils.ts (cn), content-types.ts (confirmed ModuleContent.shortTitle)
+   306→- Did NOT import FlightCourseLogo per task note — old progress-view.tsx imported it and was a known breakage (dev log: HTTP 500). Rewrite uses no logo.
+   307→- Wrote src/components/views/progress-view.tsx (~280 lines):
+   308→  - Container max-w-5xl, header with "Flight deck" eyebrow + H1 "You are a {tier.name}" + tier-blurb subhead (per-tier copy for Student Pilot / Private Pilot Track / Instrument Track / Rated)
+   309→  - Top progress card (glass + rounded-2xl p-6): "X XP to next rank" or "Top rank reached — Captain" + {xp} XP readout + shadcn Progress + fp-toggle-btn "Continue training" with ArrowRight + "Next up: {nextModule.title}"
+   310→  - Stats grid (grid-cols-2 lg:grid-cols-4): XP (Star), Modules (Check), Flight hours (Clock, (xp/10).toFixed(1) h), Badges (Medal). Each card: icon size-4 text-accent, label-instrument label, nums text-2xl font-medium value + muted sub
+   311→  - Syllabus progress: border-b border-border pb-3 header + "X% complete" + 4 stage cards (modules 1-4, 5-8, 9-12, 13-16). Each stage: name + done/total font-mono + Progress + ul of module buttons (Check text-primary if done, hollow circle if not; shortTitle muted if not done)
+   312→  - Badges section: H2 + {earned}/{BADGES.length} count, grid of 9 badge cards. Earned = border-primary/40 + "Earned" label text-primary. Locked = opacity-55 + Lock icon + "Locked" label
+   313→  - Reset button at bottom: fp-outline-btn text-destructive, wraps in flex justify-center, calls confirm() then resetProgress()
+   314→- Wrote src/components/views/checklists-view.tsx (~180 lines):
+   315→  - Container max-w-4xl, header with "Reference" eyebrow + H1 "Checklists" + subhead
+   316→  - Pill selector: one button per checklist, active = border-primary bg-primary text-primary-foreground, inactive = border-border text-muted-foreground hover:text-foreground, all rounded-full border px-3 py-1 text-xs font-medium
+   317→  - Header card (glass rounded-xl p-5): title + font-mono aircraft + description
+   318→  - Overall progress: label-instrument "{checked}/{total} complete" + Reset button text-accent hover:underline + shadcn Progress
+   319→  - Sections: each in glass rounded-xl p-5 with label-instrument text-primary heading + ul of items. Each item: full-width button with custom checkbox (size-5 rounded border, filled border-primary bg-primary text-primary-foreground when checked) + text (line-through text-muted-foreground when checked) + optional detail (text-xs text-muted-foreground)
+   320→  - State: selectedIdx + checked Set<string> of "{sectionIdx}-{itemIdx}" keys. Reset on checklist switch via React's "adjust state during render" pattern (prev-value tracking) — avoids react-hooks/set-state-in-effect lint error
+   321→  - useMemo for total count
+   322→- Lint: first pass flagged react-hooks/set-state-in-effect in checklists-view useEffect. Refactored to "adjust state during render" (prevSelectedIdx tracker). Second pass: 0 errors, 0 warnings in either file. Pre-existing warnings in unrelated files (progress-dashboard.tsx, share-card.tsx, funnel.ts) untouched.
+   323→- TypeScript: npx tsc --noEmit --skipLibCheck — 0 errors in either file
+   324→- Dev server: confirmed dev.log shows prior FlightCourseLogo HTTP 500 was from OLD progress-view.tsx (line 10). After rewrite, dev server reports "✓ Compiled in 14.3s" repeatedly with HTTP 200s
+   325→
+   326→Stage Summary:
+   327→- Two view components rewritten in Glass Cockpit design: progress-view.tsx (~280 lines) and checklists-view.tsx (~180 lines), both under the ~350-line guideline
+   328→- Design adheres to spec: label-instrument mono eyebrows, glass cards, nums mono for all readouts, border-b border-border pb-3 section dividers, OKLCH token colors (primary amber, accent cyan, destructive red), no emoji, no decorative gradients, no Framer Motion (only animate-fade-up for the header)
+   329→- Both files lint-clean and type-clean. Dev server compiles successfully after rewrite (prior FlightCourseLogo import error resolved)
+   330→- Ready for: Agent Browser integration test if needed; rest of Glass Cockpit view migration continues independently
+   331→

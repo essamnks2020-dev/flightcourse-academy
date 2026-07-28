@@ -1,53 +1,61 @@
-import type { Metadata } from "next";
-import { Sora, Inter, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const sora = Sora({
-  variable: "--font-sora",
+const body = Instrument_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+  variable: "--font-body",
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const jetbrains = JetBrains_Mono({
-  variable: "--font-jetbrains",
+const instrument = JetBrains_Mono({
   subsets: ["latin"],
+  variable: "--font-instrument",
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
+
+const siteUrl = "https://flightcourse.academy";
 
 export const metadata: Metadata = {
-  title: "FlightCourse Academy — From Zero to Wheels Up",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "FlightCourse Academy — Learn to fly in a flight simulator",
+    template: "%s | FlightCourse Academy",
+  },
   description:
-    "Learn to fly in a flight simulator (MSFS, X-Plane) from absolute zero. Cockpit basics, aerodynamics, controls, procedures, navigation, radio comms, weather, and emergencies — taught with patience and real aviation standards.",
+    "A structured 16-module flight training course for flight simulator pilots. Ground school to IFR, with quizzes, checklists, a cockpit explorer and progress tracking.",
   keywords: [
-    "flight simulator",
-    "learn to fly",
-    "MSFS",
-    "X-Plane",
-    "flight training",
-    "aviation",
-    "Cessna 172",
-    "VFR",
-    "pilot training",
+    "flight simulator course",
+    "learn to fly MSFS",
+    "flight simulator training",
+    "Cessna 172 tutorial",
+    "X-Plane ground school",
+    "virtual pilot training",
   ],
   authors: [{ name: "FlightCourse Academy" }],
   openGraph: {
-    title: "FlightCourse Academy — From Zero to Wheels Up",
-    description:
-      "A flight simulation learning website for total beginners. 16 modules, 50+ terms, interactive cockpit, real checklists.",
-    siteName: "FlightCourse Academy",
     type: "website",
+    url: siteUrl,
+    siteName: "FlightCourse Academy",
+    title: "FlightCourse Academy — Learn to fly in a flight simulator",
+    description:
+      "16 modules from cold cockpit to IFR approach. Quizzes, checklists, badges and a real syllabus for simulator pilots.",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "FlightCourse Academy",
+    description:
+      "A real syllabus for flight simulator pilots. Ground school to IFR in 16 modules.",
+  },
+};
+
+export const viewport: Viewport = {
+  colorScheme: "dark",
+  themeColor: "#0b1220",
 };
 
 export default function RootLayout({
@@ -56,9 +64,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
-        className={`${sora.variable} ${inter.variable} ${jetbrains.variable} antialiased bg-background text-foreground`}
+        className={`${body.variable} ${instrument.variable} font-sans antialiased bg-background text-foreground`}
       >
         <ThemeProvider>{children}</ThemeProvider>
         <Toaster />

@@ -1,31 +1,47 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plane, Compass, Gauge, Gamepad2, Radio, Map, Sun, Moon, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNav } from "@/lib/nav-store";
 import { useProgress } from "@/lib/progress-store";
 import type { ViewName } from "@/lib/nav-store";
 import { cn } from "@/lib/utils";
+import { Logo, LogoMark } from "@/components/brand/logo";
+import {
+  Sun,
+  Moon,
+  Menu,
+  X,
+  Gamepad2,
+  Gauge,
+  Plane,
+  Radio,
+  Map,
+  ChevronDown,
+} from "lucide-react";
 
-const NAV_ITEMS: { label: string; view: ViewName; icon: React.ElementType }[] = [
-  { label: "Home", view: "home", icon: Plane },
-  { label: "Learning Path", view: "path", icon: Compass },
-  { label: "Cockpit", view: "cockpit", icon: Gauge },
-  { label: "Glossary", view: "glossary", icon: Compass },
-  { label: "Checklists", view: "checklists", icon: Compass },
-  { label: "Setup", view: "setup", icon: Compass },
-  { label: "Progress", view: "progress", icon: Gauge },
-  { label: "Flare Trainer", view: "flare", icon: Gamepad2 },
-  { label: "Radio Builder", view: "radio", icon: Radio },
-  { label: "Pattern Perfect", view: "pattern", icon: Map },
-  { label: "Progress", view: "progress", icon: Gauge },
-  { label: "FAQ", view: "faq", icon: Compass },
+// Backward-compat: older views import FlightCourseLogo from navbar.
+export const FlightCourseLogo = LogoMark;
+
+const PRIMARY_NAV: { label: string; view: ViewName }[] = [
+  { label: "Course", view: "path" },
+  { label: "Cockpit", view: "cockpit" },
+  { label: "Glossary", view: "glossary" },
+  { label: "Checklists", view: "checklists" },
+  { label: "Setup", view: "setup" },
+  { label: "Progress", view: "progress" },
+  { label: "FAQ", view: "faq" },
+];
+
+const GAMES: { label: string; view: ViewName; icon: React.ElementType; blurb: string }[] = [
+  { label: "Flare Trainer", view: "flare", icon: Plane, blurb: "Land without bouncing" },
+  { label: "Radio Builder", view: "radio", icon: Radio, blurb: "Say it right, first time" },
+  { label: "Pattern Perfect", view: "pattern", icon: Map, blurb: "Fly the traffic pattern" },
 ];
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [gamesOpen, setGamesOpen] = React.useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const navigate = useNav((s) => s.navigate);
@@ -35,172 +51,170 @@ export function Navbar() {
 
   React.useEffect(() => setMounted(true), []);
 
+  const go = (view: ViewName) => {
+    navigate(view);
+    setMobileOpen(false);
+    setGamesOpen(false);
+  };
+
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4 sm:px-6">
         {/* Logo */}
         <button
-          onClick={() => navigate("home")}
-          className="flex items-center gap-2.5 group flex-shrink-0 transition-transform hover:scale-[1.02]"
+          onClick={() => go("home")}
+          className="shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label="FlightCourse Academy home"
         >
-          <FlightCourseLogo className="w-9 h-9 transition-transform group-hover:rotate-6 duration-500" />
-          <div className="hidden sm:block text-left">
-            <div className="font-heading font-bold text-base leading-none tracking-tight">
-              FlightCourse
-            </div>
-            <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-sky leading-none mt-0.5">
-              Academy
-            </div>
-          </div>
+          <Logo />
         </button>
 
         {/* Desktop nav */}
-        <div className="hidden lg:flex items-center gap-1 fp-glass rounded-full px-2 py-1">
-          {NAV_ITEMS.slice(0, 6).map((item) => (
+        <nav aria-label="Main" className="ml-2 hidden items-center gap-0.5 md:flex">
+          {PRIMARY_NAV.map((item) => (
             <button
               key={item.view}
-              onClick={() => navigate(item.view)}
+              onClick={() => go(item.view)}
               className={cn(
-                "relative px-3.5 py-1.5 text-sm font-medium transition-all rounded-full",
+                "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                 currentView === item.view
-                  ? "text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
             >
-              {currentView === item.view && (
-                <motion.span
-                  layoutId="nav-active"
-                  className="absolute inset-0 rounded-full bg-sky"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              <span className="relative z-10">{item.label}</span>
+              {item.label}
             </button>
           ))}
-        </div>
+
+          {/* Games dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setGamesOpen((v) => !v)}
+              onBlur={() => setTimeout(() => setGamesOpen(false), 150)}
+              className={cn(
+                "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                GAMES.some((g) => g.view === currentView)
+                  ? "text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              )}
+              aria-expanded={gamesOpen}
+              aria-haspopup="menu"
+            >
+              <Gamepad2 className="size-4" aria-hidden="true" />
+              Games
+              <ChevronDown className={cn("size-3.5 transition-transform", gamesOpen && "rotate-180")} aria-hidden="true" />
+            </button>
+            {gamesOpen && (
+              <div
+                role="menu"
+                className="glass absolute right-0 top-full mt-2 w-64 rounded-xl p-1.5 shadow-lg animate-fade-up"
+              >
+                {GAMES.map((g) => (
+                  <button
+                    key={g.view}
+                    role="menuitem"
+                    onMouseDown={() => go(g.view)}
+                    className={cn(
+                      "flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-muted",
+                      currentView === g.view && "bg-muted"
+                    )}
+                  >
+                    <g.icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="flex flex-col">
+                      <span className="text-sm font-medium leading-tight">{g.label}</span>
+                      <span className="text-xs text-muted-foreground leading-tight">{g.blurb}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </nav>
 
         {/* Right side */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* XP indicator */}
+        <div className="ml-auto flex items-center gap-2">
+          {/* XP / progress readout */}
           <button
-            onClick={() => navigate("progress")}
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 fp-glass rounded-full hover:border-gold/50 transition-all group"
+            onClick={() => go("progress")}
+            className="hidden sm:flex items-center gap-2.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:border-primary/40"
           >
-            <Gauge className="w-4 h-4 text-gold group-hover:text-gold-light transition-colors" />
-            <div className="text-left">
-              <div className="text-xs font-mono font-bold leading-none">
-                {(xp / 10).toFixed(1)}h
-              </div>
-              <div className="text-[8px] font-mono uppercase tracking-wider text-muted-foreground leading-none mt-0.5">
-                logged
-              </div>
-            </div>
+            <Gauge className="size-4 text-primary" aria-hidden="true" />
+            <span className="flex items-baseline gap-1.5">
+              <span className="nums text-xs font-semibold">{completedCount}/16</span>
+              <span className="label-instrument text-muted-foreground">modules</span>
+            </span>
           </button>
 
           {/* Theme toggle */}
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="w-9 h-9 flex items-center justify-center border border-border hover:border-sky/50 transition-colors"
+              className="flex size-9 items-center justify-center rounded-lg border border-border transition-colors hover:border-primary/40 hover:text-primary"
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </button>
           )}
 
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="lg:hidden w-9 h-9 flex items-center justify-center border border-border"
+            className="flex size-9 items-center justify-center rounded-lg border border-border md:hidden"
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
-            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
           </button>
         </div>
-      </nav>
+      </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-border bg-background">
-          <div className="px-4 py-3 grid grid-cols-2 gap-2">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.view}
-                onClick={() => {
-                  navigate(item.view);
-                  setMobileOpen(false);
-                }}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2.5 text-sm font-medium border transition-colors",
-                  currentView === item.view
-                    ? "border-sky text-sky bg-sky/5"
-                    : "border-border text-muted-foreground"
-                )}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </button>
-            ))}
-            <div className="col-span-2 mt-1 px-3 py-2 border border-border flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-                Hours logged
-              </span>
-              <span className="font-mono font-bold text-gold">{(xp / 10).toFixed(1)}h</span>
+        <div className="border-t border-border bg-background md:hidden">
+          <div className="space-y-5 px-4 py-4 sm:px-6">
+            <div className="grid grid-cols-2 gap-1.5">
+              {PRIMARY_NAV.map((item) => (
+                <button
+                  key={item.view}
+                  onClick={() => go(item.view)}
+                  className={cn(
+                    "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    currentView === item.view
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
-            <div className="col-span-2 px-3 py-2 border border-border flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-                Modules complete
-              </span>
-              <span className="font-mono font-bold text-sky">{completedCount}/16</span>
+            <div>
+              <p className="label-instrument text-muted-foreground px-1 pb-1.5">Training games</p>
+              <div className="grid gap-1.5">
+                {GAMES.map((g) => (
+                  <button
+                    key={g.view}
+                    onClick={() => go(g.view)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      currentView === g.view
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    )}
+                  >
+                    <g.icon className="size-4 text-primary" aria-hidden="true" />
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="glass flex items-center justify-between rounded-lg px-3 py-2.5">
+              <span className="label-instrument text-muted-foreground">Hours logged</span>
+              <span className="nums text-sm font-semibold text-primary">{(xp / 10).toFixed(1)} h</span>
             </div>
           </div>
         </div>
       )}
     </header>
-  );
-}
-
-export function FlightCourseLogo({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id="fp-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3E92CC" />
-          <stop offset="100%" stopColor="#F2B134" />
-        </linearGradient>
-        <linearGradient id="fp-sky-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#3E92CC" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#3E92CC" stopOpacity="0.1" />
-        </linearGradient>
-        <radialGradient id="fp-glow" cx="50%" cy="40%">
-          <stop offset="0%" stopColor="#F2B134" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#F2B134" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* Ambient glow */}
-      <circle cx="20" cy="20" r="18" fill="url(#fp-glow)" />
-      {/* Outer ring — gradient */}
-      <circle cx="20" cy="20" r="18" fill="none" stroke="url(#fp-ring-grad)" strokeWidth="1.5" />
-      {/* Sky half — gradient fill */}
-      <path d="M 2 20 A 18 18 0 0 1 38 20 Z" fill="url(#fp-sky-grad)" />
-      {/* Ground half */}
-      <path d="M 2 20 A 18 18 0 0 0 38 20 Z" fill="#0B1D3A" opacity="0.1" className="dark:fill-[#3E92CC] dark:opacity-[0.06]" />
-      {/* Horizon line — gold with subtle glow */}
-      <line x1="2" y1="20" x2="38" y2="20" stroke="#F2B134" strokeWidth="1.5" />
-      <line x1="2" y1="20" x2="38" y2="20" stroke="#F2B134" strokeWidth="3" opacity="0.2" />
-      {/* Compass tick marks */}
-      <line x1="20" y1="3" x2="20" y2="7" stroke="#F2B134" strokeWidth="1.5" />
-      <line x1="20" y1="33" x2="20" y2="37" stroke="currentColor" strokeWidth="1" opacity="0.3" />
-      <line x1="3" y1="20" x2="7" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.3" />
-      <line x1="33" y1="20" x2="37" y2="20" stroke="currentColor" strokeWidth="1" opacity="0.3" />
-      {/* Flight path arrow — gradient stroke */}
-      <path d="M 12 24 Q 20 8 28 24" fill="none" stroke="#3E92CC" strokeWidth="2" strokeLinecap="round" />
-      <path d="M 12 24 Q 20 8 28 24" fill="none" stroke="#6FB3DE" strokeWidth="3" strokeLinecap="round" opacity="0.2" />
-      {/* Arrow tip */}
-      <polygon points="28,24 25,20 28,21 31,20" fill="#3E92CC" />
-      <circle cx="28" cy="24" r="1.5" fill="#F2B134" />
-    </svg>
   );
 }

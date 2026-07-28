@@ -1,0 +1,1268 @@
+     1→'use client'
+     2→
+     3→import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+     4→
+     5→/* ============================================================
+     6→ * Types & data
+     7→ * ========================================================== */
+     8→
+     9→type Category = 'Instrument' | 'Control' | 'Avionics' | 'Switch'
+    10→
+    11→interface Hotspot {
+    12→  id: string
+    13→  name: string
+    14→  category: Category
+    15→  detail: string
+    16→}
+    17→
+    18→const HOTSPOTS: Hotspot[] = [
+    19→  { id: 'asi', name: 'Airspeed Indicator', category: 'Instrument', detail: 'Indicates airspeed in knots. White, green, yellow arcs and a red line mark flap, normal, caution, and never-exceed ranges.' },
+    20→  { id: 'ai', name: 'Attitude Indicator', category: 'Instrument', detail: 'Gyro-driven artificial horizon showing pitch and bank against the horizon line.' },
+    21→  { id: 'alt', name: 'Altimeter', category: 'Instrument', detail: 'Barometric altimeter in feet. The needle indicates hundreds of feet per revolution; the digital window shows the full reading.' },
+    22→  { id: 'tc', name: 'Turn Coordinator', category: 'Instrument', detail: 'Shows rate of turn. The miniature aircraft banks with roll; standard-rate marks sit left and right.' },
+    23→  { id: 'dg', name: 'Heading Indicator', category: 'Instrument', detail: 'Directional gyro. The compass card rotates beneath a fixed lubber pointer to display the current heading.' },
+    24→  { id: 'vsi', name: 'Vertical Speed Indicator', category: 'Instrument', detail: 'Rate of climb or descent in feet per minute. Zero sits at the nine o’clock position.' },
+    25→  { id: 'master', name: 'Master Switch', category: 'Switch', detail: 'Controls the aircraft electrical master bus.' },
+    26→  { id: 'avbus', name: 'Avionics Bus', category: 'Switch', detail: 'Enables power to the avionics bus.' },
+    27→  { id: 'land', name: 'Landing Light', category: 'Switch', detail: 'Toggle for the forward landing light.' },
+    28→  { id: 'hdgknob', name: 'Heading Bug Knob', category: 'Control', detail: 'Rotary control that sets the heading bug on the directional gyro.' },
+    29→  { id: 'altknob', name: 'Altimeter Knob', category: 'Control', detail: 'Adjusts the barometric pressure reference (Kollsman window).' },
+    30→  { id: 'radio', name: 'COM/NAV Radio', category: 'Avionics', detail: 'Communication and navigation frequency display.' },
+    31→]
+    32→
+    33→const CATEGORY_ORDER: Category[] = ['Instrument', 'Control', 'Avionics', 'Switch']
+    34→
+    35→const CATEGORY_COLOR: Record<Category, string> = {
+    36→  Instrument: '#5ec5ff',
+    37→  Control: '#ffcc00',
+    38→  Avionics: '#7cfca0',
+    39→  Switch: '#ff7878',
+    40→}
+    41→
+    42→/* ============================================================
+    43→ * Demo flight profile
+    44→ * ========================================================== */
+    45→
+    46→interface FlightState {
+    47→  airspeed: number
+    48→  altitude: number
+    49→  vsi: number
+    50→  heading: number
+    51→  pitch: number
+    52→  bank: number
+    53→}
+    54→
+    55→const NEUTRAL: FlightState = { airspeed: 0, altitude: 0, vsi: 0, heading: 0, pitch: 0, bank: 0 }
+    56→
+    57→const KEYFRAMES: Array<{ t: number } & FlightState> = [
+    58→  { t: 0.0,  airspeed: 0,   altitude: 0,    vsi: 0,    heading: 0,  pitch: 0,  bank: 0 },
+    59→  { t: 1.0,  airspeed: 15,  altitude: 0,    vsi: 0,    heading: 0,  pitch: 0,  bank: 0 },
+    60→  { t: 3.0,  airspeed: 70,  altitude: 0,    vsi: 200,  heading: 0,  pitch: 5,  bank: 0 },
+    61→  { t: 4.5,  airspeed: 95,  altitude: 1500, vsi: 1500, heading: 7,  pitch: 8,  bank: 6 },
+    62→  { t: 6.0,  airspeed: 120, altitude: 3500, vsi: 1000, heading: 0,  pitch: 6,  bank: -4 },
+    63→  { t: 7.5,  airspeed: 120, altitude: 3500, vsi: 0,    heading: 0,  pitch: 2,  bank: 0 },
+    64→  { t: 9.0,  airspeed: 120, altitude: 3500, vsi: 0,    heading: 20, pitch: 2,  bank: 9 },
+    65→  { t: 10.0, airspeed: 110, altitude: 2500, vsi: -400, heading: 15, pitch: -2, bank: 0 },
+    66→  { t: 11.5, airspeed: 90,  altitude: 200,  vsi: -700, heading: 5,  pitch: -3, bank: -3 },
+    67→  { t: 14.0, airspeed: 0,   altitude: 0,    vsi: 0,    heading: 0,  pitch: 0,  bank: 0 },
+    68→]
+    69→
+    70→function lerp(a: number, b: number, f: number) {
+    71→  return a + (b - a) * f
+    72→}
+    73→
+    74→function interpolateFlight(elapsed: number): FlightState {
+    75→  if (elapsed <= KEYFRAMES[0].t) return KEYFRAMES[0]
+    76→  const last = KEYFRAMES[KEYFRAMES.length - 1]
+    77→  if (elapsed >= last.t) return last
+    78→  for (let i = 0; i < KEYFRAMES.length - 1; i++) {
+    79→    const a = KEYFRAMES[i]
+    80→    const b = KEYFRAMES[i + 1]
+    81→    if (elapsed >= a.t && elapsed <= b.t) {
+    82→      const f = (elapsed - a.t) / (b.t - a.t)
+    83→      return {
+    84→        airspeed: lerp(a.airspeed, b.airspeed, f),
+    85→        altitude: lerp(a.altitude, b.altitude, f),
+    86→        vsi: lerp(a.vsi, b.vsi, f),
+    87→        heading: lerp(a.heading, b.heading, f),
+    88→        pitch: lerp(a.pitch, b.pitch, f),
+    89→        bank: lerp(a.bank, b.bank, f),
+    90→      }
+    91→    }
+    92→  }
+    93→  return last
+    94→}
+    95→
+    96→/* ============================================================
+    97→ * Needle / dial angle maps
+    98→ *  Convention: 0deg = 12 o'clock (pointing up), positive = clockwise
+    99→ * ========================================================== */
+   100→
+   101→const ASI_MAX = 160
+   102→function asiAngle(kt: number) {
+   103→  return -135 + (Math.min(Math.max(kt, 0), ASI_MAX) / ASI_MAX) * 270
+   104→}
+   105→// Altimeter 100s needle: full turn per 1000ft, continuous (no modulo) so it
+   106→// never snaps backward at the 999->1000 boundary.
+   107→function altAngle(ft: number) {
+   108→  return (ft / 1000) * 360
+   109→}
+   110→// VSI: 0 at 9 o'clock (-90deg), +2000 at +50, -2000 at -230
+   111→function vsiAngle(fpm: number) {
+   112→  const c = Math.max(-2000, Math.min(2000, fpm))
+   113→  return -90 + (c / 2000) * 140
+   114→}
+   115→// DG card rotates so current heading sits under the top lubber pointer.
+   116→function dgCardAngle(h: number) {
+   117→  return -h
+   118→}
+   119→// AI horizon: bank rotates the horizon (opposite sense), pitch translates it.
+   120→function aiHorizonTransform(pitch: number, bank: number) {
+   121→  return `rotate(${-bank}deg) translateY(${pitch * 2.2}px)`
+   122→}
+   123→// Turn coordinator: aircraft banks with roll.
+   124→function tcAircraftAngle(bank: number) {
+   125→  return bank
+   126→}
+   127→
+   128→/* ============================================================
+   129→ * SVG dial helpers
+   130→ * ========================================================== */
+   131→
+   132→function polar(r: number, angleDeg: number) {
+   133→  const rad = (angleDeg * Math.PI) / 180
+   134→  return { x: 50 + r * Math.sin(rad), y: 50 - r * Math.cos(rad) }
+   135→}
+   136→
+   137→function arcPath(r: number, a1: number, a2: number) {
+   138→  const p1 = polar(r, a1)
+   139→  const p2 = polar(r, a2)
+   140→  const large = Math.abs(a2 - a1) > 180 ? 1 : 0
+   141→  return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`
+   142→}
+   143→
+   144→function Tick({ angle, major }: { angle: number; major?: boolean }) {
+   145→  const r2 = major ? 41 : 43.5
+   146→  return (
+   147→    <line
+   148→      x1="50"
+   149→      y1="4"
+   150→      x2="50"
+   151→      y2={50 - r2}
+   152→      transform={`rotate(${angle} 50 50)`}
+   153→      className={major ? 'tick-major' : 'tick-minor'}
+   154→    />
+   155→  )
+   156→}
+   157→
+   158→function DialLabel({ angle, r, children }: { angle: number; r: number; children: ReactNode }) {
+   159→  return (
+   160→    <g transform={`rotate(${angle} 50 50)`}>
+   161→      <text
+   162→        x="50"
+   163→        y={50 - r}
+   164→        textAnchor="middle"
+   165→        dominantBaseline="central"
+   166→        transform={`rotate(${-angle} 50 ${50 - r})`}
+   167→        className="dial-text"
+   168→      >
+   169→        {children}
+   170→      </text>
+   171→    </g>
+   172→  )
+   173→}
+   174→
+   175→/* ============================================================
+   176→ * Gauge shell — bezel, face gradient, screws, glass reflection
+   177→ * (shared by all 6 instruments)
+   178→ * ========================================================== */
+   179→
+   180→function Gauge({ children }: { children: ReactNode }) {
+   181→  return (
+   182→    <div className="gauge">
+   183→      <div className="gauge-bezel">
+   184→        <div className="gauge-face">
+   185→          {children}
+   186→          <div className="gauge-glass" />
+   187→        </div>
+   188→      </div>
+   189→      <div className="screw screw-12" />
+   190→      <div className="screw screw-3" />
+   191→      <div className="screw screw-6" />
+   192→      <div className="screw screw-9" />
+   193→    </div>
+   194→  )
+   195→}
+   196→
+   197→/* ============================================================
+   198→ * Instruments
+   199→ * ========================================================== */
+   200→
+   201→function AirspeedIndicator({ value }: { value: number }) {
+   202→  return (
+   203→    <Gauge>
+   204→      <svg className="dial-svg" viewBox="0 0 100 100">
+   205→        {/* colored operating arcs */}
+   206→        <path d={arcPath(44, asiAngle(40), asiAngle(85))} className="arc arc-white" />
+   207→        <path d={arcPath(44, asiAngle(85), asiAngle(120))} className="arc arc-green" />
+   208→        <path d={arcPath(44, asiAngle(120), asiAngle(150))} className="arc arc-yellow" />
+   209→        <path d={arcPath(44, asiAngle(150), asiAngle(160))} className="arc arc-red" />
+   210→        {/* ticks every 10kt */}
+   211→        {Array.from({ length: 17 }).map((_, i) => {
+   212→          const kt = i * 10
+   213→          return <Tick key={kt} angle={asiAngle(kt)} major={kt % 20 === 0} />
+   214→        })}
+   215→        {/* labels every 40kt */}
+   216→        {[0, 40, 80, 120, 160].map((kt) => (
+   217→          <DialLabel key={kt} angle={asiAngle(kt)} r={35}>{kt}</DialLabel>
+   218→        ))}
+   219→      </svg>
+   220→      <div className="lcd lcd-asi">{Math.round(value).toString().padStart(3, '0')} KT</div>
+   221→      <div className="needle" style={{ transform: `rotate(${asiAngle(value)}deg)` }} />
+   222→      <div className="hub-cap" />
+   223→    </Gauge>
+   224→  )
+   225→}
+   226→
+   227→function AttitudeIndicator({ pitch, bank }: { pitch: number; bank: number }) {
+   228→  return (
+   229→    <Gauge>
+   230→      <div className="ai-horizon" style={{ transform: aiHorizonTransform(pitch, bank) }}>
+   231→        <div className="ai-sky" />
+   232→        <div className="ai-ground" />
+   233→        <div className="ai-horizon-line" />
+   234→        <div className="ai-ladder">
+   235→          {[-20, -10, 10, 20].map((p) => (
+   236→            <div key={p} className="ai-ladder-mark" style={{ top: `calc(50% + ${p * 1.6}px)` }}>
+   237→              <span>{Math.abs(p)}</span>
+   238→            </div>
+   239→          ))}
+   240→        </div>
+   241→        {/* bank scale that rotates with the horizon */}
+   242→        {[-30, -20, -10, 10, 20, 30].map((b) => (
+   243→          <div
+   244→            key={b}
+   245→            className="ai-bank-mark"
+   246→            style={{ transform: `rotate(${b}deg)` }}
+   247→          />
+   248→        ))}
+   249→      </div>
+   250→      <svg className="dial-svg" viewBox="0 0 100 100" />
+   251→      {/* fixed aircraft symbol */}
+   252→      <div className="ai-aircraft">
+   253→        <div className="ai-wing ai-wing-l" />
+   254→        <div className="ai-wing ai-wing-r" />
+   255→        <div className="ai-dot" />
+   256→      </div>
+   257→      {/* fixed sky pointer at top */}
+   258→      <div className="ai-pointer" />
+   259→    </Gauge>
+   260→  )
+   261→}
+   262→
+   263→function Altimeter({ value }: { value: number }) {
+   264→  const rounded = Math.round(value)
+   265→  return (
+   266→    <Gauge>
+   267→      <svg className="dial-svg" viewBox="0 0 100 100">
+   268→        {Array.from({ length: 10 }).map((_, i) => {
+   269→          const n = i // 0..9, hundreds digit
+   270→          const a = (n / 10) * 360
+   271→          return <Tick key={n} angle={a} major />
+   272→        })}
+   273→        {Array.from({ length: 50 }).map((_, i) => {
+   274→          const a = (i / 50) * 360
+   275→          return <Tick key={`m${i}`} angle={a} major={false} />
+   276→        })}
+   277→        {Array.from({ length: 10 }).map((_, i) => (
+   278→          <DialLabel key={i} angle={(i / 10) * 360} r={35}>{i}</DialLabel>
+   279→        ))}
+   280→      </svg>
+   281→      <div className="lcd lcd-alt">{rounded.toString().padStart(5, '0')}</div>
+   282→      <div className="needle" style={{ transform: `rotate(${altAngle(value)}deg)` }} />
+   283→      <div className="hub-cap" />
+   284→    </Gauge>
+   285→  )
+   286→}
+   287→
+   288→function TurnCoordinator({ bank }: { bank: number }) {
+   289→  return (
+   290→    <Gauge>
+   291→      <svg className="dial-svg" viewBox="0 0 100 100">
+   292→        {/* standard-rate marks L and R */}
+   293→        <line x1="50" y1="6" x2="50" y2="14" transform="rotate(-35 50 50)" className="tick-major" />
+   294→        <line x1="50" y1="6" x2="50" y2="14" transform="rotate(35 50 50)" className="tick-major" />
+   295→        <line x1="50" y1="6" x2="50" y2="12" transform="rotate(-25 50 50)" className="tick-minor" />
+   296→        <line x1="50" y1="6" x2="50" y2="12" transform="rotate(25 50 50)" className="tick-minor" />
+   297→        <DialLabel angle={-35} r={30}>L</DialLabel>
+   298→        <DialLabel angle={35} r={30}>R</DialLabel>
+   299→      </svg>
+   300→      <div className="tc-aircraft" style={{ transform: `rotate(${tcAircraftAngle(bank)}deg)` }}>
+   301→        <div className="tc-wing" />
+   302→        <div className="tc-tail" />
+   303→        <div className="tc-body" />
+   304→      </div>
+   305→      <div className="tc-label">2 MIN</div>
+   306→      <div className="hub-cap" />
+   307→    </Gauge>
+   308→  )
+   309→}
+   310→
+   311→function HeadingIndicator({ heading }: { heading: number }) {
+   312→  const h = ((Math.round(heading) % 360) + 360) % 360
+   313→  const display = h === 0 ? 360 : h
+   314→  return (
+   315→    <Gauge>
+   316→      <div className="dg-card" style={{ transform: `rotate(${dgCardAngle(heading)}deg)` }}>
+   317→        <svg className="dial-svg" viewBox="0 0 100 100">
+   318→          {Array.from({ length: 36 }).map((_, i) => {
+   319→            const deg = i * 10
+   320→            return <Tick key={deg} angle={deg} major={deg % 30 === 0} />
+   321→          })}
+   322→          <DialLabel angle={0} r={33}>N</DialLabel>
+   323→          <DialLabel angle={90} r={33}>E</DialLabel>
+   324→          <DialLabel angle={180} r={33}>S</DialLabel>
+   325→          <DialLabel angle={270} r={33}>W</DialLabel>
+   326→          {[30, 60, 120, 150, 210, 240, 300, 330].map((d) => (
+   327→            <DialLabel key={d} angle={d} r={33}>{d / 10}</DialLabel>
+   328→          ))}
+   329→        </svg>
+   330→      </div>
+   331→      <div className="dg-pointer" />
+   332→      <div className="lcd lcd-dg">{display.toString().padStart(3, '0')}°</div>
+   333→    </Gauge>
+   334→  )
+   335→}
+   336→
+   337→function VerticalSpeedIndicator({ value }: { value: number }) {
+   338→  const fpm = Math.round(value)
+   339→  const sign = fpm > 0 ? '+' : fpm < 0 ? '-' : '±'
+   340→  const abs = Math.abs(fpm).toString().padStart(4, '0')
+   341→  return (
+   342→    <Gauge>
+   343→      <svg className="dial-svg" viewBox="0 0 100 100">
+   344→        {[0, 500, 1000, 1500, 2000, -500, -1000, -1500, -2000].map((v) => (
+   345→          <Tick key={v} angle={vsiAngle(v)} major />
+   346→        ))}
+   347→        {[-1000, -500, 0, 500, 1000, 1500, 2000].map((v) => (
+   348→          <DialLabel key={v} angle={vsiAngle(v)} r={33}>
+   349→            {Math.abs(v) / 1000}
+   350→          </DialLabel>
+   351→        ))}
+   352→      </svg>
+   353→      <div className="lcd lcd-vsi">{sign}{abs}</div>
+   354→      <div className="needle" style={{ transform: `rotate(${vsiAngle(value)}deg)` }} />
+   355→      <div className="hub-cap" />
+   356→    </Gauge>
+   357→  )
+   358→}
+   359→
+   360→/* ============================================================
+   361→ * Panel controls (switches / knobs / avionics)
+   362→ * ========================================================== */
+   363→
+   364→function ToggleSwitch({ on, label }: { on: boolean; label: string }) {
+   365→  return (
+   366→    <div className="toggle-wrap">
+   367→      <div className="toggle-switch">
+   368→        <div className={`toggle-lever ${on ? 'toggle-lever--up' : 'toggle-lever--down'}`} />
+   369→      </div>
+   370→      <span className="toggle-label">{label}</span>
+   371→    </div>
+   372→  )
+   373→}
+   374→
+   375→function Knob({ angle, label }: { angle: number; label: string }) {
+   376→  return (
+   377→    <div className="knob-wrap">
+   378→      <div className="knob" style={{ transform: `rotate(${angle}deg)` }}>
+   379→        <div className="knob-pointer" />
+   380→      </div>
+   381→      <span className="knob-label">{label}</span>
+   382→    </div>
+   383→  )
+   384→}
+   385→
+   386→/* ============================================================
+   387→ * Hotspot wrapper — keyboard accessible, filterable
+   388→ * ========================================================== */
+   389→
+   390→function Hotspot({
+   391→  hotspot,
+   392→  selectedId,
+   393→  activeCategory,
+   394→  onSelect,
+   395→  className,
+   396→  children,
+   397→}: {
+   398→  hotspot: Hotspot
+   399→  selectedId: string | null
+   400→  activeCategory: Category | null
+   401→  onSelect: (id: string) => void
+   402→  className?: string
+   403→  children: ReactNode
+   404→}) {
+   405→  const dim = activeCategory !== null && activeCategory !== hotspot.category
+   406→  const active = selectedId === hotspot.id
+   407→  return (
+   408→    <div
+   409→      role="button"
+   410→      tabIndex={0}
+   411→      aria-label={`${hotspot.name} — ${hotspot.category}`}
+   412→      aria-pressed={active}
+   413→      onClick={() => onSelect(hotspot.id)}
+   414→      onKeyDown={(e) => {
+   415→        if (e.key === 'Enter' || e.key === ' ') {
+   416→          e.preventDefault()
+   417→          onSelect(hotspot.id)
+   418→        }
+   419→      }}
+   420→      className={`hotspot ${dim ? 'hotspot--dimmed' : ''} ${active ? 'hotspot--active' : ''} ${className ?? ''}`}
+   421→    >
+   422→      {children}
+   423→    </div>
+   424→  )
+   425→}
+   426→
+   427→/* ============================================================
+   428→ * Main view
+   429→ * ========================================================== */
+   430→
+   431→export default function CockpitExplorerView() {
+   432→  const [flight, setFlight] = useState<FlightState>(NEUTRAL)
+   433→  const [running, setRunning] = useState(false)
+   434→  const [selectedId, setSelectedId] = useState<string | null>(null)
+   435→  const [activeCategory, setActiveCategory] = useState<Category | null>(null)
+   436→  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+   437→
+   438→  const runDemo = useCallback(() => {
+   439→    if (running || intervalRef.current) return
+   440→    setRunning(true)
+   441→    setSelectedId(null)
+   442→    const start = performance.now()
+   443→    intervalRef.current = setInterval(() => {
+   444→      const elapsed = (performance.now() - start) / 1000
+   445→      if (elapsed >= 14) {
+   446→        setFlight(NEUTRAL)
+   447→        setRunning(false)
+   448→        if (intervalRef.current) {
+   449→          clearInterval(intervalRef.current)
+   450→          intervalRef.current = null
+   451→        }
+   452→        return
+   453→      }
+   454→      setFlight(interpolateFlight(elapsed))
+   455→    }, 100)
+   456→  }, [running])
+   457→
+   458→  useEffect(() => {
+   459→    return () => {
+   460→      if (intervalRef.current) clearInterval(intervalRef.current)
+   461→    }
+   462→  }, [])
+   463→
+   464→  const selectHotspot = useCallback((id: string) => {
+   465→    setSelectedId((cur) => (cur === id ? null : id))
+   466→  }, [])
+   467→
+   468→  const toggleCategory = useCallback((cat: Category) => {
+   469→    setActiveCategory((cur) => (cur === cat ? null : cat))
+   470→  }, [])
+   471→
+   472→  const selected = HOTSPOTS.find((h) => h.id === selectedId) ?? null
+   473→
+   474→  const landingOn = running && flight.airspeed < 95 && flight.altitude < 1200
+   475→
+   476→  const hotspotById = (id: string) => HOTSPOTS.find((h) => h.id === id)!
+   477→
+   478→  return (
+   479→    <div className="cockpit-root">
+   480→      <div className="cockpit-shell">
+   481→        <header className="cockpit-head">
+   482→          <h1 className="cockpit-title">Flight Instrument Panel</h1>
+   483→          <div className="legend" role="group" aria-label="Filter panel by category">
+   484→            {CATEGORY_ORDER.map((cat) => (
+   485→              <button
+   486→                key={cat}
+   487→                type="button"
+   488→                onClick={() => toggleCategory(cat)}
+   489→                aria-pressed={activeCategory === cat}
+   490→                className={`legend-chip ${activeCategory === cat ? 'legend-chip--active' : ''}`}
+   491→              >
+   492→                <span
+   493→                  className="legend-dot"
+   494→                  aria-hidden="true"
+   495→                  style={{ background: CATEGORY_COLOR[cat] }}
+   496→                />
+   497→                {cat}
+   498→              </button>
+   499→            ))}
+   500→          </div>
+   501→        </header>
+   502→
+   503→        {/* Carbon-fiber instrument panel */}
+   504→        <section className="panel-carbon" aria-label="Six-pack flight instruments">
+   505→          <div className="sixpack">
+   506→            <Hotspot hotspot={hotspotById('asi')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot}>
+   507→              <AirspeedIndicator value={flight.airspeed} />
+   508→              <span className="gauge-caption">ASI</span>
+   509→            </Hotspot>
+   510→            <Hotspot hotspot={hotspotById('ai')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot}>
+   511→              <AttitudeIndicator pitch={flight.pitch} bank={flight.bank} />
+   512→              <span className="gauge-caption">AI</span>
+   513→            </Hotspot>
+   514→            <Hotspot hotspot={hotspotById('alt')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot}>
+   515→              <Altimeter value={flight.altitude} />
+   516→              <span className="gauge-caption">ALT</span>
+   517→            </Hotspot>
+   518→            <Hotspot hotspot={hotspotById('tc')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot}>
+   519→              <TurnCoordinator bank={flight.bank} />
+   520→              <span className="gauge-caption">TC</span>
+   521→            </Hotspot>
+   522→            <Hotspot hotspot={hotspotById('dg')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot}>
+   523→              <HeadingIndicator heading={flight.heading} />
+   524→              <span className="gauge-caption">DG</span>
+   525→            </Hotspot>
+   526→            <Hotspot hotspot={hotspotById('vsi')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot}>
+   527→              <VerticalSpeedIndicator value={flight.vsi} />
+   528→              <span className="gauge-caption">VSI</span>
+   529→            </Hotspot>
+   530→          </div>
+   531→        </section>
+   532→
+   533→        {/* Brushed-metal switch rail */}
+   534→        <section className="panel-brushed" aria-label="Switches and controls">
+   535→          <Hotspot hotspot={hotspotById('master')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot} className="rail-cell">
+   536→            <ToggleSwitch on={running} label="Master" />
+   537→          </Hotspot>
+   538→          <Hotspot hotspot={hotspotById('avbus')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot} className="rail-cell">
+   539→            <ToggleSwitch on={running} label="Avionics" />
+   540→          </Hotspot>
+   541→          <Hotspot hotspot={hotspotById('land')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot} className="rail-cell">
+   542→            <ToggleSwitch on={landingOn} label="Landing" />
+   543→          </Hotspot>
+   544→          <Hotspot hotspot={hotspotById('hdgknob')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot} className="rail-cell">
+   545→            <Knob angle={-flight.heading} label="HDG" />
+   546→          </Hotspot>
+   547→          <Hotspot hotspot={hotspotById('altknob')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot} className="rail-cell">
+   548→            <Knob angle={flight.altitude / 18} label="ALT" />
+   549→          </Hotspot>
+   550→          <Hotspot hotspot={hotspotById('radio')} selectedId={selectedId} activeCategory={activeCategory} onSelect={selectHotspot} className="rail-cell rail-cell--radio">
+   551→            <div className="lcd radio-lcd">
+   552→              <div className="radio-row">COM <span>122.75</span></div>
+   553→              <div className="radio-row">NAV <span>108.50</span></div>
+   554→            </div>
+   555→          </Hotspot>
+   556→          <button
+   557→            type="button"
+   558→            className="demo-btn"
+   559→            onClick={runDemo}
+   560→            disabled={running}
+   561→            aria-label="Run demo flight profile"
+   562→          >
+   563→            {running ? 'Flying…' : 'Run Demo Flight'}
+   564→          </button>
+   565→        </section>
+   566→
+   567→        {/* Detail view */}
+   568→        <section className="detail-area" aria-live="polite">
+   569→          {selected ? (
+   570→            <div className="detail-card">
+   571→              <div className="detail-head">
+   572→                <span
+   573→                  className="legend-dot"
+   574→                  aria-hidden="true"
+   575→                  style={{ background: CATEGORY_COLOR[selected.category] }}
+   576→                />
+   577→                <h2 className="detail-title">{selected.name}</h2>
+   578→                <span className="detail-cat">{selected.category}</span>
+   579→              </div>
+   580→              <p className="detail-text">{selected.detail}</p>
+   581→            </div>
+   582→          ) : (
+   583→            <div className="detail-card detail-card--empty">
+   584→              Select an instrument, control, switch, or avionics item to view its details.
+   585→            </div>
+   586→          )}
+   587→        </section>
+   588→      </div>
+   589→
+   590→      <footer className="cockpit-footer">
+   591→        Cockpit Instrument Explorer — six-pack gauge cluster
+   592→      </footer>
+   593→
+   594→      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+   595→    </div>
+   596→  )
+   597→}
+   598→
+   599→/* ============================================================
+   600→ * Styles — plain CSS (multi-stop gradients can't be expressed in
+   601→ * Tailwind arbitrary values, so this is injected as a global block).
+   602→ * ========================================================== */
+   603→
+   604→const CSS = `
+   605→.cockpit-root {
+   606→  min-height: 100vh;
+   607→  display: flex;
+   608→  flex-direction: column;
+   609→  background: #0a0a0b;
+   610→  color: #e6e6ea;
+   611→  font-family: var(--font-geist-sans, system-ui, sans-serif);
+   612→}
+   613→.cockpit-shell {
+   614→  flex: 1;
+   615→  width: 100%;
+   616→  max-width: 920px;
+   617→  margin: 0 auto;
+   618→  padding: 22px 16px 32px;
+   619→  display: flex;
+   620→  flex-direction: column;
+   621→  gap: 18px;
+   622→}
+   623→
+   624→/* ---------- header / legend ---------- */
+   625→.cockpit-head {
+   626→  display: flex;
+   627→  flex-direction: column;
+   628→  align-items: center;
+   629→  gap: 12px;
+   630→}
+   631→.cockpit-title {
+   632→  font-size: 17px;
+   633→  font-weight: 600;
+   634→  letter-spacing: 0.6px;
+   635→  color: #d8d8dc;
+   636→  text-transform: uppercase;
+   637→}
+   638→.legend {
+   639→  display: flex;
+   640→  flex-wrap: wrap;
+   641→  gap: 8px;
+   642→  justify-content: center;
+   643→}
+   644→.legend-chip {
+   645→  display: inline-flex;
+   646→  align-items: center;
+   647→  gap: 6px;
+   648→  padding: 5px 11px;
+   649→  font-size: 11px;
+   650→  font-weight: 600;
+   651→  letter-spacing: 0.6px;
+   652→  text-transform: uppercase;
+   653→  color: #a8a8ac;
+   654→  background: #161618;
+   655→  border: 1px solid #2a2a2e;
+   656→  border-radius: 20px;
+   657→  cursor: pointer;
+   658→  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+   659→}
+   660→.legend-chip:hover {
+   661→  border-color: #3a3a40;
+   662→  color: #e6e6ea;
+   663→}
+   664→.legend-chip--active {
+   665→  background: #0c2a3a;
+   666→  border-color: #38bdf8;
+   667→  color: #bae6fd;
+   668→}
+   669→.legend-chip:focus-visible {
+   670→  outline: 2px solid #38bdf8;
+   671→  outline-offset: 2px;
+   672→}
+   673→.legend-dot {
+   674→  width: 8px;
+   675→  height: 8px;
+   676→  border-radius: 50%;
+   677→  box-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
+   678→}
+   679→
+   680→/* ---------- carbon-fiber panel ---------- */
+   681→.panel-carbon {
+   682→  background-color: #161616;
+   683→  background-image:
+   684→    repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px),
+   685→    repeating-linear-gradient(-45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px);
+   686→  box-shadow: inset 0 0 60px rgba(0,0,0,0.75), inset 0 0 12px rgba(0,0,0,0.9);
+   687→  border-radius: 14px;
+   688→  padding: 26px 16px;
+   689→  display: flex;
+   690→  justify-content: center;
+   691→}
+   692→.sixpack {
+   693→  display: grid;
+   694→  grid-template-columns: repeat(3, max-content);
+   695→  gap: 22px 26px;
+   696→  justify-content: center;
+   697→}
+   698→@media (max-width: 560px) {
+   699→  .sixpack { grid-template-columns: repeat(2, max-content); }
+   700→}
+   701→
+   702→/* ---------- brushed-metal rail ---------- */
+   703→.panel-brushed {
+   704→  background: linear-gradient(90deg, #9a9a9e, #b8b8bc, #8e8e92, #c0c0c4, #949498);
+   705→  background-size: 3px 100%;
+   706→  background-repeat: repeat;
+   707→  box-shadow: inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.4), 0 4px 14px rgba(0,0,0,0.5);
+   708→  border-radius: 12px;
+   709→  padding: 14px 12px;
+   710→  display: flex;
+   711→  flex-wrap: wrap;
+   712→  gap: 14px;
+   713→  align-items: center;
+   714→  justify-content: center;
+   715→}
+   716→.rail-cell { padding: 4px 8px; border-radius: 8px; }
+   717→.rail-cell--radio { display: flex; align-items: center; }
+   718→
+   719→/* ---------- hotspots ---------- */
+   720→.hotspot {
+   721→  display: flex;
+   722→  flex-direction: column;
+   723→  align-items: center;
+   724→  gap: 6px;
+   725→  padding: 8px;
+   726→  border-radius: 12px;
+   727→  cursor: pointer;
+   728→  transition: opacity 0.25s ease, box-shadow 0.2s ease, transform 0.2s ease;
+   729→}
+   730→.hotspot:hover:not(.hotspot--dimmed) { transform: translateY(-1px); }
+   731→.hotspot--dimmed { opacity: 0.2; }
+   732→.hotspot--active { box-shadow: 0 0 0 2px rgba(56,189,248,0.65); }
+   733→.hotspot:focus-visible {
+   734→  outline: 2px solid #38bdf8;
+   735→  outline-offset: 2px;
+   736→}
+   737→
+   738→/* ---------- gauge shell ---------- */
+   739→.gauge {
+   740→  position: relative;
+   741→  width: var(--g, 168px);
+   742→  height: var(--g, 168px);
+   743→}
+   744→@media (max-width: 720px) { .gauge { --g: 150px; } }
+   745→@media (max-width: 560px) { .gauge { --g: 124px; } }
+   746→@media (max-width: 380px) { .gauge { --g: 108px; } }
+   747→
+   748→.gauge-bezel {
+   749→  position: absolute;
+   750→  inset: 0;
+   751→  border-radius: 50%;
+   752→  background: conic-gradient(
+   753→    from 135deg,
+   754→    #8a8a8e 0deg, #d8d8dc 45deg, #6e6e72 90deg,
+   755→    #b8b8bc 135deg, #4a4a4e 180deg, #c4c4c8 225deg,
+   756→    #7a7a7e 270deg, #e0e0e4 315deg, #8a8a8e 360deg
+   757→  );
+   758→  box-shadow:
+   759→    inset 0 0 3px rgba(0,0,0,0.6),
+   760→    0 1px 3px rgba(0,0,0,0.6),
+   761→    0 6px 14px rgba(0,0,0,0.5);
+   762→  padding: 9px;
+   763→}
+   764→.gauge-face {
+   765→  position: relative;
+   766→  width: 100%;
+   767→  height: 100%;
+   768→  border-radius: 50%;
+   769→  background: radial-gradient(circle at 35% 35%, #2b2b2e 0%, #1c1c1e 55%, #0a0a0b 100%);
+   770→  overflow: hidden;
+   771→  box-shadow: inset 0 0 14px rgba(0,0,0,0.95), inset 0 0 3px rgba(0,0,0,0.9);
+   772→}
+   773→
+   774→/* screws at 12 / 3 / 6 / 9 */
+   775→.screw {
+   776→  position: absolute;
+   777→  width: 7px;
+   778→  height: 7px;
+   779→  border-radius: 50%;
+   780→  background: radial-gradient(circle at 35% 35%, #ccc 0%, #888 50%, #333 100%);
+   781→  box-shadow: 0 0.5px 1px rgba(0,0,0,0.8), inset 0 0 1px rgba(0,0,0,0.5);
+   782→  z-index: 10;
+   783→}
+   784→.screw::after {
+   785→  content: '';
+   786→  position: absolute;
+   787→  left: 50%;
+   788→  top: 50%;
+   789→  width: 80%;
+   790→  height: 1px;
+   791→  background: rgba(0,0,0,0.75);
+   792→  transform: translate(-50%, -50%) rotate(45deg);
+   793→  border-radius: 1px;
+   794→}
+   795→.screw-12 { top: 2px; left: 50%; margin-left: -3.5px; }
+   796→.screw-3  { right: 2px; top: 50%; margin-top: -3.5px; }
+   797→.screw-6  { bottom: 2px; left: 50%; margin-left: -3.5px; }
+   798→.screw-9  { left: 2px; top: 50%; margin-top: -3.5px; }
+   799→
+   800→/* convex glass reflection */
+   801→.gauge-glass {
+   802→  position: absolute;
+   803→  width: 60%;
+   804→  height: 38%;
+   805→  top: 7%;
+   806→  left: 12%;
+   807→  border-radius: 50%;
+   808→  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 40%, transparent 70%);
+   809→  transform: rotate(-25deg);
+   810→  filter: blur(1.5px);
+   811→  pointer-events: none;
+   812→  z-index: 5;
+   813→}
+   814→
+   815→/* ---------- dial (SVG) ---------- */
+   816→.dial-svg {
+   817→  position: absolute;
+   818→  inset: 0;
+   819→  width: 100%;
+   820→  height: 100%;
+   821→  pointer-events: none;
+   822→  overflow: visible;
+   823→  z-index: 1;
+   824→}
+   825→.tick-major { stroke: #d8d8dc; stroke-width: 1.3; }
+   826→.tick-minor { stroke: #6a6a6e; stroke-width: 0.7; }
+   827→.dial-text {
+   828→  fill: #d8d8dc;
+   829→  font-size: 6.5px;
+   830→  font-family: 'Courier New', monospace;
+   831→  font-weight: 700;
+   832→  letter-spacing: 0.2px;
+   833→}
+   834→.arc { fill: none; stroke-width: 2.4; stroke-linecap: butt; }
+   835→.arc-white  { stroke: rgba(255,255,255,0.6); }
+   836→.arc-green  { stroke: rgba(90,220,100,0.78); }
+   837→.arc-yellow { stroke: rgba(255,210,40,0.8); }
+   838→.arc-red    { stroke: rgba(255,50,50,0.9); stroke-width: 1.8; }
+   839→
+   840→/* ---------- needle (CSS transform + spring transition) ---------- */
+   841→.needle {
+   842→  position: absolute;
+   843→  left: 50%;
+   844→  top: 8%;
+   845→  width: 4px;
+   846→  height: 42%;
+   847→  margin-left: -2px;
+   848→  transform-origin: 50% 100%;
+   849→  background: linear-gradient(180deg, #f0f0f4 0%, #ffffff 50%, #b0b0b4 100%);
+   850→  border-radius: 3px 3px 1px 1px;
+   851→  box-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+   852→  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+   853→  will-change: transform;
+   854→  z-index: 3;
+   855→}
+   856→.needle::after {
+   857→  content: '';
+   858→  position: absolute;
+   859→  left: 50%;
+   860→  top: 100%;
+   861→  width: 6px;
+   862→  height: 12%;
+   863→  margin-left: -3px;
+   864→  background: linear-gradient(180deg, #888, #3a3a3e);
+   865→  border-radius: 1px;
+   866→}
+   867→.hub-cap {
+   868→  position: absolute;
+   869→  left: 50%;
+   870→  top: 50%;
+   871→  width: 16px;
+   872→  height: 16px;
+   873→  margin: -8px 0 0 -8px;
+   874→  border-radius: 50%;
+   875→  background: radial-gradient(circle at 35% 35%, #d8d8dc 0%, #7a7a7e 60%, #2a2a2c 100%);
+   876→  box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 0 3px rgba(0,0,0,0.7);
+   877→  z-index: 4;
+   878→}
+   879→
+   880→/* ---------- LCD digital readouts ---------- */
+   881→.lcd {
+   882→  font-family: 'Courier New', monospace;
+   883→  color: #6fd0ff;
+   884→  filter: drop-shadow(0 0 4px rgba(62,146,204,0.7));
+   885→  background: #05141c;
+   886→  padding: 2px 6px;
+   887→  border-radius: 2px;
+   888→  box-shadow: inset 0 0 4px rgba(0,0,0,0.9), 0 1px 1px rgba(0,0,0,0.4);
+   889→  font-size: 11px;
+   890→  letter-spacing: 1px;
+   891→  position: absolute;
+   892→  z-index: 2;
+   893→  white-space: nowrap;
+   894→}
+   895→.lcd-asi { left: 50%; bottom: 16%; transform: translateX(-50%); }
+   896→.lcd-alt { right: 13%; top: 50%; transform: translateY(-50%); }
+   897→.lcd-dg  { left: 50%; top: 63%; transform: translateX(-50%); }
+   898→.lcd-vsi { left: 50%; bottom: 16%; transform: translateX(-50%); }
+   899→
+   900→.gauge-caption {
+   901→  font-size: 10px;
+   902→  letter-spacing: 1.5px;
+   903→  color: #8a8a8e;
+   904→  text-transform: uppercase;
+   905→  font-weight: 700;
+   906→}
+   907→
+   908→/* ---------- attitude indicator ---------- */
+   909→.ai-horizon {
+   910→  position: absolute;
+   911→  left: -25%;
+   912→  top: -25%;
+   913→  width: 150%;
+   914→  height: 150%;
+   915→  transform-origin: 50% 50%;
+   916→  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+   917→  will-change: transform;
+   918→}
+   919→.ai-sky {
+   920→  position: absolute;
+   921→  left: 0;
+   922→  top: 0;
+   923→  width: 100%;
+   924→  height: 50%;
+   925→  background: linear-gradient(180deg, #2a6cb0 0%, #4a9adb 100%);
+   926→}
+   927→.ai-ground {
+   928→  position: absolute;
+   929→  left: 0;
+   930→  top: 50%;
+   931→  width: 100%;
+   932→  height: 50%;
+   933→  background: linear-gradient(180deg, #6b4a2a 0%, #3a2a1a 100%);
+   934→}
+   935→.ai-horizon-line {
+   936→  position: absolute;
+   937→  left: 0;
+   938→  top: 50%;
+   939→  width: 100%;
+   940→  height: 2px;
+   941→  background: #e6e6ea;
+   942→  transform: translateY(-1px);
+   943→  box-shadow: 0 0 1px rgba(0,0,0,0.6);
+   944→}
+   945→.ai-ladder { position: absolute; inset: 0; }
+   946→.ai-ladder-mark {
+   947→  position: absolute;
+   948→  left: 50%;
+   949→  width: 22px;
+   950→  height: 1px;
+   951→  margin-left: -11px;
+   952→  background: rgba(255,255,255,0.7);
+   953→}
+   954→.ai-ladder-mark span {
+   955→  position: absolute;
+   956→  left: 50%;
+   957→  top: 50%;
+   958→  transform: translate(-50%, -50%);
+   959→  font-size: 6px;
+   960→  color: #e6e6ea;
+   961→  background: rgba(0,0,0,0.25);
+   962→  padding: 0 1px;
+   963→}
+   964→.ai-bank-mark {
+   965→  position: absolute;
+   966→  left: 50%;
+   967→  top: 6%;
+   968→  width: 1px;
+   969→  height: 7px;
+   970→  margin-left: -0.5px;
+   971→  background: rgba(255,255,255,0.6);
+   972→  transform-origin: 50% calc(50vw);
+   973→}
+   974→.ai-aircraft {
+   975→  position: absolute;
+   976→  left: 50%;
+   977→  top: 50%;
+   978→  width: 0;
+   979→  height: 0;
+   980→  z-index: 3;
+   981→}
+   982→.ai-wing {
+   983→  position: absolute;
+   984→  top: -1.5px;
+   985→  height: 3px;
+   986→  width: 26px;
+   987→  background: #ffcc00;
+   988→  box-shadow: 0 0 2px rgba(0,0,0,0.8);
+   989→}
+   990→.ai-wing-l { right: 6px; }
+   991→.ai-wing-r { left: 6px; }
+   992→.ai-dot {
+   993→  position: absolute;
+   994→  left: -3px;
+   995→  top: -3px;
+   996→  width: 6px;
+   997→  height: 6px;
+   998→  border-radius: 50%;
+   999→  background: #ffcc00;
+  1000→  box-shadow: 0 0 2px rgba(0,0,0,0.8);
+  1001→}
+  1002→.ai-pointer {
+  1003→  position: absolute;
+  1004→  left: 50%;
+  1005→  top: 4%;
+  1006→  width: 0;
+  1007→  height: 0;
+  1008→  margin-left: -5px;
+  1009→  border-left: 5px solid transparent;
+  1010→  border-right: 5px solid transparent;
+  1011→  border-top: 8px solid #ffcc00;
+  1012→  z-index: 4;
+  1013→  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+  1014→}
+  1015→
+  1016→/* ---------- turn coordinator ---------- */
+  1017→.tc-aircraft {
+  1018→  position: absolute;
+  1019→  left: 50%;
+  1020→  top: 50%;
+  1021→  width: 0;
+  1022→  height: 0;
+  1023→  transform-origin: 50% 50%;
+  1024→  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  1025→  will-change: transform;
+  1026→  z-index: 3;
+  1027→}
+  1028→.tc-wing {
+  1029→  position: absolute;
+  1030→  left: -26px;
+  1031→  top: -2px;
+  1032→  width: 52px;
+  1033→  height: 4px;
+  1034→  background: #f0f0f4;
+  1035→  border-radius: 2px;
+  1036→  box-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  1037→}
+  1038→.tc-tail {
+  1039→  position: absolute;
+  1040→  left: -1.5px;
+  1041→  top: -15px;
+  1042→  width: 3px;
+  1043→  height: 13px;
+  1044→  background: #f0f0f4;
+  1045→  border-radius: 1px;
+  1046→}
+  1047→.tc-body {
+  1048→  position: absolute;
+  1049→  left: -3px;
+  1050→  top: -5px;
+  1051→  width: 6px;
+  1052→  height: 12px;
+  1053→  background: #f0f0f4;
+  1054→  border-radius: 2px;
+  1055→}
+  1056→.tc-label {
+  1057→  position: absolute;
+  1058→  left: 50%;
+  1059→  bottom: 16%;
+  1060→  transform: translateX(-50%);
+  1061→  font-size: 8px;
+  1062→  letter-spacing: 1.2px;
+  1063→  color: #a8a8ac;
+  1064→  font-family: 'Courier New', monospace;
+  1065→  font-weight: 700;
+  1066→  z-index: 2;
+  1067→}
+  1068→
+  1069→/* ---------- heading indicator ---------- */
+  1070→.dg-card {
+  1071→  position: absolute;
+  1072→  inset: 0;
+  1073→  border-radius: 50%;
+  1074→  transform-origin: 50% 50%;
+  1075→  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  1076→  will-change: transform;
+  1077→}
+  1078→.dg-pointer {
+  1079→  position: absolute;
+  1080→  left: 50%;
+  1081→  top: 3%;
+  1082→  width: 0;
+  1083→  height: 0;
+  1084→  margin-left: -6px;
+  1085→  border-left: 6px solid transparent;
+  1086→  border-right: 6px solid transparent;
+  1087→  border-top: 10px solid #ffcc00;
+  1088→  z-index: 4;
+  1089→  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+  1090→}
+  1091→
+  1092→/* ---------- toggles / knobs / radio ---------- */
+  1093→.toggle-wrap {
+  1094→  display: flex;
+  1095→  flex-direction: column;
+  1096→  align-items: center;
+  1097→  gap: 6px;
+  1098→}
+  1099→.toggle-switch {
+  1100→  position: relative;
+  1101→  width: 26px;
+  1102→  height: 44px;
+  1103→  background: linear-gradient(180deg, #2a2a2c, #0e0e10);
+  1104→  border-radius: 4px;
+  1105→  box-shadow: inset 0 0 5px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.5);
+  1106→  border: 1px solid #1a1a1c;
+  1107→}
+  1108→.toggle-lever {
+  1109→  position: absolute;
+  1110→  left: 50%;
+  1111→  width: 8px;
+  1112→  height: 20px;
+  1113→  margin-left: -4px;
+  1114→  background: linear-gradient(180deg, #e8e8ec 0%, #b0b0b4 50%, #7a7a7e 100%);
+  1115→  border-radius: 2px;
+  1116→  box-shadow: 0 1px 2px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.5);
+  1117→  transition: top 0.25s ease;
+  1118→}
+  1119→.toggle-lever--up { top: 3px; }
+  1120→.toggle-lever--down { top: 21px; }
+  1121→.toggle-label {
+  1122→  font-size: 9px;
+  1123→  color: #1c1c1e;
+  1124→  letter-spacing: 0.5px;
+  1125→  text-transform: uppercase;
+  1126→  font-weight: 700;
+  1127→}
+  1128→
+  1129→.knob-wrap {
+  1130→  display: flex;
+  1131→  flex-direction: column;
+  1132→  align-items: center;
+  1133→  gap: 6px;
+  1134→}
+  1135→.knob {
+  1136→  position: relative;
+  1137→  width: 34px;
+  1138→  height: 34px;
+  1139→  border-radius: 50%;
+  1140→  background: radial-gradient(circle at 35% 35%, #6a6a6e 0%, #3a3a3e 55%, #1a1a1c 100%);
+  1141→  box-shadow: inset 0 0 4px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.15);
+  1142→  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  1143→  transform-origin: 50% 50%;
+  1144→}
+  1145→.knob-pointer {
+  1146→  position: absolute;
+  1147→  left: 50%;
+  1148→  top: 3px;
+  1149→  width: 2px;
+  1150→  height: 9px;
+  1151→  margin-left: -1px;
+  1152→  background: #f0f0f4;
+  1153→  border-radius: 1px;
+  1154→  box-shadow: 0 0 1px rgba(0,0,0,0.8);
+  1155→}
+  1156→.knob-label {
+  1157→  font-size: 9px;
+  1158→  color: #1c1c1e;
+  1159→  letter-spacing: 0.5px;
+  1160→  text-transform: uppercase;
+  1161→  font-weight: 700;
+  1162→}
+  1163→
+  1164→.radio-lcd {
+  1165→  position: static;
+  1166→  transform: none;
+  1167→  font-size: 10px;
+  1168→  line-height: 1.55;
+  1169→  letter-spacing: 0.5px;
+  1170→  min-width: 88px;
+  1171→  text-align: left;
+  1172→}
+  1173→.radio-row { display: flex; justify-content: space-between; gap: 8px; }
+  1174→.radio-row span { color: #b6ecff; }
+  1175→
+  1176→/* ---------- demo button ---------- */
+  1177→.demo-btn {
+  1178→  margin-left: auto;
+  1179→  padding: 10px 18px;
+  1180→  font-size: 12px;
+  1181→  font-weight: 700;
+  1182→  letter-spacing: 1.2px;
+  1183→  text-transform: uppercase;
+  1184→  color: #05141c;
+  1185→  background: linear-gradient(180deg, #5ec5ff, #2a8fd0);
+  1186→  border: none;
+  1187→  border-radius: 6px;
+  1188→  cursor: pointer;
+  1189→  box-shadow: 0 2px 0 #1a5f8a, 0 3px 8px rgba(0,0,0,0.5);
+  1190→  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+  1191→}
+  1192→.demo-btn:hover:not(:disabled) { filter: brightness(1.08); }
+  1193→.demo-btn:active:not(:disabled) {
+  1194→  transform: translateY(2px);
+  1195→  box-shadow: 0 0 0 #1a5f8a, 0 1px 2px rgba(0,0,0,0.5);
+  1196→}
+  1197→.demo-btn:disabled {
+  1198→  opacity: 0.55;
+  1199→  cursor: default;
+  1200→  filter: grayscale(0.4);
+  1201→}
+  1202→.demo-btn:focus-visible {
+  1203→  outline: 2px solid #38bdf8;
+  1204→  outline-offset: 2px;
+  1205→}
+  1206→
+  1207→/* ---------- detail card ---------- */
+  1208→.detail-area { min-height: 92px; }
+  1209→.detail-card {
+  1210→  background: #0e0e10;
+  1211→  border: 1px solid #232328;
+  1212→  border-radius: 10px;
+  1213→  padding: 14px 18px;
+  1214→  box-shadow: inset 0 0 22px rgba(0,0,0,0.6);
+  1215→}
+  1216→.detail-card--empty {
+  1217→  color: #6a6a6e;
+  1218→  font-size: 13px;
+  1219→  text-align: center;
+  1220→  padding: 26px 18px;
+  1221→}
+  1222→.detail-head {
+  1223→  display: flex;
+  1224→  align-items: center;
+  1225→  gap: 10px;
+  1226→  margin-bottom: 8px;
+  1227→}
+  1228→.detail-title {
+  1229→  font-size: 15px;
+  1230→  font-weight: 600;
+  1231→  color: #e6e6ea;
+  1232→  margin: 0;
+  1233→}
+  1234→.detail-cat {
+  1235→  margin-left: auto;
+  1236→  font-size: 10px;
+  1237→  letter-spacing: 1px;
+  1238→  text-transform: uppercase;
+  1239→  color: #8a8a8e;
+  1240→  border: 1px solid #2a2a2c;
+  1241→  padding: 2px 7px;
+  1242→  border-radius: 3px;
+  1243→}
+  1244→.detail-text {
+  1245→  font-size: 13px;
+  1246→  color: #a8a8ac;
+  1247→  line-height: 1.5;
+  1248→  margin: 0;
+  1249→}
+  1250→
+  1251→/* ---------- footer ---------- */
+  1252→.cockpit-footer {
+  1253→  margin-top: auto;
+  1254→  padding: 14px 16px;
+  1255→  text-align: center;
+  1256→  font-size: 11px;
+  1257→  letter-spacing: 0.5px;
+  1258→  color: #4a4a4e;
+  1259→  border-top: 1px solid #1a1a1c;
+  1260→  background: #060607;
+  1261→}
+  1262→
+  1263→@media (max-width: 560px) {
+  1264→  .panel-brushed { gap: 12px; }
+  1265→  .demo-btn { margin-left: 0; width: 100%; }
+  1266→}
+  1267→`
+  1268→

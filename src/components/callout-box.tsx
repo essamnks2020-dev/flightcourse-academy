@@ -13,26 +13,29 @@ interface CalloutBoxProps {
 const config = {
   info: {
     icon: Info,
-    border: "border-sky",
-    bg: "bg-sky/5",
-    iconBg: "bg-sky/15 text-sky",
     label: "Note",
+    iconClass: "text-accent",
+    labelClass: "text-accent",
+    ring: "border-accent/30",
+    tint: "bg-accent/5",
   },
   warning: {
     icon: AlertTriangle,
-    border: "border-gold",
-    bg: "bg-gold/5",
-    iconBg: "bg-gold/20 text-gold-dark",
     label: "Common Mistake",
+    iconClass: "text-destructive",
+    labelClass: "text-destructive",
+    ring: "border-destructive/30",
+    tint: "bg-destructive/5",
   },
   tip: {
     icon: Lightbulb,
-    border: "border-gold",
-    bg: "bg-gold/5",
-    iconBg: "bg-gold/15 text-gold-dark",
     label: "Try It",
+    iconClass: "text-primary",
+    labelClass: "text-primary",
+    ring: "border-primary/30",
+    tint: "bg-primary/5",
   },
-};
+} as const;
 
 export function CalloutBox({ variant, title, children, className }: CalloutBoxProps) {
   const c = config[variant];
@@ -40,29 +43,18 @@ export function CalloutBox({ variant, title, children, className }: CalloutBoxPr
   return (
     <div
       className={cn(
-        "fp-bezel relative p-4 sm:p-5 my-6",
-        c.border,
-        c.bg,
+        "glass my-6 rounded-xl p-4 sm:p-5",
+        c.ring,
+        c.tint,
         className
       )}
     >
       <div className="flex gap-3">
-        <div
-          className={cn(
-            "flex-shrink-0 w-9 h-9 flex items-center justify-center",
-            c.iconBg
-          )}
-        >
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-              {c.label}
-            </span>
-          </div>
-          <h4 className="font-heading font-semibold text-base mb-1.5">{title}</h4>
-          <div className="text-sm text-muted-foreground leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_li]:mb-1">
+        <Icon className={cn("mt-0.5 size-5 shrink-0", c.iconClass)} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className={cn("label-instrument mb-1.5", c.labelClass)}>{c.label}</p>
+          <h4 className="mb-1.5 font-semibold tracking-tight">{title}</h4>
+          <div className="text-sm leading-relaxed text-muted-foreground [&_p]:mb-2 [&_p:last-child]:mb-0 [&_li]:mb-1">
             {children}
           </div>
         </div>

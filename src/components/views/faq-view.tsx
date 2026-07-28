@@ -1,118 +1,113 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, HelpCircle, AlertCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { faqItems } from "@/lib/data/faq";
+import { useNav } from "@/lib/nav-store";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = ["Getting Started", "Simulators & Hardware", "Real Flying", "Course & Progress"];
+const CATEGORIES: string[] = [
+  "All",
+  ...Array.from(new Set(faqItems.map((i) => i.category))),
+];
+
+/* ============================================================
+ * FAQ view — full list with category filter
+ * Glass Cockpit design system. No emoji, no Framer Motion.
+ * ========================================================== */
 
 export function FaqView() {
-  const [openIdx, setOpenIdx] = React.useState<number | null>(0);
-  const [activeCategory, setActiveCategory] = React.useState<string | null>(null);
+  const navigate = useNav((s) => s.navigate);
+  const [category, setCategory] = React.useState<string>("All");
 
-  const filtered = activeCategory
-    ? faqItems.map((item, i) => ({ item, i })).filter(({ item }) => item.category === activeCategory)
-    : faqItems.map((item, i) => ({ item, i }));
+  const filtered = React.useMemo(
+    () =>
+      category === "All"
+        ? faqItems
+        : faqItems.filter((i) => i.category === category),
+    [category]
+  );
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-sky mb-2">
-          <HelpCircle className="w-4 h-4" />
-          {faqItems.length} Questions Answered
-        </div>
-        <h1 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight mb-3">
-          Frequently Asked Questions
+    <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+      {/* Header */}
+      <header className="mb-8 animate-fade-up">
+        <p className="label-instrument text-primary mb-3">Help</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          Frequently asked questions
         </h1>
-        <p className="text-muted-foreground">
-          Straight answers. No upselling. If you have a question that isn't
-          here, it's probably answered in one of the modules.
+        <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">
+          Everything a new simulator pilot tends to ask before they start. If
+          your question isn&apos;t here, the glossary and setup guide probably
+          cover it.
         </p>
-      </div>
+      </header>
 
       {/* Category filter */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => setActiveCategory(null)}
-          className={cn(
-            "text-xs font-mono px-3 py-1.5 border transition-colors",
-            !activeCategory ? "bg-sky/15 border-sky text-sky" : "border-border text-muted-foreground hover:border-sky/50"
-          )}
-        >
-          All Questions
-        </button>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-            className={cn(
-              "text-xs font-mono px-3 py-1.5 border transition-colors",
-              activeCategory === cat ? "bg-sky/15 border-sky text-sky" : "border-border text-muted-foreground hover:border-sky/50"
-            )}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* FAQ list */}
-      <div className="space-y-3">
-        {filtered.map(({ item, i }) => (
-          <div key={i} className="fp-bezel bg-card overflow-hidden">
+      <div className="mb-6 flex flex-wrap gap-2">
+        {CATEGORIES.map((cat) => {
+          const active = category === cat;
+          return (
             <button
-              onClick={() => setOpenIdx(openIdx === i ? null : i)}
-              className="w-full flex items-center justify-between gap-4 p-4 sm:p-5 text-left"
-              aria-expanded={openIdx === i}
-            >
-              <span className="font-heading font-semibold text-sm sm:text-base">{item.question}</span>
-              <ChevronDown
-                className={cn(
-                  "w-4 h-4 flex-shrink-0 transition-transform",
-                  openIdx === i && "rotate-180 text-sky"
-                )}
-              />
-            </button>
-            <AnimatePresence>
-              {openIdx === i && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-4 sm:px-5 pb-4 sm:pb-5">
-                    <div className="border-l-2 border-sky pl-4 text-sm text-muted-foreground leading-relaxed">
-                      {item.answer}
-                    </div>
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mt-3">
-                      {item.category}
-                    </div>
-                  </div>
-                </motion.div>
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground"
               )}
-            </AnimatePresence>
-          </div>
-        ))}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Honest disclaimer */}
-      <div className="fp-bezel bg-gold/5 border-gold p-5 mt-8 flex gap-3">
-        <AlertCircle className="w-5 h-5 text-gold-dark flex-shrink-0 mt-0.5" />
-        <div className="text-sm">
-          <p className="font-heading font-semibold mb-1">A note on real certification</p>
-          <p className="text-muted-foreground leading-relaxed">
-            FlightCourse Academy teaches genuine aviation knowledge and builds
-            real procedure muscle memory — but it is not a substitute for
-            certified flight training. To earn a real pilot's license, you need
-            a Certified Flight Instructor (CFI), a medical certificate, logged
-            flight hours in a real aircraft, and written + practical exams
-            administered by your country's aviation authority. Think of this as
-            the best possible head start.
+      {/* Result count */}
+      <p className="label-instrument mb-4 text-muted-foreground">
+        {filtered.length} questions
+      </p>
+
+      {/* Accordion */}
+      <Accordion type="single" collapsible className="flex flex-col">
+        {filtered.map((item) => (
+          <AccordionItem
+            key={item.question}
+            value={item.question}
+            className="border-border border-b"
+          >
+            <AccordionTrigger className="text-left hover:no-underline">
+              {item.question}
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground leading-relaxed">
+              {item.answer}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+
+      {/* CTA */}
+      <div className="glass mt-10 flex flex-col gap-3 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold tracking-tight">Still stuck?</p>
+          <p className="text-sm text-muted-foreground">
+            The learning path lays out every module in order, module 1 first.
           </p>
         </div>
+        <button
+          onClick={() => navigate("path")}
+          className="fp-outline-btn shrink-0 px-4 py-2 text-sm"
+        >
+          Start with module 1
+          <ArrowRight className="size-4" />
+        </button>
       </div>
     </div>
   );

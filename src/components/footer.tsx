@@ -2,94 +2,79 @@
 
 import { useNav } from "@/lib/nav-store";
 import type { ViewName } from "@/lib/nav-store";
-import { FlightCourseLogo } from "./navbar";
-import { Plane, Compass, Gauge, BookOpen, CheckSquare, Settings, Award, HelpCircle } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 
-const FOOTER_LINKS: { label: string; view: ViewName; icon: React.ElementType }[] = [
-  { label: "Learning Path", view: "path", icon: Compass },
-  { label: "Cockpit Explorer", view: "cockpit", icon: Gauge },
-  { label: "Glossary", view: "glossary", icon: BookOpen },
-  { label: "Checklists", view: "checklists", icon: CheckSquare },
-  { label: "Setup Guide", view: "setup", icon: Settings },
-  { label: "Your Progress", view: "progress", icon: Award },
-  { label: "FAQ", view: "faq", icon: HelpCircle },
+const COLUMNS: { heading: string; links: { label: string; view: ViewName }[] }[] = [
+  {
+    heading: "Course",
+    links: [
+      { label: "Learning path", view: "path" },
+      { label: "Cockpit explorer", view: "cockpit" },
+      { label: "Glossary", view: "glossary" },
+      { label: "Checklists", view: "checklists" },
+    ],
+  },
+  {
+    heading: "Training games",
+    links: [
+      { label: "Flare trainer", view: "flare" },
+      { label: "Radio builder", view: "radio" },
+      { label: "Pattern perfect", view: "pattern" },
+    ],
+  },
+  {
+    heading: "Account",
+    links: [
+      { label: "Your progress", view: "progress" },
+      { label: "Setup guide", view: "setup" },
+      { label: "FAQ", view: "faq" },
+    ],
+  },
 ];
 
 export function Footer() {
   const navigate = useNav((s) => s.navigate);
+
   return (
-    <footer className="mt-auto border-t border-border/60 bg-card/30 backdrop-blur-sm relative overflow-hidden">
-      {/* Subtle gradient accent at top */}
-      <div className="absolute top-0 left-0 right-0 h-px" style={{
-        background: "linear-gradient(90deg, transparent, var(--color-sky), var(--color-gold), transparent)",
-        opacity: 0.3,
-      }} />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="mt-auto border-t border-border bg-background">
+      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-2.5 mb-4">
-              <FlightCourseLogo className="w-9 h-9" />
-              <div>
-                <div className="font-heading font-bold text-base leading-none">
-                  FlightCourse Academy
-                </div>
-                <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-sky leading-none mt-0.5">
-                  From Zero to Wheels Up
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-              A flight simulation learning platform for total beginners. Real
-              aviation knowledge, patient instruction, and zero experience
-              required. Built for MSFS, X-Plane, and anyone who's ever looked up
-              and wondered how.
+          <div className="lg:col-span-1">
+            <Logo />
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              A structured flight-training course for simulator pilots. Ground
+              school to IFR, in plain English.
             </p>
           </div>
 
-          {/* Quick links */}
-          <div>
-            <h4 className="font-heading font-semibold text-xs uppercase tracking-widest text-muted-foreground mb-4">Navigate</h4>
-            <ul className="space-y-2.5">
-              {FOOTER_LINKS.slice(0, 4).map((link) => (
-                <li key={link.view}>
-                  <button
-                    onClick={() => navigate(link.view)}
-                    className="text-sm text-muted-foreground hover:text-sky transition-colors flex items-center gap-2 group"
-                  >
-                    <link.icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* More links */}
-          <div>
-            <h4 className="font-heading font-semibold text-xs uppercase tracking-widest text-muted-foreground mb-4">More</h4>
-            <ul className="space-y-2.5">
-              {FOOTER_LINKS.slice(4).map((link) => (
-                <li key={link.view}>
-                  <button
-                    onClick={() => navigate(link.view)}
-                    className="text-sm text-muted-foreground hover:text-sky transition-colors flex items-center gap-2 group"
-                  >
-                    <link.icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Link columns */}
+          {COLUMNS.map((col) => (
+            <nav key={col.heading} aria-label={col.heading} className="flex flex-col gap-3">
+              <p className="label-instrument text-muted-foreground">{col.heading}</p>
+              <ul className="flex flex-col gap-2">
+                {col.links.map((link) => (
+                  <li key={link.view}>
+                    <button
+                      onClick={() => navigate(link.view)}
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
         </div>
 
-        <div className="mt-10 pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground font-mono">
-            © {new Date().getFullYear()} FlightCourse Academy · For simulation training only
+        <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 sm:flex-row sm:items-center">
+          <p className="text-xs text-muted-foreground">
+            Built for MSFS, X-Plane, and anyone who has ever looked up and
+            wondered how.
           </p>
-          <p className="text-xs text-muted-foreground/60 font-mono italic">
-            "Aviate. Navigate. Communicate."
+          <p className="label-instrument text-muted-foreground">
+            FlightCourse Academy · For simulation training only
           </p>
         </div>
       </div>

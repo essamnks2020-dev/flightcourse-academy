@@ -1,186 +1,157 @@
 "use client";
 
-import * as React from "react";
-import { motion } from "framer-motion";
-import { CheckSquare, Square, Plane, RotateCcw, ClipboardList } from "lucide-react";
+import { Check } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Progress } from "@/components/ui/progress";
 import { checklists } from "@/lib/data/checklists";
 import { cn } from "@/lib/utils";
 
 export function ChecklistsView() {
-  const [activeId, setActiveId] = React.useState(checklists[0].id);
-  const [checked, setChecked] = React.useState<Record<string, Set<string>>>({});
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [prevSelectedIdx, setPrevSelectedIdx] = useState(selectedIdx);
 
-  const active = checklists.find((c) => c.id === activeId)!;
+  const checklist = checklists[selectedIdx];
 
-  function toggle(sectionIdx: number, itemIdx: number) {
+  // Reset checked items when the selected checklist changes.
+  // (Adjust state during render — the React-recommended pattern for
+  // reacting to a state change without an effect.)
+  if (selectedIdx !== prevSelectedIdx) {
+    setPrevSelectedIdx(selectedIdx);
+    setChecked(new Set());
+  }
+
+  const total = useMemo(
+    () =>
+      checklist.sections.reduce((sum, s) => sum + s.items.length, 0),
+    [checklist]
+  );
+  const checkedCount = checked.size;
+
+  const toggleItem = (sectionIdx: number, itemIdx: number) => {
     const key = `${sectionIdx}-${itemIdx}`;
     setChecked((prev) => {
-      const setForChecklist = new Set(prev[activeId] || []);
-      if (setForChecklist.has(key)) setForChecklist.delete(key);
-      else setForChecklist.add(key);
-      return { ...prev, [activeId]: setForChecklist };
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
     });
-  }
+  };
 
-  function resetChecklist() {
-    setChecked((prev) => ({ ...prev, [activeId]: new Set() }));
-  }
-
-  const checkedSet = checked[activeId] || new Set();
-  const totalItems = active.sections.reduce((acc, s) => acc + s.items.length, 0);
-  const checkedCount = checkedSet.size;
-  const allDone = checkedCount === totalItems;
+  const resetAll = () => setChecked(new Set());
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-sky mb-2">
-          <ClipboardList className="w-4 h-4" />
-          Real Cessna 172 Procedures
-        </div>
-        <h1 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight mb-3">
-          Checklist Library
+    <div className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6">
+      {/* Header */}
+      <header className="flex animate-fade-up flex-col gap-3">
+        <span className="label-instrument text-primary">Reference</span>
+        <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+          Checklists
         </h1>
-        <p className="text-muted-foreground max-w-2xl">
-          Real, accurate checklists for the Cessna 172 Skyhawk. Click items as
-          you complete them — your progress is saved per checklist. In real
-          flying, checklists are sacred. Get in the habit now.
+        <p className="max-w-2xl leading-relaxed text-muted-foreground">
+          The same flows real Cessna 172 pilots run, from preflight to shutdown.
+          Tap an item to check it off.
         </p>
-      </div>
+      </header>
 
-      {/* Checklist selector tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {checklists.map((c) => (
+      {/* Checklist selector */}
+      <div className="mt-6 flex flex-wrap gap-2">
+        {checklists.map((c, idx) => (
           <button
             key={c.id}
-            onClick={() => setActiveId(c.id)}
+            onClick={() => setSelectedIdx(idx)}
             className={cn(
-              "px-3 py-2 text-sm font-medium border transition-all flex items-center gap-2",
-              activeId === c.id
-                ? "border-sky bg-sky/10 text-sky"
-                : "border-border text-muted-foreground hover:border-sky/50"
+              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              idx === selectedIdx
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border text-muted-foreground hover:text-foreground"
             )}
           >
-            <Plane className="w-3.5 h-3.5" />
             {c.title}
           </button>
         ))}
       </div>
 
-      {/* Active checklist */}
-      <motion.div
-        key={active.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="fp-bezel bg-card p-5 sm:p-7"
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
-          <div>
-            <h2 className="font-heading font-bold text-xl mb-1">{active.title}</h2>
-            <p className="text-sm text-muted-foreground">{active.description}</p>
-            <p className="text-xs font-mono text-muted-foreground mt-1">{active.aircraft}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="font-heading font-bold text-lg">
-                {checkedCount}/{totalItems}
-              </div>
-              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">items done</div>
-            </div>
+      {/* Selected checklist detail */}
+      <div className="mt-8 flex flex-col gap-4">
+        {/* Header card */}
+        <div className="glass rounded-xl p-5">
+          <h2 className="text-xl font-semibold tracking-tight">
+            {checklist.title}
+          </h2>
+          <p className="font-mono text-sm text-muted-foreground">
+            {checklist.aircraft}
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            {checklist.description}
+          </p>
+        </div>
+
+        {/* Overall progress */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="label-instrument text-muted-foreground">
+              {checkedCount}/{total} complete
+            </span>
             <button
-              onClick={resetChecklist}
-              className="fp-outline-btn px-3 py-1.5 text-xs flex items-center gap-1.5"
+              onClick={resetAll}
+              className="text-xs font-medium text-accent hover:underline"
             >
-              <RotateCcw className="w-3 h-3" />
               Reset
             </button>
           </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-6">
-          <motion.div
-            className={cn("h-full rounded-full", allDone ? "bg-green-500" : "bg-sky")}
-            initial={{ width: 0 }}
-            animate={{ width: `${(checkedCount / totalItems) * 100}%` }}
-            transition={{ duration: 0.3 }}
-          />
+          <Progress value={total === 0 ? 0 : (checkedCount / total) * 100} />
         </div>
 
         {/* Sections */}
-        <div className="space-y-6">
-          {active.sections.map((section, si) => {
-            const sectionItems = section.items.map((_, ii) => `${si}-${ii}`);
-            const sectionChecked = sectionItems.filter((k) => checkedSet.has(k)).length;
-            return (
-              <div key={si}>
-                <div className="flex items-center gap-2 mb-3">
-                  <h3 className="font-heading font-semibold text-sm uppercase tracking-wider text-sky">
-                    {section.name}
-                  </h3>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {sectionChecked}/{section.items.length}
-                  </span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-                <div className="grid gap-1.5 sm:grid-cols-2">
-                  {section.items.map((item, ii) => {
-                    const key = `${si}-${ii}`;
-                    const isChecked = checkedSet.has(key);
-                    return (
-                      <button
-                        key={ii}
-                        onClick={() => toggle(si, ii)}
+        {checklist.sections.map((section, sectionIdx) => (
+          <section key={section.name} className="glass rounded-xl p-5">
+            <h3 className="label-instrument mb-3 text-primary">
+              {section.name}
+            </h3>
+            <ul className="flex flex-col gap-2">
+              {section.items.map((item, itemIdx) => {
+                const key = `${sectionIdx}-${itemIdx}`;
+                const isChecked = checked.has(key);
+                return (
+                  <li key={key}>
+                    <button
+                      onClick={() => toggleItem(sectionIdx, itemIdx)}
+                      className="flex w-full items-start gap-3 text-left"
+                    >
+                      <span
                         className={cn(
-                          "flex items-start gap-2.5 p-2.5 border text-left transition-all text-sm",
+                          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border transition-colors",
                           isChecked
-                            ? "border-green-500/30 bg-green-500/5"
-                            : "border-border hover:border-sky/40 hover:bg-sky/5"
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border"
                         )}
                       >
-                        {isChecked ? (
-                          <CheckSquare className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <Square className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                        )}
-                        <div className="min-w-0">
-                          <div className={cn("font-medium", isChecked && "line-through opacity-60")}>
-                            {item.text}
-                          </div>
-                          {item.detail && (
-                            <div className="text-xs text-muted-foreground mt-0.5">{item.detail}</div>
+                        {isChecked && <Check className="size-3.5" />}
+                      </span>
+                      <div className="flex-1">
+                        <p
+                          className={cn(
+                            "text-sm leading-relaxed",
+                            isChecked && "text-muted-foreground line-through"
                           )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Completion message */}
-        {allDone && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 p-4 border border-green-500/40 bg-green-500/5 flex items-center gap-3"
-          >
-            <CheckSquare className="w-6 h-6 text-green-500" />
-            <div>
-              <div className="font-heading font-bold text-sm text-green-700 dark:text-green-400">
-                Checklist complete
-              </div>
-              <div className="text-xs text-muted-foreground">
-                All items verified. In a real cockpit, you'd read each item aloud
-                and confirm with your hand on the control. Build that habit.
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
+                        >
+                          {item.text}
+                        </p>
+                        {item.detail && (
+                          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                            {item.detail}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

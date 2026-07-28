@@ -14,15 +14,15 @@ interface GaugeRingProps {
   animate?: boolean;
 }
 
-/** Circular progress ring styled like an instrument gauge with tick marks */
+/** Circular progress ring styled like an instrument gauge with tick marks. */
 export function GaugeRing({
   value,
   size = 120,
   strokeWidth = 8,
   label,
   sublabel,
-  color = "var(--color-sky)",
-  trackColor = "color-mix(in srgb, var(--color-sky) 15%, transparent)",
+  color = "var(--color-primary)",
+  trackColor = "color-mix(in srgb, var(--color-primary) 15%, transparent)",
   showTicks = true,
   animate = true,
 }: GaugeRingProps) {
@@ -32,7 +32,6 @@ export function GaugeRing({
   const offset = circumference - (clampedValue / 100) * circumference;
   const center = size / 2;
 
-  // Tick marks around the ring
   const ticks = Array.from({ length: 40 }, (_, i) => {
     const angle = (i / 40) * 360 - 90;
     const isMajor = i % 5 === 0;
@@ -49,9 +48,11 @@ export function GaugeRing({
   });
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
-        {/* Tick marks */}
         {showTicks &&
           ticks.map((t, i) => (
             <line
@@ -60,11 +61,10 @@ export function GaugeRing({
               y1={t.y1}
               x2={t.x2}
               y2={t.y2}
-              stroke="color-mix(in srgb, var(--color-slate) 40%, transparent)"
+              stroke="oklch(0.99 0.01 250 / 22%)"
               strokeWidth={t.major ? 1.5 : 0.75}
             />
           ))}
-        {/* Track */}
         <circle
           cx={center}
           cy={center}
@@ -73,7 +73,6 @@ export function GaugeRing({
           stroke={trackColor}
           strokeWidth={strokeWidth}
         />
-        {/* Progress */}
         <motion.circle
           cx={center}
           cy={center}
@@ -85,17 +84,17 @@ export function GaugeRing({
           strokeDasharray={circumference}
           initial={animate ? { strokeDashoffset: circumference } : false}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {label && (
-          <span className="font-heading font-bold text-xl sm:text-2xl leading-none">
+          <span className="nums text-xl font-semibold leading-none sm:text-2xl">
             {label}
           </span>
         )}
         {sublabel && (
-          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-1">
+          <span className="label-instrument mt-1.5 text-muted-foreground">
             {sublabel}
           </span>
         )}

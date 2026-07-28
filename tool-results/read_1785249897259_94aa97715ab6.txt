@@ -1,0 +1,815 @@
+     1→import type { GlossaryTerm } from "@/lib/content-types";
+     2→
+     3→// FlightCourse Academy — Aviation Glossary
+     4→// 76 terms across 7 categories, mapped to modules 1-16 where relevant.
+     5→// Categories: Aerodynamics, Instruments, Navigation, Communications,
+     6→//             Weather, Procedures, General
+     7→//
+     8→// Approximate module map (used for moduleId assignments):
+     9→//  1  Intro / Foundations
+    10→//  2  Aerodynamics & the Four Forces
+    11→//  3  Flight Controls (Pitch / Roll / Yaw)
+    12→//  4  The Six-Pack (analog instruments)
+    13→//  5  Glass Cockpit & Avionics
+    14→//  6  Radio Communications
+    15→//  7  Airspace & ATC
+    16→//  8  Weather Theory
+    17→//  9  Weather Services & Briefing
+    18→// 10  Radio Navigation (VOR / GPS)
+    19→// 11  Sectional Charts & Pilotage
+    20→// 12  Traffic Pattern, Takeoff & Landing
+    21→// 13  Maneuvers (Stalls, Slow Flight)
+    22→// 14  Emergency Procedures
+    23→// 15  Cross-Country Flight Planning
+    24→// 16  Cockpit Procedures & Checklists
+    25→
+    26→export const glossary: GlossaryTerm[] = [
+    27→  // ---------------------------------------------------------------------------
+    28→  // AERODYNAMICS (12)
+    29→  // ---------------------------------------------------------------------------
+    30→  {
+    31→    id: "angle-of-attack",
+    32→    term: "Angle of Attack",
+    33→    category: "Aerodynamics",
+    34→    definition:
+    35→      "The angle between the wing's chord line (an imaginary line from the leading edge to the trailing edge) and the oncoming airflow. A higher angle of attack generally produces more lift — until the wing stalls.",
+    36→    whyItMatters:
+    37→      "Pulling back too hard raises the angle of attack past the critical point and causes a stall, so it's the single most important angle to feel as a pilot.",
+    38→    moduleId: 2,
+    39→  },
+    40→  {
+    41→    id: "lift",
+    42→    term: "Lift",
+    43→    category: "Aerodynamics",
+    44→    definition:
+    45→      "The upward aerodynamic force created by the wings that opposes the aircraft's weight. Lift increases with airspeed and angle of attack up to the point of a stall.",
+    46→    whyItMatters:
+    47→      "Understanding lift is what makes flight possible — it's the force you balance every second you're airborne.",
+    48→    moduleId: 2,
+    49→  },
+    50→  {
+    51→    id: "drag",
+    52→    term: "Drag",
+    53→    category: "Aerodynamics",
+    54→    definition:
+    55→      "The rearward force that resists the aircraft's motion through the air, caused by friction and pressure differences. The two main types are parasite drag (from the aircraft's shape) and induced drag (a byproduct of making lift).",
+    56→    whyItMatters:
+    57→      "More drag means more thrust needed and more fuel burned, so pilots manage drag with airspeed, configuration, and a clean airframe.",
+    58→    moduleId: 2,
+    59→  },
+    60→  {
+    61→    id: "thrust",
+    62→    term: "Thrust",
+    63→    category: "Aerodynamics",
+    64→    definition:
+    65→      "The forward force produced by the engine and propeller (or jet) that overcomes drag. In most light aircraft, you control thrust with the throttle.",
+    66→    whyItMatters:
+    67→      "Thrust sets your airspeed and climb ability, and managing the throttle is one of the first skills a sim pilot must master.",
+    68→    moduleId: 2,
+    69→  },
+    70→  {
+    71→    id: "weight",
+    72→    term: "Weight",
+    73→    category: "Aerodynamics",
+    74→    definition:
+    75→      "The downward force of gravity acting on the aircraft's mass. Weight must be balanced by lift for the aircraft to stay airborne.",
+    76→    whyItMatters:
+    77→      "A heavier aircraft needs more lift and a higher takeoff speed, which directly changes runway length and climb performance.",
+    78→    moduleId: 2,
+    79→  },
+    80→  {
+    81→    id: "stall",
+    82→    term: "Stall",
+    83→    category: "Aerodynamics",
+    84→    definition:
+    85→      "A sudden loss of lift that occurs when the wing's angle of attack exceeds the critical angle and airflow separates from the upper surface. Recovery means reducing pitch and adding power.",
+    86→    whyItMatters:
+    87→      "Stalls near the ground (like on final approach) are deadly, so recognizing and recovering from them is a core pilot skill.",
+    88→    moduleId: 13,
+    89→  },
+    90→  {
+    91→    id: "aspect-ratio",
+    92→    term: "Aspect Ratio",
+    93→    category: "Aerodynamics",
+    94→    definition:
+    95→      "The ratio of a wing's wingspan to its average width (chord). High aspect ratio wings (long and skinny, like a glider) are more efficient; low aspect ratio wings (short and wide, like a fighter jet) are more maneuverable.",
+    96→    whyItMatters:
+    97→      "It explains why a glider floats forever and a jet doesn't — wing shape fundamentally changes how the aircraft behaves.",
+    98→    moduleId: 2,
+    99→  },
+   100→  {
+   101→    id: "boundary-layer",
+   102→    term: "Boundary Layer",
+   103→    category: "Aerodynamics",
+   104→    definition:
+   105→      "The thin layer of air right next to the wing's surface where friction slows the airflow. When the boundary layer separates, the wing loses lift and stalls.",
+   106→    whyItMatters:
+   107→      "Knowing this helps you understand why a smooth, clean wing matters and why stalls happen at the surface level.",
+   108→    moduleId: 2,
+   109→  },
+   110→  {
+   111→    id: "pitch",
+   112→    term: "Pitch",
+   113→    category: "Aerodynamics",
+   114→    definition:
+   115→      "The up-and-down movement of the aircraft's nose, controlled by the elevators on the tail. Pushing the yoke forward pitches the nose down; pulling back pitches it up.",
+   116→    whyItMatters:
+   117→      "Pitch is your primary control of airspeed and altitude, so mastering it is the foundation of smooth flying.",
+   118→    moduleId: 3,
+   119→  },
+   120→  {
+   121→    id: "roll",
+   122→    term: "Roll",
+   123→    category: "Aerodynamics",
+   124→    definition:
+   125→      "The rotation of the aircraft around its nose-to-tail axis, controlled by the ailerons on the wings. Rolling left or right banks the aircraft into a turn.",
+   126→    whyItMatters:
+   127→      "Roll is how you turn the airplane, so coordinating it with rudder prevents sloppy, uncomfortable turns.",
+   128→    moduleId: 3,
+   129→  },
+   130→  {
+   131→    id: "yaw",
+   132→    term: "Yaw",
+   133→    category: "Aerodynamics",
+   134→    definition:
+   135→      "The left-and-right movement of the aircraft's nose, controlled by the rudder on the tail. Yaw is used to keep the tail aligned behind the nose during turns and crosswinds.",
+   136→    whyItMatters:
+   137→      "Using rudder to manage yaw keeps your turns coordinated and prevents the uncomfortable slipping or skidding feeling.",
+   138→    moduleId: 3,
+   139→  },
+   140→  {
+   141→    id: "center-of-gravity",
+   142→    term: "Center of Gravity",
+   143→    category: "Aerodynamics",
+   144→    definition:
+   145→      "The single point where the aircraft's weight is considered to be balanced. The CG must stay within manufacturer limits for the aircraft to fly safely and predictably.",
+   146→    whyItMatters:
+   147→      "An out-of-limits CG can make the aircraft uncontrollable, so weight and balance is checked before every flight.",
+   148→    moduleId: 2,
+   149→  },
+   150→
+   151→  // ---------------------------------------------------------------------------
+   152→  // INSTRUMENTS (12)
+   153→  // ---------------------------------------------------------------------------
+   154→  {
+   155→    id: "airspeed-indicator",
+   156→    term: "Airspeed Indicator",
+   157→    category: "Instruments",
+   158→    definition:
+   159→      "The instrument that shows the aircraft's speed through the air, measured in knots. It works by comparing ram air pressure from the pitot tube to static air pressure from the static port.",
+   160→    whyItMatters:
+   161→      "Flying below maneuvering speed or above never-exceed speed can damage or destroy the aircraft, so reading this gauge is essential.",
+   162→    moduleId: 4,
+   163→  },
+   164→  {
+   165→    id: "attitude-indicator",
+   166→    term: "Attitude Indicator",
+   167→    category: "Instruments",
+   168→    definition:
+   169→      "The gyroscopic instrument that shows the aircraft's pitch and roll attitude relative to the horizon. It's the only instrument that gives a direct picture of the aircraft's orientation.",
+   170→    whyItMatters:
+   171→      "In clouds or at night, the attitude indicator becomes your artificial horizon and keeps you alive.",
+   172→    moduleId: 4,
+   173→  },
+   174→  {
+   175→    id: "altimeter",
+   176→    term: "Altimeter",
+   177→    category: "Instruments",
+   178→    definition:
+   179→      "The instrument that displays the aircraft's height above a reference pressure level, usually mean sea level. It's a barometer that converts atmospheric pressure into altitude in feet.",
+   180→    whyItMatters:
+   181→      "Without an accurate altimeter you can't maintain safe altitudes or fly instrument approaches, so setting it correctly is non-negotiable.",
+   182→    moduleId: 4,
+   183→  },
+   184→  {
+   185→    id: "turn-coordinator",
+   186→    term: "Turn Coordinator",
+   187→    category: "Instruments",
+   188→    definition:
+   189→      "The instrument that shows the rate of turn and whether the turn is coordinated (no slip or skid). The miniature airplane tilts with roll, and the inclinometer ball shows rudder coordination.",
+   190→    whyItMatters:
+   191→      "It's the single best tool for keeping turns coordinated when you can't see the horizon.",
+   192→    moduleId: 4,
+   193→  },
+   194→  {
+   195→    id: "heading-indicator",
+   196→    term: "Heading Indicator",
+   197→    category: "Instruments",
+   198→    definition:
+   199→      "The gyroscopic instrument that shows the direction the nose is pointing, in degrees from 000 to 360. Unlike a magnetic compass it doesn't swing around in turbulence, but it must be set periodically to match the compass.",
+   200→    whyItMatters:
+   201→      "It gives you a steady, easy-to-read heading reference for steering precise courses.",
+   202→    moduleId: 4,
+   203→  },
+   204→  {
+   205→    id: "vertical-speed-indicator",
+   206→    term: "Vertical Speed Indicator (VSI)",
+   207→    category: "Instruments",
+   208→    definition:
+   209→      "The instrument that shows whether the aircraft is climbing or descending and at what rate, in feet per minute. It's also called the VSI.",
+   210→    whyItMatters:
+   211→      "It tells you at a glance if you're holding altitude or trending up or down, which helps smooth out your pitch control.",
+   212→    moduleId: 4,
+   213→  },
+   214→  {
+   215→    id: "tachometer",
+   216→    term: "Tachometer",
+   217→    category: "Instruments",
+   218→    definition:
+   219→      "The instrument that shows engine speed in revolutions per minute (RPM). In a fixed-pitch propeller aircraft, RPM is the main indication of engine power.",
+   220→    whyItMatters:
+   221→      "Running the engine above redline damages it, so the tachometer is your guide to safe power settings.",
+   222→    moduleId: 4,
+   223→  },
+   224→  {
+   225→    id: "manifold-pressure",
+   226→    term: "Manifold Pressure",
+   227→    category: "Instruments",
+   228→    definition:
+   229→      "The instrument that shows the air pressure in the engine's intake manifold, measured in inches of mercury (inHg). On constant-speed propeller aircraft it's used together with the tachometer to set power.",
+   230→    whyItMatters:
+   231→      "On more complex aircraft this gauge replaces RPM as your primary power indicator, so you must learn to read it.",
+   232→    moduleId: 4,
+   233→  },
+   234→  {
+   235→    id: "glass-cockpit",
+   236→    term: "Glass Cockpit",
+   237→    category: "Instruments",
+   238→    definition:
+   239→      "A modern flight deck where traditional round steam gauges are replaced by large flat-panel displays, usually a Primary Flight Display (PFD) and a Multi-Function Display (MFD). Examples include the Garmin G1000.",
+   240→    whyItMatters:
+   241→      "Most modern aircraft and sims use glass cockpits, so learning to read them is essential for any new pilot.",
+   242→    moduleId: 5,
+   243→  },
+   244→  {
+   245→    id: "six-pack",
+   246→    term: "Six-Pack",
+   247→    category: "Instruments",
+   248→    definition:
+   249→      "The classic arrangement of six analog flight instruments found in traditional cockpits: airspeed indicator, attitude indicator, altimeter, turn coordinator, heading indicator, and vertical speed indicator.",
+   250→    whyItMatters:
+   251→      "Recognizing the six-pack instantly helps you fly almost any older aircraft and teaches the foundations every instrument builds on.",
+   252→    moduleId: 4,
+   253→  },
+   254→  {
+   255→    id: "pitot-tube",
+   256→    term: "Pitot Tube",
+   257→    category: "Instruments",
+   258→    definition:
+   259→      "A small forward-facing tube on the wing or nose that captures ram air pressure to drive the airspeed indicator. If it gets blocked by ice or insects, the airspeed indicator will read incorrectly.",
+   260→    whyItMatters:
+   261→      "A blocked pitot tube causes dangerous airspeed errors, so many aircraft have a pitot heat switch to prevent icing.",
+   262→    moduleId: 4,
+   263→  },
+   264→  {
+   265→    id: "static-port",
+   266→    term: "Static Port",
+   267→    category: "Instruments",
+   268→    definition:
+   269→      "A small flush-mounted hole on the side of the fuselage that senses the still (static) air pressure outside the aircraft. It feeds the altimeter, airspeed indicator, and vertical speed indicator.",
+   270→    whyItMatters:
+   271→      "A blocked static port can make three instruments lie at once, which is why many aircraft have an alternate static source.",
+   272→    moduleId: 4,
+   273→  },
+   274→
+   275→  // ---------------------------------------------------------------------------
+   276→  // NAVIGATION (12)
+   277→  // ---------------------------------------------------------------------------
+   278→  {
+   279→    id: "vor",
+   280→    term: "VOR",
+   281→    category: "Navigation",
+   282→    definition:
+   283→      "Very High Frequency Omnidirectional Range (VOR), a ground-based radio station that broadcasts signal courses (called radials) the aircraft can tune to and track. A VOR receiver shows whether you're left, right, or on a selected course.",
+   284→    whyItMatters:
+   285→      "Even in the GPS era, VORs are a backup navigation source and a required skill for many pilot certificates.",
+   286→    moduleId: 10,
+   287→  },
+   288→  {
+   289→    id: "heading",
+   290→    term: "Heading",
+   291→    category: "Navigation",
+   292→    definition:
+   293→      "The direction the aircraft's nose is pointing, measured in degrees clockwise from north. Heading is what you read on the heading indicator or compass.",
+   294→    whyItMatters:
+   295→      "In wind, your heading and your actual track are often different — understanding that difference is the heart of navigation.",
+   296→    moduleId: 10,
+   297→  },
+   298→  {
+   299→    id: "course",
+   300→    term: "Course",
+   301→    category: "Navigation",
+   302→    definition:
+   303→      "The intended path over the ground you want to fly, measured in degrees from north. Course is what you plan; heading is what you steer to get there.",
+   304→    whyItMatters:
+   305→      "Distinguishing course from heading is what lets you calculate wind correction and actually arrive at your destination.",
+   306→    moduleId: 10,
+   307→  },
+   308→  {
+   309→    id: "bearing",
+   310→    term: "Bearing",
+   311→    category: "Navigation",
+   312→    definition:
+   313→      "The direction from the aircraft to a particular object or station, measured in degrees from north. A bearing tells you where something is relative to you.",
+   314→    whyItMatters:
+   315→      "Bearings are how you find a station, a waypoint, or another aircraft in relation to your position.",
+   316→    moduleId: 10,
+   317→  },
+   318→  {
+   319→    id: "waypoint",
+   320→    term: "Waypoint",
+   321→    category: "Navigation",
+   322→    definition:
+   323→      "A defined geographic point used for navigation, stored as a name and coordinates in a GPS database. Waypoints can be VOR stations, intersections, airports, or user-defined points.",
+   324→    whyItMatters:
+   325→      "GPS navigation is built on stringing waypoints together, so understanding them unlocks modern flight planning.",
+   326→    moduleId: 10,
+   327→  },
+   328→  {
+   329→    id: "sectional-chart",
+   330→    term: "Sectional Chart",
+   331→    category: "Navigation",
+   332→    definition:
+   333→      "A 1:500,000-scale aeronautical chart used by VFR pilots for visual navigation, showing terrain, airports, airspace, radio aids, and landmarks. In the U.S. they're published by the FAA and updated regularly.",
+   334→    whyItMatters:
+   335→      "The sectional chart is the pilot's road map — it's how you plan routes, avoid restricted airspace, and find your way visually.",
+   336→    moduleId: 11,
+   337→  },
+   338→  {
+   339→    id: "gps",
+   340→    term: "GPS",
+   341→    category: "Navigation",
+   342→    definition:
+   343→      "Global Positioning System (GPS), a satellite-based navigation system that determines the aircraft's position and guides it along programmed routes. Most modern aircraft have a GPS receiver built into the avionics.",
+   344→    whyItMatters:
+   345→      "GPS is the most accurate and widely used navigation method today, so learning to program a GPS route is a core sim skill.",
+   346→    moduleId: 10,
+   347→  },
+   348→  {
+   349→    id: "dead-reckoning",
+   350→    term: "Dead Reckoning",
+   351→    category: "Navigation",
+   352→    definition:
+   353→      "Navigation by calculating your position from a known starting point, using heading, airspeed, time, and wind. It's pure math — no electronic aids required.",
+   354→    whyItMatters:
+   355→      "Dead reckoning is the backup skill that gets you home when the GPS dies and teaches you to actually understand your route.",
+   356→    moduleId: 15,
+   357→  },
+   358→  {
+   359→    id: "pilotage",
+   360→    term: "Pilotage",
+   361→    category: "Navigation",
+   362→    definition:
+   363→      "Navigation by comparing what you see outside the window to features on a chart — roads, rivers, towns, mountains. It's the most basic form of visual navigation.",
+   364→    whyItMatters:
+   365→      "Pilotage keeps you oriented when instruments fail and is the foundation of all VFR cross-country flying.",
+   366→    moduleId: 11,
+   367→  },
+   368→  {
+   369→    id: "magnetic-variation",
+   370→    term: "Magnetic Variation",
+   371→    category: "Navigation",
+   372→    definition:
+   373→      "The angular difference between true north (the geographic North Pole) and magnetic north (where the compass points). Variation varies by location and is shown on sectional charts.",
+   374→    whyItMatters:
+   375→      "Converting between true and magnetic is essential for accurate navigation, since the compass only reads magnetic.",
+   376→    moduleId: 11,
+   377→  },
+   378→  {
+   379→    id: "true-north",
+   380→    term: "True North",
+   381→    category: "Navigation",
+   382→    definition:
+   383→      "The direction of the geographic North Pole — the fixed point at the top of the Earth. Charts and many calculations use true north as their reference.",
+   384→    whyItMatters:
+   385→      "Knowing true north versus magnetic north keeps your course calculations consistent with both the map and the compass.",
+   386→    moduleId: 11,
+   387→  },
+   388→  {
+   389→    id: "ndb",
+   390→    term: "NDB",
+   391→    category: "Navigation",
+   392→    definition:
+   393→      "Non-Directional Beacon (NDB), a ground-based radio transmitter that sends a signal in all directions, which an Automatic Direction Finder (ADF) in the aircraft can point toward. NDBs are older and less precise than VORs and are being phased out.",
+   394→    whyItMatters:
+   395→      "Though largely obsolete, NDBs still appear in some sims and training scenarios, so knowing what they are helps you understand older procedures.",
+   396→    moduleId: 10,
+   397→  },
+   398→
+   399→  // ---------------------------------------------------------------------------
+   400→  // COMMUNICATIONS (9)
+   401→  // ---------------------------------------------------------------------------
+   402→  {
+   403→    id: "ctaf",
+   404→    term: "CTAF",
+   405→    category: "Communications",
+   406→    definition:
+   407→      "Common Traffic Advisory Frequency (CTAF), a radio frequency pilots use to announce their position and intentions at non-towered airports. It's how pilots coordinate with each other when there's no controller.",
+   408→    whyItMatters:
+   409→      "Using CTAF correctly prevents collisions at uncontrolled airports, which is where most general aviation traffic operates.",
+   410→    moduleId: 6,
+   411→  },
+   412→  {
+   413→    id: "atis",
+   414→    term: "ATIS",
+   415→    category: "Communications",
+   416→    definition:
+   417→      "Automatic Terminal Information Service (ATIS), a recorded broadcast at towered airports that gives the current weather, runway in use, and other essential info. It's updated each time conditions change and given a letter identifier (Alpha, Bravo, etc.).",
+   418→    whyItMatters:
+   419→      "Listening to ATIS saves controller time and gives you a complete picture of the airport before you even call the tower.",
+   420→    moduleId: 6,
+   421→  },
+   422→  {
+   423→    id: "tower",
+   424→    term: "Tower",
+   425→    category: "Communications",
+   426→    definition:
+   427→      "The air traffic control unit responsible for managing aircraft on the active runways and in the immediate airspace around an airport. Tower controllers issue takeoff, landing, and runway crossing clearances.",
+   428→    whyItMatters:
+   429→      "At a towered airport, the tower controller is who clears you to land and take off — ignoring them is dangerous and illegal.",
+   430→    moduleId: 7,
+   431→  },
+   432→  {
+   433→    id: "ground-control",
+   434→    term: "Ground Control",
+   435→    category: "Communications",
+   436→    definition:
+   437→      "The air traffic control unit responsible for moving aircraft safely on taxiways and aprons. You talk to ground after landing and before takeoff to get taxi instructions.",
+   438→    whyItMatters:
+   439→      "Following ground control keeps you off active runways and prevents runway incursions while taxiing.",
+   440→    moduleId: 7,
+   441→  },
+   442→  {
+   443→    id: "phonetic-alphabet",
+   444→    term: "Phonetic Alphabet",
+   445→    category: "Communications",
+   446→    definition:
+   447→      "The standard International Civil Aviation Organization (ICAO) word-for-each-letter system: Alpha, Bravo, Charlie, and so on. It's used so letters sound distinct over noisy radios.",
+   448→    whyItMatters:
+   449→      "Saying B and D sound identical on a crackly radio, but Bravo and Delta don't — memorizing this alphabet is mandatory for clear communication.",
+   450→    moduleId: 6,
+   451→  },
+   452→  {
+   453→    id: "squawk",
+   454→    term: "Squawk",
+   455→    category: "Communications",
+   456→    definition:
+   457→      "The four-digit code a pilot enters into the transponder so air traffic control can identify the aircraft on radar. Controllers assign codes like squawk 1200 (the standard VFR code) or squawk 4471.",
+   458→    whyItMatters:
+   459→      "Squawking the right code lets ATC see who you are on their screen, which is essential in controlled airspace.",
+   460→    moduleId: 6,
+   461→  },
+   462→  {
+   463→    id: "transponder",
+   464→    term: "Transponder",
+   465→    category: "Communications",
+   466→    definition:
+   467→      "The onboard device that receives a radar ping from ATC and replies with the aircraft's squawk code and, in Mode C, its altitude. It's what makes an aircraft visible on a controller's radar display.",
+   468→    whyItMatters:
+   469→      "Without a working transponder you may be invisible to ATC, which restricts where you can fly.",
+   470→    moduleId: 6,
+   471→  },
+   472→  {
+   473→    id: "unicom",
+   474→    term: "Unicom",
+   475→    category: "Communications",
+   476→    definition:
+   477→      "A non-government radio frequency at some airports used by pilots to announce intentions and by airport staff to provide basic advisory info. It's distinct from CTAF, though at many smaller airports one frequency serves both.",
+   478→    whyItMatters:
+   479→      "Knowing when you're talking to Unicom versus CTAF affects what kind of information you can expect to receive.",
+   480→    moduleId: 6,
+   481→  },
+   482→  {
+   483→    id: "clearance-delivery",
+   484→    term: "Clearance Delivery",
+   485→    category: "Communications",
+   486→    definition:
+   487→      "The air traffic control position at towered airports that gives IFR pilots their route and altitude clearance before taxi. You contact them before ground to copy your clearance.",
+   488→    whyItMatters:
+   489→      "If you fly IFR, clearance delivery is your first stop — it's where you receive and read back the route you've been cleared to fly.",
+   490→    moduleId: 7,
+   491→  },
+   492→
+   493→  // ---------------------------------------------------------------------------
+   494→  // WEATHER (12)
+   495→  // ---------------------------------------------------------------------------
+   496→  {
+   497→    id: "metar",
+   498→    term: "METAR",
+   499→    category: "Weather",
+   500→    definition:
+   501→      "Aviation Routine Weather Report (METAR), an hourly coded observation of current weather at an airport: wind, visibility, sky condition, temperature, dew point, and pressure. It's the standard snapshot of what's happening right now.",
+   502→    whyItMatters:
+   503→      "Every preflight weather brief starts with METARs — they tell you if it's safe to fly at your departure and arrival airports.",
+   504→    moduleId: 9,
+   505→  },
+   506→  {
+   507→    id: "taf",
+   508→    term: "TAF",
+   509→    category: "Weather",
+   510→    definition:
+   511→      "Terminal Aerodrome Forecast (TAF), a coded forecast of expected weather at an airport over the next 24 to 30 hours. It predicts wind, visibility, sky condition, and significant changes.",
+   512→    whyItMatters:
+   513→      "A TAF tells you whether the weather will still be good when you arrive, which is critical for go/no-go decisions on longer flights.",
+   514→    moduleId: 9,
+   515→  },
+   516→  {
+   517→    id: "density-altitude",
+   518→    term: "Density Altitude",
+   519→    category: "Weather",
+   520→    definition:
+   521→      "The altitude the aircraft feels like it's flying at, after adjusting pressure altitude for non-standard temperature. High, hot, and humid conditions raise density altitude and reduce performance.",
+   522→    whyItMatters:
+   523→      "On a hot day at a high airport, density altitude can turn a normal takeoff into a dangerously long one — ignoring it has caused many accidents.",
+   524→    moduleId: 8,
+   525→  },
+   526→  {
+   527→    id: "crosswind",
+   528→    term: "Crosswind",
+   529→    category: "Weather",
+   530→    definition:
+   531→      "A wind that blows across the runway direction rather than along it. Crosswinds push the aircraft sideways during takeoff and landing and require special crab or wing-low techniques.",
+   532→    whyItMatters:
+   533→      "Most real runways aren't aligned with the wind, so crosswind landings are a skill every pilot must develop.",
+   534→    moduleId: 8,
+   535→  },
+   536→  {
+   537→    id: "headwind",
+   538→    term: "Headwind",
+   539→    category: "Weather",
+   540→    definition:
+   541→      "A wind that blows directly opposite the aircraft's direction of flight. Headwinds slow groundspeed and shorten takeoff and landing distance but increase flight time.",
+   542→    whyItMatters:
+   543→      "A headwind helps you land shorter but makes cross-country flights longer, so it affects both safety and fuel planning.",
+   544→    moduleId: 8,
+   545→  },
+   546→  {
+   547→    id: "tailwind",
+   548→    term: "Tailwind",
+   549→    category: "Weather",
+   550→    definition:
+   551→      "A wind that blows in the same direction the aircraft is flying. Tailwinds increase groundspeed and shorten flight time but make takeoff and landing distances longer and riskier.",
+   552→    whyItMatters:
+   553→      "Taking off or landing with a tailwind uses a lot more runway and is something pilots usually avoid.",
+   554→    moduleId: 8,
+   555→  },
+   556→  {
+   557→    id: "wind-shear",
+   558→    term: "Wind Shear",
+   559→    category: "Weather",
+   560→    definition:
+   561→      "A sudden change in wind speed or direction over a short distance, often near thunderstorms or temperature inversions. Wind shear can abruptly change airspeed and altitude.",
+   562→    whyItMatters:
+   563→      "Wind shear on short final can drop an aircraft toward the ground without warning, so recognizing the risk is a key survival skill.",
+   564→    moduleId: 8,
+   565→  },
+   566→  {
+   567→    id: "visibility",
+   568→    term: "Visibility",
+   569→    category: "Weather",
+   570→    definition:
+   571→      "The horizontal distance at which prominent objects can be seen and identified, reported in statute miles (or meters in some countries). It's a key factor in whether VFR flight is legal.",
+   572→    whyItMatters:
+   573→      "Below certain visibilities you can't legally fly VFR at all, and low visibility is a major cause of disorientation and accidents.",
+   574→    moduleId: 8,
+   575→  },
+   576→  {
+   577→    id: "ceiling",
+   578→    term: "Ceiling",
+   579→    category: "Weather",
+   580→    definition:
+   581→      "The height of the lowest layer of clouds or obscuring phenomena that covers more than half the sky, measured above the ground. A low ceiling can make VFR flight impossible.",
+   582→    whyItMatters:
+   583→      "The ceiling sets whether you can stay below the clouds legally and safely on a VFR flight.",
+   584→    moduleId: 8,
+   585→  },
+   586→  {
+   587→    id: "airmet",
+   588→    term: "AIRMET",
+   589→    category: "Weather",
+   590→    definition:
+   591→      "Airmen's Meteorological Information (AIRMET), a weather advisory for conditions that may affect all aircraft but are especially hazardous to light aircraft: moderate icing, moderate turbulence, sustained winds, or low ceilings and visibilities over a wide area.",
+   592→    whyItMatters:
+   593→      "AIRMETs flag widespread hazards you need to plan around before launching into less-than-perfect weather.",
+   594→    moduleId: 9,
+   595→  },
+   596→  {
+   597→    id: "sigmet",
+   598→    term: "SIGMET",
+   599→    category: "Weather",
+   600→    definition:
+   601→      "Significant Meteorological Information (SIGMET), a weather advisory for severe or potentially hazardous conditions such as severe icing, severe turbulence, dust storms, or embedded thunderstorms. SIGMETs are more serious than AIRMETs.",
+   602→    whyItMatters:
+   603→      "A SIGMET means dangerous weather that can threaten any aircraft, so it's a strong signal to stay on the ground or divert.",
+   604→    moduleId: 9,
+   605→  },
+   606→  {
+   607→    id: "fog",
+   608→    term: "Fog",
+   609→    category: "Weather",
+   610→    definition:
+   611→      "A cloud that forms at ground level, reducing visibility to less than 5/8 of a statute mile in its dense form. Fog often forms on clear, calm nights when the air cools to its dew point.",
+   612→    whyItMatters:
+   613→      "Fog can close an airport with little warning and is one of the most common reasons VFR flights get stranded away from home.",
+   614→    moduleId: 8,
+   615→  },
+   616→
+   617→  // ---------------------------------------------------------------------------
+   618→  // PROCEDURES (10)
+   619→  // ---------------------------------------------------------------------------
+   620→  {
+   621→    id: "traffic-pattern",
+   622→    term: "Traffic Pattern",
+   623→    category: "Procedures",
+   624→    definition:
+   625→      "The standard rectangular path pilots fly around an airport to organize arrivals and departures, with an upwind leg, a crosswind leg, a downwind leg, a base leg, and a final leg. Most patterns are flown at 1,000 feet above ground level and turn left.",
+   626→    whyItMatters:
+   627→      "Flying a consistent traffic pattern is what makes landings orderly and predictable at busy airports.",
+   628→    moduleId: 12,
+   629→  },
+   630→  {
+   631→    id: "downwind",
+   632→    term: "Downwind",
+   633→    category: "Procedures",
+   634→    definition:
+   635→      "The traffic pattern leg flown parallel to the runway in the opposite direction of landing, usually just past the runway and a thousand feet up. You fly downwind before turning base and then final.",
+   636→    whyItMatters:
+   637→      "Downwind is where you run your before-landing checklist and set up the airplane for a stable approach.",
+   638→    moduleId: 12,
+   639→  },
+   640→  {
+   641→    id: "base",
+   642→    term: "Base",
+   643→    category: "Procedures",
+   644→    definition:
+   645→      "The traffic pattern leg flown perpendicular to the runway, between downwind and final. You turn from downwind to base, then from base to final to line up with the runway.",
+   646→    whyItMatters:
+   647→      "The base-to-final turn is where many stall-spin accidents happen, so it's a critical moment to manage airspeed and bank.",
+   648→    moduleId: 12,
+   649→  },
+   650→  {
+   651→    id: "final",
+   652→    term: "Final",
+   653→    category: "Procedures",
+   654→    definition:
+   655→      "The traffic pattern leg aligned with the runway, flown inbound toward the landing point. You fly final to descend steadily down to the touchdown zone.",
+   656→    whyItMatters:
+   657→      "A stable final approach is the single biggest factor in a good landing — everything before it sets you up for it.",
+   658→    moduleId: 12,
+   659→  },
+   660→  {
+   661→    id: "flare",
+   662→    term: "Flare",
+   663→    category: "Procedures",
+   664→    definition:
+   665→      "The smooth nose-up pitch made just before the wheels touch, used to slow the descent rate and land softly. Too early or too late a flare leads to a hard landing, a balloon, or a porpoise.",
+   666→    whyItMatters:
+   667→      "The flare is the hardest part of landing to time, and getting it right is what separates smooth touchdowns from bounce-fests.",
+   668→    moduleId: 12,
+   669→  },
+   670→  {
+   671→    id: "go-around",
+   672→    term: "Go-Around",
+   673→    category: "Procedures",
+   674→    definition:
+   675→      "A discontinued landing in which the pilot applies full power, climbs back up, and re-enters the traffic pattern for another attempt. Also called a balked landing.",
+   676→    whyItMatters:
+   677→      "Knowing when and how to go around saves bad landings and is one of the most important safety skills a pilot has.",
+   678→    moduleId: 12,
+   679→  },
+   680→  {
+   681→    id: "hold-short",
+   682→    term: "Hold Short",
+   683→    category: "Procedures",
+   684→    definition:
+   685→      "An instruction to stop on a taxiway before reaching a runway and wait for further clearance. Pilots must read back hold short instructions word for word.",
+   686→    whyItMatters:
+   687→      "Hold short lines prevent runway incursions — one of the deadliest mistakes a pilot can make on the ground.",
+   688→    moduleId: 7,
+   689→  },
+   690→  {
+   691→    id: "taxi",
+   692→    term: "Taxi",
+   693→    category: "Procedures",
+   694→    definition:
+   695→      "The slow movement of an aircraft on the ground under its own power, using the rudder pedals (and sometimes toe brakes) to steer. Taxi speed is controlled with throttle and brakes.",
+   696→    whyItMatters:
+   697→      "Taxiing safely keeps you clear of obstacles and other aircraft before you even get to the runway.",
+   698→    moduleId: 16,
+   699→  },
+   700→  {
+   701→    id: "rotation",
+   702→    term: "Rotation",
+   703→    category: "Procedures",
+   704→    definition:
+   705→      "The moment during takeoff when the pilot pulls back smoothly to lift the nose off the runway at rotation speed (Vr). After rotation the aircraft accelerates in a climb attitude.",
+   706→    whyItMatters:
+   707→      "Rotating at the right speed and rate sets up a safe climb and prevents dragging the tail or climbing too early.",
+   708→    moduleId: 12,
+   709→  },
+   710→  {
+   711→    id: "best-glide-speed",
+   712→    term: "Best Glide Speed",
+   713→    category: "Procedures",
+   714→    definition:
+   715→      "The airspeed at which the aircraft glides the farthest distance for a given altitude loss, published by the manufacturer. It's the speed you fly if the engine quits and you need to maximize range.",
+   716→    whyItMatters:
+   717→      "If the engine fails, best glide speed gives you the most time and distance to find a landing spot — it's a number every pilot memorizes.",
+   718→    moduleId: 14,
+   719→  },
+   720→
+   721→  // ---------------------------------------------------------------------------
+   722→  // GENERAL (9)
+   723→  // ---------------------------------------------------------------------------
+   724→  {
+   725→    id: "general-aviation",
+   726→    term: "GA (General Aviation)",
+   727→    category: "General",
+   728→    definition:
+   729→      "General Aviation (GA), the part of civil aviation that isn't military or scheduled airline — everything from training Cessnas to private business jets. GA is where virtually every pilot starts.",
+   730→    whyItMatters:
+   731→      "General Aviation is your world as a student pilot, and understanding it frames everything else you learn.",
+   732→    moduleId: 1,
+   733→  },
+   734→  {
+   735→    id: "vfr",
+   736→    term: "VFR",
+   737→    category: "General",
+   738→    definition:
+   739→      "Visual Flight Rules (VFR), flying by looking out the window and navigating visually, generally in good weather. VFR has specific minimums for visibility and distance from clouds.",
+   740→    whyItMatters:
+   741→      "VFR is the starting point for every pilot and the most common way sim pilots fly, so knowing its rules keeps you legal and safe.",
+   742→    moduleId: 1,
+   743→  },
+   744→  {
+   745→    id: "ifr",
+   746→    term: "IFR",
+   747→    category: "General",
+   748→    definition:
+   749→      "Instrument Flight Rules (IFR), flying by reference to instruments inside the cockpit, generally in clouds or low visibility. IFR requires special training, a rating, and an instrument-equipped aircraft.",
+   750→    whyItMatters:
+   751→      "IFR lets you fly when the weather won't allow VFR and is the next big step after earning a private license.",
+   752→    moduleId: 1,
+   753→  },
+   754→  {
+   755→    id: "atc",
+   756→    term: "ATC",
+   757→    category: "General",
+   758→    definition:
+   759→      "Air Traffic Control (ATC), the ground-based service that separates and directs aircraft in controlled airspace and at towered airports. ATC includes clearance delivery, ground, tower, approach, and center controllers.",
+   760→    whyItMatters:
+   761→      "Talking to ATC lets you use busy airports and airspace, and learning the lingo is essential for any pilot.",
+   762→    moduleId: 7,
+   763→  },
+   764→  {
+   765→    id: "fbo",
+   766→    term: "FBO",
+   767→    category: "General",
+   768→    definition:
+   769→      "Fixed-Base Operator (FBO), a commercial business at an airport that provides fuel, hangars, flight instruction, aircraft rental, and pilot services. FBOs are where general aviation pilots go for almost everything on the ground.",
+   770→    whyItMatters:
+   771→      "The FBO is your gateway to fuel, restrooms, weather planning, and a warm cup of coffee on a cross-country flight.",
+   772→    moduleId: 1,
+   773→  },
+   774→  {
+   775→    id: "notam",
+   776→    term: "NOTAM",
+   777→    category: "General",
+   778→    definition:
+   779→      "Notice to Air Missions (NOTAM), an official notice alerting pilots to changes or hazards at an airport or along a route — closed runways, navaid outages, airspace changes, and the like. NOTAMs are issued by aviation authorities.",
+   780→    whyItMatters:
+   781→      "Flying without checking NOTAMs can put you into a closed runway or inactive airspace, so it's a required preflight step.",
+   782→    moduleId: 9,
+   783→  },
+   784→  {
+   785→    id: "pirep",
+   786→    term: "PIREP",
+   787→    category: "General",
+   788→    definition:
+   789→      "Pilot Report (PIREP), a radio report from a pilot in flight describing actual weather conditions — cloud bases, turbulence, icing, or visibility. PIREPs are shared with other pilots and the National Weather Service.",
+   790→    whyItMatters:
+   791→      "PIREPs give you real-world weather that no forecast or observation can, so learning to read and give them makes you a safer pilot.",
+   792→    moduleId: 9,
+   793→  },
+   794→  {
+   795→    id: "knots",
+   796→    term: "Knots",
+   797→    category: "General",
+   798→    definition:
+   799→      "A unit of speed equal to one nautical mile per hour, used throughout aviation for airspeed, wind speed, and groundspeed. One knot equals about 1.15 statute miles per hour.",
+   800→    whyItMatters:
+   801→      "Every airspeed, wind, and distance in aviation is in knots, so getting comfortable with the unit is your first math step.",
+   802→    moduleId: 1,
+   803→  },
+   804→  {
+   805→    id: "nautical-mile",
+   806→    term: "Nautical Mile",
+   807→    category: "General",
+   808→    definition:
+   809→      "A unit of distance equal to 6,076 feet (about 1.15 statute miles), based on one minute of latitude. Nautical miles are the standard distance unit in aviation and marine navigation.",
+   810→    whyItMatters:
+   811→      "All aviation charts and distances use nautical miles, so understanding them is essential for planning and reading instruments.",
+   812→    moduleId: 1,
+   813→  },
+   814→];
+   815→

@@ -1,0 +1,637 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { motion, AnimatePresence } from "framer-motion";
+     5→import { ArrowRight, Compass, Gauge, BookOpen, CheckSquare, Award, Sparkles, ChevronRight, Plane, Cloud } from "lucide-react";
+     6→import { useNav } from "@/lib/nav-store";
+     7→import { useProgress } from "@/lib/progress-store";
+     8→import { allModules, TOTAL_MODULES } from "@/lib/data/modules";
+     9→import { glossary } from "@/lib/data/glossary";
+    10→import { InteractiveAircraft, type AircraftPart } from "@/components/3d/interactive-aircraft";
+    11→import { GaugeRing } from "@/components/gauge-ring";
+    12→import { cn } from "@/lib/utils";
+    13→
+    14→export function HomeView() {
+    15→  const navigate = useNav((s) => s.navigate);
+    16→  const openModule = useNav((s) => s.openModule);
+    17→  const xp = useProgress((s) => s.xp);
+    18→  const completedCount = useProgress((s) => s.getCompletedCount());
+    19→  const isCompleted = useProgress((s) => s.isModuleCompleted);
+    20→  const [selectedPart, setSelectedPart] = React.useState<AircraftPart | null>(null);
+    21→
+    22→  const firstFive = allModules.slice(0, 5);
+    23→
+    24→  return (
+    25→    <div>
+    26→      {/* ===== HERO ===== */}
+    27→      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+    28→        {/* Cinematic sky background — multi-layer animated system */}
+    29→        <div className="absolute inset-0">
+    30→          {/* Base gradient — deep sky with horizon */}
+    31→          <div className="absolute inset-0" style={{
+    32→            background: "radial-gradient(ellipse at 50% 100%, #1a3a5c 0%, #0B1D3A 30%, #07152A 65%, #050d1c 100%)",
+    33→          }} />
+    34→
+    35→          {/* Aurora mesh — slow drifting color blobs */}
+    36→          <motion.div
+    37→            className="absolute inset-0"
+    38→            style={{
+    39→              background: "radial-gradient(circle at 20% 30%, rgba(62,146,204,0.15) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(111,179,222,0.1) 0%, transparent 45%), radial-gradient(circle at 60% 70%, rgba(242,177,52,0.08) 0%, transparent 40%)",
+    40→              filter: "blur(40px)",
+    41→            }}
+    42→            animate={{ backgroundPosition: ["0% 0%", "100% 50%", "0% 0%"] }}
+    43→            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+    44→          />
+    45→
+    46→          {/* God rays — light beams from above */}
+    47→          <div className="absolute inset-0 overflow-hidden">
+    48→            {[15, 38, 58, 78].map((left, i) => (
+    49→              <motion.div
+    50→                key={i}
+    51→                className="absolute"
+    52→                style={{
+    53→                  top: "-5%",
+    54→                  left: `${left}%`,
+    55→                  width: `${60 + i * 20}px`,
+    56→                  height: "130%",
+    57→                  background: `linear-gradient(180deg, ${i % 2 === 0 ? "rgba(242,177,52,0.06)" : "rgba(111,179,222,0.04)"} 0%, transparent 50%)`,
+    58→                  transform: `rotate(${[-3, 2, -1, 4][i]}deg)`,
+    59→                  transformOrigin: "top center",
+    60→                  filter: "blur(20px)",
+    61→                  mixBlendMode: "screen",
+    62→                }}
+    63→                animate={{ opacity: [0.3, 0.6, 0.3], scaleY: [0.95, 1, 0.95] }}
+    64→                transition={{ duration: 8 + i, repeat: Infinity, ease: "easeInOut", delay: i * 1.5 }}
+    65→              />
+    66→            ))}
+    67→          </div>
+    68→
+    69→          {/* Stars — deterministic positions, twinkling */}
+    70→          <div className="absolute inset-0">
+    71→            {STARS.map((star, i) => (
+    72→              <div key={i} className="absolute" style={{ top: `${star.top}%`, left: `${star.left}%` }}>
+    73→                <motion.div
+    74→                  className="rounded-full"
+    75→                  style={{
+    76→                    width: `${star.size}px`, height: `${star.size}px`,
+    77→                    backgroundColor: star.color,
+    78→                    boxShadow: `0 0 ${star.size * 3}px ${star.color}`,
+    79→                  }}
+    80→                  animate={{ opacity: [star.minOpacity, star.maxOpacity, star.minOpacity] }}
+    81→                  transition={{ duration: star.duration, repeat: Infinity, delay: star.delay, ease: "easeInOut" }}
+    82→                />
+    83→                {star.size > 2 && (
+    84→                  <motion.div
+    85→                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+    86→                    style={{
+    87→                      width: `${star.size * 6}px`, height: "1px",
+    88→                      background: `linear-gradient(90deg, transparent, ${star.color}, transparent)`,
+    89→                    }}
+    90→                    animate={{ opacity: [0, 0.4, 0], scaleX: [0.5, 1, 0.5] }}
+    91→                    transition={{ duration: star.duration * 1.5, repeat: Infinity, delay: star.delay + 1 }}
+    92→                  />
+    93→                )}
+    94→              </div>
+    95→            ))}
+    96→          </div>
+    97→
+    98→          {/* Cloud layers — parallax drift */}
+    99→          <CloudLayer speed={160} opacity={0.1} blur={10} className="top-[5%]" />
+   100→          <CloudLayer speed={110} opacity={0.12} blur={6} className="top-[25%]" />
+   101→          <CloudLayer speed={75} opacity={0.18} blur={3} className="top-[50%]" />
+   102→
+   103→          {/* Horizon glow — warm band */}
+   104→          <div className="absolute bottom-0 left-0 right-0 h-56" style={{
+   105→            background: "linear-gradient(to top, rgba(242,177,52,0.25) 0%, rgba(242,177,52,0.08) 40%, transparent 100%)",
+   106→          }} />
+   107→          {/* Light bloom at horizon center */}
+   108→          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-40 rounded-full" style={{
+   109→            background: "radial-gradient(ellipse at center, rgba(242,177,52,0.2) 0%, transparent 70%)",
+   110→            filter: "blur(20px)",
+   111→          }} />
+   112→
+   113→          {/* Terrain silhouette — mountains at horizon */}
+   114→          <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
+   115→            <svg viewBox="0 0 1200 120" className="w-full h-full" preserveAspectRatio="none">
+   116→              <path d="M0,120 L0,80 L80,60 L150,75 L220,45 L290,65 L360,50 L440,70 L520,40 L600,55 L680,35 L760,60 L840,45 L920,65 L1000,50 L1080,70 L1150,55 L1200,65 L1200,120 Z" fill="rgba(7,21,42,0.7)" />
+   117→              {/* Runway approach lights */}
+   118→              {[300, 350, 400, 450, 500, 550, 600].map((x, i) => (
+   119→                <motion.circle key={i} cx={x} cy={95 - i * 3} r="1.5" fill="#F2B134"
+   120→                  animate={{ opacity: [0.3, 1, 0.3] }}
+   121→                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.15 }}
+   122→                />
+   123→              ))}
+   124→            </svg>
+   125→          </div>
+   126→
+   127→          {/* Atmospheric fog near horizon */}
+   128→          <div className="absolute bottom-0 left-0 right-0 h-48" style={{
+   129→            background: "linear-gradient(to top, rgba(91,107,121,0.12) 0%, transparent 100%)",
+   130→          }} />
+   131→
+   132→          {/* Vignette */}
+   133→          <div className="absolute inset-0" style={{
+   134→            background: "radial-gradient(ellipse at center, transparent 35%, rgba(5,13,28,0.5) 100%)",
+   135→          }} />
+   136→
+   137→          {/* Film grain */}
+   138→          <div className="absolute inset-0 opacity-[0.035] mix-blend-overlay" style={{
+   139→            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+   140→            backgroundSize: "256px 256px",
+   141→          }} />
+   142→        </div>
+   143→
+   144→        {/* Content */}
+   145→        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 py-20 grid lg:grid-cols-2 gap-8 items-center w-full">
+   146→          <div>
+   147→            <motion.div
+   148→              initial={{ opacity: 0, y: 20 }}
+   149→              animate={{ opacity: 1, y: 0 }}
+   150→              transition={{ duration: 0.6 }}
+   151→              className="inline-flex items-center gap-2 px-3 py-1 border border-gold/30 bg-gold/5 mb-6"
+   152→            >
+   153→              <Sparkles className="w-3.5 h-3.5 text-gold" />
+   154→              <span className="text-xs font-mono uppercase tracking-widest text-gold-light">
+   155→                From Zero to Wheels Up
+   156→              </span>
+   157→            </motion.div>
+   158→
+   159→            <motion.h1
+   160→              initial={{ opacity: 0, y: 20 }}
+   161→              animate={{ opacity: 1, y: 0 }}
+   162→              transition={{ duration: 0.6, delay: 0.1 }}
+   163→              className="font-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight text-cloud"
+   164→            >
+   165→              Learn to Fly.
+   166→              <br />
+   167→              <span className="text-sky-light">For Real,</span> In The Sim.
+   168→            </motion.h1>
+   169→
+   170→            <motion.p
+   171→              initial={{ opacity: 0, y: 20 }}
+   172→              animate={{ opacity: 1, y: 0 }}
+   173→              transition={{ duration: 0.6, delay: 0.2 }}
+   174→              className="mt-5 text-base sm:text-lg text-cloud/70 max-w-lg leading-relaxed"
+   175→            >
+   176→              A complete course that takes you from zero aviation knowledge to
+   177→              confidently flying a Cessna 172 in MSFS or X-Plane. Cockpit
+   178→              basics, aerodynamics, procedures, navigation, radio comms — all
+   179→              taught the way a real flight instructor would. Patient. Precise.
+   180→              No jargon without explanation.
+   181→            </motion.p>
+   182→
+   183→            <motion.div
+   184→              initial={{ opacity: 0, y: 20 }}
+   185→              animate={{ opacity: 1, y: 0 }}
+   186→              transition={{ duration: 0.6, delay: 0.3 }}
+   187→              className="mt-8 flex flex-col sm:flex-row gap-3"
+   188→            >
+   189→              <button
+   190→                onClick={() => navigate("path")}
+   191→                className="fp-toggle-btn px-6 py-3.5 text-sm flex items-center justify-center gap-2 group"
+   192→              >
+   193→                Start the Learning Path
+   194→                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+   195→              </button>
+   196→              <button
+   197→                onClick={() => navigate("cockpit")}
+   198→                className="fp-outline-btn px-6 py-3.5 text-sm flex items-center justify-center gap-2 border-sky/50 text-cloud"
+   199→                style={{ borderColor: "rgba(62,146,204,0.5)" }}
+   200→              >
+   201→                <Gauge className="w-4 h-4" />
+   202→                Explore the Cockpit First
+   203→              </button>
+   204→            </motion.div>
+   205→
+   206→            {/* Stat bar */}
+   207→            <motion.div
+   208→              initial={{ opacity: 0, y: 20 }}
+   209→              animate={{ opacity: 1, y: 0 }}
+   210→              transition={{ duration: 0.6, delay: 0.4 }}
+   211→              className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-mono text-cloud/60"
+   212→            >
+   213→              <span className="flex items-center gap-1.5">
+   214→                <span className="text-gold font-bold">{TOTAL_MODULES}</span> Modules
+   215→              </span>
+   216→              <span className="text-cloud/30">·</span>
+   217→              <span className="flex items-center gap-1.5">
+   218→                <span className="text-gold font-bold">{glossary.length}+</span> Terms Demystified
+   219→              </span>
+   220→              <span className="text-cloud/30">·</span>
+   221→              <span className="flex items-center gap-1.5">
+   222→                <span className="text-gold font-bold">Zero</span> Experience Required
+   223→              </span>
+   224→            </motion.div>
+   225→          </div>
+   226→
+   227→          {/* 3D Aircraft */}
+   228→          <motion.div
+   229→            initial={{ opacity: 0, scale: 0.9 }}
+   230→            animate={{ opacity: 1, scale: 1 }}
+   231→            transition={{ duration: 0.8, delay: 0.3 }}
+   232→            className="relative h-[300px] sm:h-[400px] lg:h-[500px]"
+   233→          >
+   234→            <InteractiveAircraft
+   235→              className="w-full h-full"
+   236→              autoRotate
+   237→              showLabels
+   238→              onPartClick={(part) => setSelectedPart(part)}
+   239→              activePartId={selectedPart?.id}
+   240→            />
+   241→            {/* Interaction hint */}
+   242→            <motion.div
+   243→              initial={{ opacity: 0 }}
+   244→              animate={{ opacity: 1 }}
+   245→              transition={{ delay: 2 }}
+   246→              className="absolute bottom-4 left-1/2 -translate-x-1/2 fp-glass rounded-full px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-cloud/70 pointer-events-none"
+   247→            >
+   248→              drag to orbit · click numbers to learn
+   249→            </motion.div>
+   250→            {/* Selected part info */}
+   251→            <AnimatePresence>
+   252→              {selectedPart && (
+   253→                <motion.div
+   254→                  initial={{ opacity: 0, y: 10 }}
+   255→                  animate={{ opacity: 1, y: 0 }}
+   256→                  exit={{ opacity: 0, y: 10 }}
+   257→                  className="absolute top-4 left-4 fp-glass rounded-xl p-3.5 max-w-[220px]"
+   258→                >
+   259→                  <div className="text-[9px] font-mono uppercase tracking-widest text-gold mb-1">Part</div>
+   260→                  <div className="font-heading font-bold text-sm text-cloud mb-1">{selectedPart.name}</div>
+   261→                  <div className="text-xs text-cloud/70 leading-relaxed">{selectedPart.description}</div>
+   262→                </motion.div>
+   263→              )}
+   264→            </AnimatePresence>
+   265→            {/* Floating gauge badges */}
+   266→            <motion.div
+   267→              animate={{ y: [0, -8, 0] }}
+   268→              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+   269→              className="absolute top-4 right-4 fp-bezel bg-card/90 backdrop-blur p-3 hidden sm:block"
+   270→            >
+   271→              <GaugeRing value={completedCount > 0 ? (completedCount / 16) * 100 : 8} size={64} strokeWidth={5} label={`${completedCount}/16`} sublabel="modules" color="var(--color-gold)" />
+   272→            </motion.div>
+   273→            <motion.div
+   274→              animate={{ y: [0, 8, 0] }}
+   275→              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+   276→              className="absolute bottom-8 left-4 fp-bezel bg-card/90 backdrop-blur p-3 hidden sm:block"
+   277→            >
+   278→              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Hours Logged</div>
+   279→              <div className="font-heading font-bold text-2xl text-sky">{(xp / 10).toFixed(1)}h</div>
+   280→            </motion.div>
+   281→          </motion.div>
+   282→        </div>
+   283→
+   284→        {/* Scroll indicator */}
+   285→        <motion.div
+   286→          animate={{ y: [0, 8, 0] }}
+   287→          transition={{ duration: 2, repeat: Infinity }}
+   288→          className="absolute bottom-6 left-1/2 -translate-x-1/2 text-cloud/40"
+   289→        >
+   290→          <ChevronRight className="w-6 h-6 rotate-90" />
+   291→        </motion.div>
+   292→      </section>
+   293→
+   294→      {/* ===== WHY FLIGHTPATH ===== */}
+   295→      <section className="py-20 px-4 sm:px-6">
+   296→        <div className="mx-auto max-w-7xl">
+   297→          <div className="mb-12">
+   298→            <div className="text-xs font-mono uppercase tracking-widest text-sky mb-2">Why FlightCourse</div>
+   299→            <h2 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight max-w-2xl">
+   300→              Built for the person who's never touched a yoke.
+   301→            </h2>
+   302→          </div>
+   303→
+   304→          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   305→            {VALUE_CARDS.map((card, i) => (
+   306→              <motion.div
+   307→                key={i}
+   308→                initial={{ opacity: 0, y: 20 }}
+   309→                whileInView={{ opacity: 1, y: 0 }}
+   310→                viewport={{ once: true }}
+   311→                transition={{ duration: 0.4, delay: i * 0.1 }}
+   312→                className="fp-bezel bg-card p-6 flex flex-col"
+   313→              >
+   314→                <div className="w-11 h-11 flex items-center justify-center mb-4 border border-sky/30 bg-sky/5">
+   315→                  <card.icon className="w-5 h-5 text-sky" />
+   316→                </div>
+   317→                <h3 className="font-heading font-semibold text-base mb-2">{card.title}</h3>
+   318→                <p className="text-sm text-muted-foreground leading-relaxed">{card.body}</p>
+   319→              </motion.div>
+   320→            ))}
+   321→          </div>
+   322→        </div>
+   323→      </section>
+   324→
+   325→      {/* ===== PATH PREVIEW ===== */}
+   326→      <section className="py-20 px-4 sm:px-6 bg-card/30 border-y border-border">
+   327→        <div className="mx-auto max-w-7xl">
+   328→          <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
+   329→            <div>
+   330→              <div className="text-xs font-mono uppercase tracking-widest text-sky mb-2">The Learning Path</div>
+   331→              <h2 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight">
+   332→                Your flight plan, module by module.
+   333→              </h2>
+   334→            </div>
+   335→            <button
+   336→              onClick={() => navigate("path")}
+   337→              className="fp-outline-btn px-5 py-2.5 text-sm flex items-center gap-2"
+   338→            >
+   339→              View Full Path
+   340→              <ArrowRight className="w-4 h-4" />
+   341→            </button>
+   342→          </div>
+   343→
+   344→          <div className="flex gap-4 overflow-x-auto fp-scroll pb-4 -mx-4 px-4 snap-x">
+   345→            {firstFive.map((mod, i) => {
+   346→              const completed = isCompleted(mod.id);
+   347→              return (
+   348→                <button
+   349→                  key={mod.id}
+   350→                  onClick={() => openModule(mod.id)}
+   351→                  className="fp-bezel bg-card p-5 min-w-[280px] snap-start text-left hover:border-sky/50 transition-colors group flex-shrink-0"
+   352→                >
+   353→                  <div className="flex items-center justify-between mb-3">
+   354→                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+   355→                      Module {String(mod.id).padStart(2, "0")} of 16
+   356→                    </span>
+   357→                    <span
+   358→                      className={cn(
+   359→                        "text-[10px] font-mono px-1.5 py-0.5",
+   360→                        mod.difficulty === "Beginner" && "bg-green-500/15 text-green-600",
+   361→                        mod.difficulty === "Foundational" && "bg-sky/15 text-sky",
+   362→                        mod.difficulty === "Intermediate" && "bg-gold/15 text-gold-dark",
+   363→                        mod.difficulty === "Advanced" && "bg-red-500/15 text-red-600"
+   364→                      )}
+   365→                    >
+   366→                      {mod.difficulty}
+   367→                    </span>
+   368→                  </div>
+   369→                  <h3 className="font-heading font-bold text-base mb-1.5 group-hover:text-sky transition-colors">
+   370→                    {mod.title}
+   371→                  </h3>
+   372→                  <p className="text-xs text-muted-foreground leading-relaxed mb-4 line-clamp-2">
+   373→                    {mod.tagline}
+   374→                  </p>
+   375→                  <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+   376→                    <span>{mod.estimatedMinutes} min</span>
+   377→                    <span className="text-gold">+{mod.xpReward / 10}h</span>
+   378→                  </div>
+   379→                  {completed && (
+   380→                    <div className="mt-2 text-[10px] font-mono text-green-600 flex items-center gap-1">
+   381→                      <CheckSquare className="w-3 h-3" /> Completed
+   382→                    </div>
+   383→                  )}
+   384→                </button>
+   385→              );
+   386→            })}
+   387→          </div>
+   388→        </div>
+   389→      </section>
+   390→
+   391→      {/* ===== FEATURE STRIP: ASYMMETRIC ===== */}
+   392→      <section className="py-20 px-4 sm:px-6">
+   393→        <div className="mx-auto max-w-7xl grid lg:grid-cols-5 gap-8 items-center">
+   394→          <div className="lg:col-span-2">
+   395→            <div className="text-xs font-mono uppercase tracking-widest text-gold mb-2">Cockpit Explorer</div>
+   396→            <h2 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight mb-4">
+   397→              Click any instrument. Learn what it does.
+   398→            </h2>
+   399→            <p className="text-muted-foreground leading-relaxed mb-6">
+   400→              Our interactive Cessna 172 panel has 15+ hotspots — from the
+   401→              six-pack instruments to the magneto switch. Click anything and get
+   402→              a plain-English explainer with a link to the full lesson. It's the
+   403→              fastest way to stop feeling overwhelmed in the cockpit.
+   404→            </p>
+   405→            <button
+   406→              onClick={() => navigate("cockpit")}
+   407→              className="fp-toggle-btn px-5 py-3 text-sm flex items-center gap-2"
+   408→            >
+   409→              <Gauge className="w-4 h-4" />
+   410→              Open the Cockpit Explorer
+   411→            </button>
+   412→          </div>
+   413→          <div className="lg:col-span-3">
+   414→            <div className="fp-bezel bg-card p-6 sm:p-8 relative overflow-hidden">
+   415→              <CockpitTeaserSVG />
+   416→            </div>
+   417→          </div>
+   418→        </div>
+   419→      </section>
+   420→
+   421→      {/* ===== TESTIMONIALS ===== */}
+   422→      <section className="py-20 px-4 sm:px-6 bg-card/30 border-y border-border">
+   423→        <div className="mx-auto max-w-7xl">
+   424→          <div className="mb-12">
+   425→            <div className="text-xs font-mono uppercase tracking-widest text-sky mb-2">What Pilots Say</div>
+   426→            <h2 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight">
+   427→              Sample voices from the pattern.
+   428→            </h2>
+   429→          </div>
+   430→          <div className="grid md:grid-cols-3 gap-5">
+   431→            {TESTIMONIALS.map((t, i) => (
+   432→              <motion.figure
+   433→                key={i}
+   434→                initial={{ opacity: 0, y: 20 }}
+   435→                whileInView={{ opacity: 1, y: 0 }}
+   436→                viewport={{ once: true }}
+   437→                transition={{ duration: 0.4, delay: i * 0.1 }}
+   438→                className="fp-bezel bg-card p-6 flex flex-col"
+   439→              >
+   440→                <div className="text-gold text-3xl font-heading leading-none mb-3">"</div>
+   441→                <blockquote className="text-sm leading-relaxed flex-1 mb-4">
+   442→                  {t.quote}
+   443→                </blockquote>
+   444→                <figcaption className="flex items-center gap-3 pt-4 border-t border-border">
+   445→                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky to-navy flex items-center justify-center text-cloud font-heading font-bold text-sm">
+   446→                    {t.name[0]}
+   447→                  </div>
+   448→                  <div>
+   449→                    <div className="text-sm font-medium">{t.name}</div>
+   450→                    <div className="text-xs text-muted-foreground font-mono">{t.role}</div>
+   451→                  </div>
+   452→                </figcaption>
+   453→              </motion.figure>
+   454→            ))}
+   455→          </div>
+   456→          <p className="text-center text-xs text-muted-foreground mt-8 italic font-mono">
+   457→            Sample content — representative of the FlightCourse Academy experience.
+   458→          </p>
+   459→        </div>
+   460→      </section>
+   461→
+   462→      {/* ===== FINAL CTA ===== */}
+   463→      <section className="relative overflow-hidden">
+   464→        <div className="bg-gradient-to-r from-[#0B1D3A] to-[#14264a] dark:from-[#07152A] dark:to-[#0B1D3A] px-4 sm:px-6 py-20">
+   465→          <div className="mx-auto max-w-4xl text-center relative z-10">
+   466→            <Compass className="w-12 h-12 text-gold mx-auto mb-6" />
+   467→            <h2 className="font-heading font-bold text-3xl sm:text-5xl text-cloud tracking-tight mb-4">
+   468→              Your First Flight Starts With One Click.
+   469→            </h2>
+   470→            <p className="text-cloud/60 text-lg max-w-xl mx-auto mb-8">
+   471→              No account. No credit card. No prior knowledge. Just you, a
+   472→              simulator, and sixteen modules that turn "I've always wanted to
+   473→              fly" into "Gear up, flaps up, runway heading."
+   474→            </p>
+   475→            <button
+   476→              onClick={() => navigate("path")}
+   477→              className="fp-toggle-gold fp-toggle-btn px-8 py-4 text-base inline-flex items-center gap-2"
+   478→            >
+   479→              <Plane className="w-5 h-5" />
+   480→              Begin Module 1: Welcome to Flight Simulation
+   481→              <ArrowRight className="w-4 h-4" />
+   482→            </button>
+   483→            <p className="text-cloud/40 text-xs font-mono mt-6">
+   484→              ~12 minutes · Beginner · No simulator required to start reading
+   485→            </p>
+   486→          </div>
+   487→        </div>
+   488→      </section>
+   489→    </div>
+   490→  );
+   491→}
+   492→
+   493→// ===== Sub-components =====
+   494→
+   495→function CloudLayer({ speed, opacity, className, blur = 0 }: { speed: number; opacity: number; className?: string; blur?: number }) {
+   496→  return (
+   497→    <div className={cn("absolute inset-x-0", className)} style={{ opacity }}>
+   498→      <motion.div
+   499→        animate={{ x: ["-35%", "135%"] }}
+   500→        transition={{ duration: speed, repeat: Infinity, ease: "linear" }}
+   501→        style={{ filter: blur > 0 ? `blur(${blur}px)` : undefined }}
+   502→      >
+   503→        <svg width="800" height="200" viewBox="0 0 800 200" className="opacity-70">
+   504→          <defs>
+   505→            <radialGradient id={`cloud-grad-${speed}`} cx="50%" cy="40%">
+   506→              <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+   507→              <stop offset="60%" stopColor="white" stopOpacity="0.4" />
+   508→              <stop offset="100%" stopColor="white" stopOpacity="0" />
+   509→            </radialGradient>
+   510→            <filter id={`cloud-noise-${speed}`}>
+   511→              <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed={speed} />
+   512→              <feDisplacementMap in="SourceGraphic" scale="15" />
+   513→            </filter>
+   514→          </defs>
+   515→          {/* Cloud body — multiple overlapping organic blobs with gradient fill */}
+   516→          <g filter={`url(#cloud-noise-${speed})`}>
+   517→            <ellipse cx="100" cy="100" rx="70" ry="30" fill={`url(#cloud-grad-${speed})`} />
+   518→            <ellipse cx="180" cy="90" rx="55" ry="35" fill={`url(#cloud-grad-${speed})`} />
+   519→            <ellipse cx="260" cy="100" rx="70" ry="28" fill={`url(#cloud-grad-${speed})`} />
+   520→            <ellipse cx="350" cy="95" rx="60" ry="26" fill={`url(#cloud-grad-${speed})`} />
+   521→            <ellipse cx="440" cy="100" rx="65" ry="32" fill={`url(#cloud-grad-${speed})`} />
+   522→            <ellipse cx="530" cy="95" rx="55" ry="28" fill={`url(#cloud-grad-${speed})`} />
+   523→            <ellipse cx="610" cy="100" rx="50" ry="24" fill={`url(#cloud-grad-${speed})`} />
+   524→          </g>
+   525→          {/* Cloud highlights — lighter tops for volume */}
+   526→          <ellipse cx="180" cy="75" rx="35" ry="12" fill="white" opacity="0.3" />
+   527→          <ellipse cx="440" cy="80" rx="40" ry="14" fill="white" opacity="0.25" />
+   528→          {/* Cloud shadows — darker bottoms for depth */}
+   529→          <ellipse cx="260" cy="115" rx="55" ry="10" fill="#5B6B79" opacity="0.08" />
+   530→          <ellipse cx="530" cy="110" rx="42" ry="8" fill="#5B6B79" opacity="0.06" />
+   531→        </svg>
+   532→      </motion.div>
+   533→    </div>
+   534→  );
+   535→}
+   536→
+   537→// Deterministic star data (hydration-safe)
+   538→const STARS = Array.from({ length: 60 }, (_, i) => {
+   539→  const seed = i * 9301 + 49297;
+   540→  const r1 = ((seed % 233280) / 233280);
+   541→  const r2 = (((seed * 7) % 233280) / 233280);
+   542→  const r3 = (((seed * 13) % 233280) / 233280);
+   543→  const r4 = (((seed * 17) % 233280) / 233280);
+   544→  const size = 0.6 + r1 * 2.4;
+   545→  const colors = ["#ffffff", "#ffffff", "#ffffff", "#cfe8ff", "#fff4e0", "#e0f0ff"];
+   546→  return {
+   547→    top: r1 * 60, left: r2 * 100, size,
+   548→    color: colors[Math.floor(r3 * colors.length)],
+   549→    minOpacity: 0.12 + r4 * 0.2, maxOpacity: 0.65 + r4 * 0.35,
+   550→    duration: 2.5 + r3 * 4.5, delay: r4 * 5,
+   551→  };
+   552→});
+   553→
+   554→function CockpitTeaserSVG() {
+   555→  return (
+   556→    <svg viewBox="0 0 500 280" className="w-full h-auto">
+   557→      {/* Panel frame */}
+   558→      <rect x="10" y="10" width="480" height="260" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.2" rx="8" />
+   559→      {/* Six instruments */}
+   560→      {[
+   561→        { cx: 90, cy: 90, r: 42, label: "ASI" },
+   562→        { cx: 190, cy: 90, r: 42, label: "AI" },
+   563→        { cx: 290, cy: 90, r: 42, label: "ALT" },
+   564→        { cx: 90, cy: 190, r: 42, label: "TC" },
+   565→        { cx: 190, cy: 190, r: 42, label: "HI" },
+   566→        { cx: 290, cy: 190, r: 42, label: "VSI" },
+   567→      ].map((g, i) => (
+   568→        <g key={i}>
+   569→          <circle cx={g.cx} cy={g.cy} r={g.r} fill="none" stroke="var(--color-sky)" strokeWidth="1.5" opacity="0.4" />
+   570→          <circle cx={g.cx} cy={g.cy} r={g.r - 4} fill="var(--color-card)" stroke="currentColor" strokeWidth="0.5" opacity="0.1" />
+   571→          {Array.from({ length: 10 }).map((_, t) => {
+   572→            const a = (t / 10) * 360 - 90;
+   573→            const rad = (a * Math.PI) / 180;
+   574→            return <line key={t} x1={g.cx + (g.r - 8) * Math.cos(rad)} y1={g.cy + (g.r - 8) * Math.sin(rad)} x2={g.cx + (g.r - 3) * Math.cos(rad)} y2={g.cy + (g.r - 3) * Math.sin(rad)} stroke="currentColor" strokeWidth="0.5" opacity="0.3" />;
+   575→          })}
+   576→          <text x={g.cx} y={g.cy + 4} textAnchor="middle" fill="currentColor" fontSize="10" fontFamily="var(--font-jetbrains)" opacity="0.4">{g.label}</text>
+   577→          {/* Hotspot pulse */}
+   578→          <circle cx={g.cx} cy={g.cy} r={g.r} fill="none" stroke="var(--color-gold)" strokeWidth="1.5" opacity="0.3">
+   579→            <animate attributeName="r" values={`${g.r};${g.r + 6};${g.r}`} dur="3s" repeatCount="indefinite" begin={`${i * 0.3}s`} />
+   580→            <animate attributeName="opacity" values="0.3;0;0.3" dur="3s" repeatCount="indefinite" begin={`${i * 0.3}s`} />
+   581→          </circle>
+   582→        </g>
+   583→      ))}
+   584→      {/* Radio stack */}
+   585→      <rect x="360" y="40" width="60" height="200" fill="none" stroke="var(--color-sky)" strokeWidth="1" opacity="0.3" rx="4" />
+   586→      <text x="390" y="32" textAnchor="middle" fill="var(--color-sky)" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.6">RADIOS</text>
+   587→      {[55, 85, 115, 145, 175, 205].map((y, i) => (
+   588→        <rect key={i} x="370" y={y} width="40" height="22" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.2" rx="2" />
+   589→      ))}
+   590→      <text x="430" y="250" fill="var(--color-gold)" fontSize="10" fontFamily="var(--font-sora)" fontWeight="600">15+ hotspots →</text>
+   591→    </svg>
+   592→  );
+   593→}
+   594→
+   595→// ===== Data =====
+   596→const VALUE_CARDS = [
+   597→  {
+   598→    icon: Plane,
+   599→    title: "Built for Zero Experience",
+   600→    body: "We assume you've never sat in a cockpit. Every term is defined. Every concept starts from 'why does this even exist?' No prerequisites except curiosity.",
+   601→  },
+   602→  {
+   603→    icon: Gauge,
+   604→    title: "Learn by Doing",
+   605→    body: "Every module ends with 'Try It In The Sim' — concrete steps to fire up MSFS or X-Plane and apply what you just learned. Reading is good. Flying is better.",
+   606→  },
+   607→  {
+   608→    icon: Award,
+   609→    title: "Real Aviation Standards",
+   610→    body: "This isn't arcade trivia. We teach real Cessna 172 procedures, real radio call structure, real METAR decoding. The same fundamentals a CFI would teach on day one.",
+   611→  },
+   612→  {
+   613→    icon: Sparkles,
+   614→    title: "Actually Fun",
+   615→    body: "Earn flight hours, unlock badges, watch your license tier climb from Student Pilot to Rated. Gamification that respects your intelligence, not condescending stars and emojis.",
+   616→  },
+   617→];
+   618→
+   619→// Sample testimonials — marked as sample content
+   620→const TESTIMONIALS = [
+   621→  {
+   622→    quote: "I'd owned MSFS for two years and never made it past the startup checklist. FlightCourse's Module 5 walked me through the C172 startup in plain English — now I'm flying circuits every evening.",
+   623→    name: "Marcus T.",
+   624→    role: "MSFS 2024 · 3 months in",
+   625→  },
+   626→  {
+   627→    quote: "The radio comms module finally made CTAF clicks. I actually called 'downwind' on a multiplayer server and someone responded 'number two, cleared to land.' I nearly fell out of my chair.",
+   628→    name: "Priya K.",
+   629→    role: "X-Plane 12 · 6 months in",
+   630→  },
+   631→  {
+   632→    quote: "As a student pilot working toward my PPL, I use FlightCourse to review concepts before lessons. The aerodynamics section explains lift correctly — unlike half the YouTube videos out there.",
+   633→    name: "Daniel R.",
+   634→    role: "Real-world student pilot",
+   635→  },
+   636→];
+   637→
