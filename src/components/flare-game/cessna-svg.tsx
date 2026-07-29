@@ -133,7 +133,7 @@ export const CessnaSvg = React.forwardRef<CessnaHandle, CessnaSvgProps>(
           <path d="M 42 52 L 42 24 L 50 26 L 52 52 Z" fill={accentDark} stroke="#0a1424" strokeWidth="0.8" opacity="0.95" />
           <path d="M 42 28 L 50 29" stroke={accent} strokeWidth="0.5" opacity="0.6" />
         </g>
-        <text x="32" y="34" fontSize="6.5" fontFamily="var(--font-jetbrains), monospace" fill="#e6f0fb" transform="rotate(-62 34 32)" opacity="0.92">N172FC</text>
+        <text x="32" y="34" fontSize="6.5" fontFamily="var(--font-mono), monospace" fill="#e6f0fb" transform="rotate(-62 34 32)" opacity="0.92">N172FC</text>
 
         {/* === Fuselage (sculpted) === */}
         <path
@@ -217,7 +217,7 @@ export const CessnaSvg = React.forwardRef<CessnaHandle, CessnaSvgProps>(
         <circle cx="128" cy={83 - gearSquash} r={5.2 - gearCompress * 0.6} fill="#22304a" stroke="#0a1424" strokeWidth="1" opacity="0.65" />
         <circle cx="128" cy={83 - gearSquash} r="2.1" fill="#2f4060" opacity="0.7" />
 
-        <text x="130" y="32" fontSize="5.5" fontFamily="var(--font-jetbrains), monospace" fill="#e6f0fb" opacity="0.7" textAnchor="middle">172</text>
+        <text x="130" y="32" fontSize="5.5" fontFamily="var(--font-mono), monospace" fill="#e6f0fb" opacity="0.7" textAnchor="middle">172</text>
         <line x1="150" y1="40" x2="150" y2="36" stroke="#0a1424" strokeWidth="0.8" />
       </svg>
     )

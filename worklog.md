@@ -444,3 +444,65 @@ VERIFICATION (Agent Browser):
 
 Stage Summary:
 - All 5 user issues resolved. Logo is a detailed attitude indicator. Setup cards fit their text. Hero no longer clips. Games dropdown is readable. Game source zips + improvement prompts are downloadable at /game-sources/.
+
+---
+Task ID: FLARE-FIX
+Agent: Flare Trainer Fix Agent
+Task: Migrate Flare Trainer game files from dead design tokens to canonical Glass Cockpit classes + bridge flare progress store to main progress store
+
+Work Log:
+- Read worklog.md, globals.css, both progress stores (src/stores/progress-store.ts + src/lib/progress-store.ts), src/lib/coaching.ts, and all 8 flare-game files (flare-trainer, coaching-ui, cockpit-canvas, telemetry-chart, paywall-dialog, share-card, replay, cessna-svg) before touching any code
+- Reviewed prior agent-ctx records (8-home-view-agent, 9+10, 11+12, 13+14) for Glass Cockpit migration context
+
+Architecture: bridged the two progress stores
+- Added `import { useProgress } from '@/lib/progress-store'` to src/stores/progress-store.ts
+- Inside `recordAttempt()`, after the existing `set(...)` + `track.gameComplete(...)` call, added a bridge block: when landing quality is 'greaser' / 'good' / 'firm', calls `useProgress.setState((s) => ({ xp: s.xp + xpGain }))` with xpGain = 5/3/2 respectively. No circular dep — lib/progress-store doesn't import from stores/. Game logic unchanged: only appended to the action.
+- Reframed paywall-dialog copy per spec: primary card headline is now "Unlock the full flight-school track" with description "Unlimited flare practice, all 16 ground-school modules, three training sims, and progress toward your pilot rating." Price ($4.99) and mechanics unchanged.
+
+DebriefCard XP-earned banner
+- Debrief type in src/lib/coaching.ts has no `quality` field (only headline/summary/cause/fix/insights/tip), so added an optional `score` prop to DebriefCard and an `inferQuality(debrief, score)` helper that reads the canonical headline prefixes ("Outstanding" → greaser, "Nice work" → good, "Acceptable" → firm) with score-based fallback (≥90 greaser, ≥75 good, ≥60 firm). Shows the spec'd "+{xpGain} XP logged toward your next rating" banner with Sparkles icon only when xpGain > 0.
+- Updated flare-trainer.tsx ResultScreen to pass `<DebriefCard debrief={debrief} score={attempt.score} />`
+
+Token migration across 7 component files (cockpit-canvas.tsx had no dead refs — pure canvas drawing):
+- coaching-ui.tsx: text-horizon-gold → text-primary (×7), text-sky → text-accent (×4), bg-horizon-gold → bg-primary (×4), border-horizon-gold → border-primary (×3), text-e0a04a (TYPO) → text-primary (warn verdict, ×1), font-sora → font-semibold tracking-tight (×3) or removed (×3), font-jetbrains → font-mono (×4), fc-pulse-gold → animate-pulse-ring (×1), border-sky → border-accent (×1), bg-sky → bg-accent (×1). Card wrapper `border border-white/10 bg-white/[0.04] backdrop-blur-md ring-1 ring-white/5` → canonical `glass` class.
+- flare-trainer.tsx: text-horizon-gold → text-primary (×17), bg-horizon-gold → bg-primary (×11), border-horizon-gold → border-primary (×5), text-navy → text-primary-foreground (×6), bg-navy → bg-background (×4), text-sky → text-accent (×9), border-sky → border-accent (×2), bg-sky → bg-accent (×2), font-sora → font-semibold tracking-tight (×18), font-jetbrains → font-mono (×14), fc-pulse-gold → animate-pulse-ring (×1). Replaced ad-hoc `border border-white/10 bg-white/[0.04] backdrop-blur-md shadow-lg ring-1 ring-white/5` card patterns with canonical `glass`. Featured share/paywall cards got `glass glow-accent` / `glass glow-primary`. Inline style hex `linear-gradient(180deg,#ffe9a0,#F2B134)` → `var(--primary)`. Inline `rgba(242,177,52,0.35)` boxShadow → `color-mix(in oklch, var(--primary) 35%, transparent)`. Inline `border: '1px solid rgba(242,177,52,0.4)'` → `'1px solid var(--primary)'`. Bezel-metal gradient (METAL_GRADIENT constant) left as-is — it's an instrument-bezel art asset, not a brand token.
+- telemetry-chart.tsx: font-jetbrains → font-mono (×1), bg-sky → bg-accent (×1), bg-horizon-gold → bg-primary (×1). Recharts stroke/fill hex values mapped to CSS vars: stroke="#F2B134" → "var(--primary)", stroke="#3E92CC" → "var(--accent)", stroke="#e0584f" → "var(--destructive)", label fill likewise. Tooltip contentStyle background `rgba(11,29,58,0.95)` → `var(--background)`, border `rgba(62,146,204,0.3)` → `var(--border)`. Grid stroke `rgba(255,255,255,0.06)` and axis tick fill `#5f7a99` left as-is (generic slate, not a brand token).
+- paywall-dialog.tsx: text-horizon-gold → text-primary (×4), bg-horizon-gold → bg-primary (×2), border-horizon-gold → border-primary (×2), text-sky → text-accent (×3), border-sky → border-accent (×2), bg-sky → bg-accent (×1), font-sora → font-semibold tracking-tight (×6), font-jetbrains → font-mono (×1). Text-navy → text-primary-foreground on the unlock button.
+- share-card.tsx: text-horizon-gold → text-primary (×2), text-sky → text-accent (×3), bg-horizon-gold → bg-primary (×1), border-sky → border-accent (×3), bg-sky → bg-accent (×2), font-sora → font-semibold tracking-tight (×2). Removed the unused `// eslint-disable-next-line @next/next/no-img-element` directive (rule is off in eslint.config.mjs, so the directive was producing a warning). The NAVY/SKY/GOLD constants and canvas drawing colors inside `generateShareCard()` left as-is — they're canvas fillStyle values for the share-card PNG art, not inline styles.
+- replay.tsx: text-sky → text-accent (×1), bg-navy → bg-background (×1), font-jetbrains → font-mono (×3), border-white/10 → border-border (×1).
+- cessna-svg.tsx: `fontFamily="var(--font-jetbrains), monospace"` → `fontFamily="var(--font-mono), monospace"` (×2 — N172FC tail number + "172" wing text). The `var(--font-jetbrains)` CSS variable is not defined anywhere (layout.tsx only exposes `--font-body` + `--font-instrument`), so this was a dead reference; `--font-mono` resolves to the JetBrains Mono font stack via globals.css. SVG drawing colors (livery body/wing/accent gradient stops) left as-is — they're artwork, not design tokens.
+
+Total dead references migrated: ~95 className substitutions across the 7 modified component files (66 dead-class refs + 26 legacy-alias refs + 2 dead CSS-var refs + a handful of inline-style hex/rgba migrations). All `"use client"` directives preserved at top of every file. No emoji, no Framer Motion added. Game logic, physics, scoring, state, handlers all unchanged — only className strings, inline style colors, and the store bridge were touched.
+
+Lint verification:
+- `bun run lint` → 0 errors, 0 warnings in any of the 7 modified flare-game files or in src/stores/progress-store.ts. The 3 remaining warnings are all pre-existing in unrelated files (_bundle/flare-game/share-card.tsx bundle copy, dashboard/progress-dashboard.tsx, lib/funnel.ts).
+- TypeScript pre-existing errors in flare-game/replay.tsx line 15 (`frameToState` function — untouched by this task) and other unrelated files (radio-builder, pattern-perfect, navbar, page.tsx) are NOT introduced by this work — confirmed via git history.
+
+Stage Summary:
+- Flare Trainer now uses ONLY canonical Glass Cockpit tokens: `text-primary` / `text-accent` / `text-muted-foreground` for type, `bg-primary` / `bg-accent` / `bg-background` for surfaces, `border-primary` / `border-accent` / `border-border` for outlines, `glass` for frosted cards, `glow-primary` / `glow-accent` for featured cards, `animate-pulse-ring` for the flare-window + start-button pulse, `font-mono` for all readouts, `font-semibold tracking-tight` for all headings. Zero references to text-horizon-gold, font-sora, font-jetbrains, text-navy, bg-navy, text-e0a04a, fc-pulse-gold, text-sky, text-gold, bg-sky, bg-gold, border-sky, border-gold, fp-glass, or font-heading remain (verified via grep — only `var(--font-jetbrains)` remains in game-canvas.tsx which the spec forbade touching).
+- A good-or-better landing now awards XP in the MAIN site-wide progress store (5/3/2 XP for greaser/good/firm), so flare practice advances the same license-tier progression that module quizzes do. The DebriefCard surfaces the XP gain inline ("+5 XP logged toward your next rating") with a Sparkles icon, so the player sees the cross-game progression reward immediately.
+- Paywall reframed from a single-game unlock ("Unlimited Flare Practice — $4.99, practice the flare forever") to a full-academy value proposition ("Unlock the full flight-school track — Unlimited flare practice, all 16 ground-school modules, three training sims, and progress toward your pilot rating"). Price and unlock mechanic unchanged.
+
+---
+Task ID: V13-FIXES-IMPLEMENTED
+Agent: Main (Z.ai Code)
+Task: Implement Claude's findings — remove download section, fix flare-game dead tokens, bridge stores
+
+Work Log:
+1. REMOVED game source download section from home-view.tsx completely (Section 7 deleted). Games are being worked on externally now. Also deleted public/game-sources/ directory (all 5 zips + README).
+2. DISPATCHED FLARE-FIX subagent which:
+   - Migrated 66 dead-class references (text-horizon-gold, font-sora, font-jetbrains, text-navy, bg-horizon-gold, border-horizon-gold, bg-navy, text-e0a04a typo, fc-pulse-gold) to canonical Glass Cockpit classes (text-primary, font-mono, bg-background, etc.)
+   - Migrated 26 legacy-alias references (text-sky, text-gold, bg-sky, bg-gold, border-sky, border-gold, fp-glass, font-heading) to canonical (text-accent, text-primary, glass, font-semibold tracking-tight)
+   - Fixed 2 dead CSS-var refs (var(--font-jetbrains) → var(--font-mono))
+   - Converted 8 inline-style hex/rgba colors to CSS vars
+   - BRIDGED the two progress stores: flare store's recordAttempt now awards XP to the main progress store (5 XP greaser, 3 good, 2 firm) so landings count toward license tiers
+   - Added "+XP logged toward your next rating" banner to DebriefCard when landing is good or better
+   - Reframed paywall copy from "Unlimited Flare Practice" to "Unlock the full flight-school track — Unlimited flare practice, all 16 ground-school modules, three training sims, and progress toward your pilot rating"
+3. VERIFIED: Flare game loads cleanly (0 errors), all dead tokens gone (except in untouched game-canvas.tsx), store bridge working, lint passes with 0 errors.
+
+Stage Summary:
+- Download section removed completely.
+- Flare Trainer migrated from dead design tokens to canonical Glass Cockpit classes — all the "invisible" styling (text-horizon-gold, font-sora, the text-e0a04a typo) is now visible.
+- Architectural fix: landings now feed XP into the main progression system. A good landing moves the same needle as a quiz — toward license tiers (Student Pilot → Private Pilot Track → Instrument Track → Rated).
+- Paywall reframed from "pay to keep playing this game" to "unlock the full flight-school track" — a much stronger value proposition.
+- Claude's recommended "make coaching data meaningful over time" is partially addressed via the XP bridge; the weak-area → module link is a future enhancement.

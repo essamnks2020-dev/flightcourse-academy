@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Attempt, LandingQuality, ScenarioId } from '@/lib/aviation'
 import { FREE_PLAYS_INITIAL, UNLOCK_PRICE, DAILY_SHARE_CAP } from '@/lib/aviation'
 import { track } from '@/lib/funnel'
+import { useProgress } from '@/lib/progress-store'
 
 /**
  * FlightCourse shared progress store.
@@ -269,6 +270,14 @@ export const useProgressStore = create<ProgressState>()(
         })
 
         track.gameComplete(a.quality, a.score, a.bounces, a.stalled, a.crosswind, a.duration)
+
+        // Bridge: award XP in the MAIN progress store for good landings, so
+        // landings count toward license tiers alongside module quizzes.
+        // Greaser = 5 XP, good = 3 XP, firm = 2 XP (about 1/4 of a module's XP).
+        if (['greaser', 'good', 'firm'].includes(a.quality)) {
+          const xpGain = a.quality === 'greaser' ? 5 : a.quality === 'good' ? 3 : 2
+          useProgress.setState((s) => ({ xp: s.xp + xpGain }))
+        }
 
         return { newBadges, bonusGranted }
       },

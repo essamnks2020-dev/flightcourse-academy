@@ -43,9 +43,9 @@ export function PaywallDialog({ open, onOpenChange, onShareToEarn }: PaywallDial
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md border-horizon-gold/40 bg-card">
+      <AlertDialogContent className="max-w-md border-primary/40 bg-card">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 font-sora text-horizon-gold">
+          <AlertDialogTitle className="flex items-center gap-2 font-semibold tracking-tight text-primary">
             <Rocket className="h-5 w-5" /> Out of free flights
           </AlertDialogTitle>
           <AlertDialogDescription className="text-muted-foreground">
@@ -55,45 +55,45 @@ export function PaywallDialog({ open, onOpenChange, onShareToEarn }: PaywallDial
 
         <div className="space-y-3 py-2">
           {/* Primary: unlock */}
-          <div className="rounded-lg border border-horizon-gold/40 bg-horizon-gold/5 p-4">
+          <div className="rounded-lg border border-primary/40 bg-primary/5 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 font-sora text-lg text-foreground">
-                  <Sparkles className="h-4 w-4 text-horizon-gold" /> Unlimited Flare Practice
+                <div className="flex items-center gap-2 font-semibold tracking-tight text-lg text-foreground">
+                  <Sparkles className="h-4 w-4 text-primary" /> Unlock the full flight-school track
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  One-time unlock. Practice the flare as many times as you like, forever.
+                  Unlimited flare practice, all 16 ground-school modules, three training sims, and progress toward your pilot rating.
                 </p>
               </div>
-              <div className="shrink-0 font-sora text-2xl text-horizon-gold">
+              <div className="shrink-0 font-semibold tracking-tight text-2xl text-primary">
                 ${UNLOCK_PRICE}
               </div>
             </div>
             <Button
               onClick={handleUnlock}
-              className="mt-3 w-full bg-horizon-gold text-navy hover:bg-horizon-gold/90"
+              className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Unlock unlimited
             </Button>
           </div>
 
           {/* Alternate: share to earn */}
-          <div className="rounded-lg border border-sky/40 bg-sky/5 p-4">
+          <div className="rounded-lg border border-accent/40 bg-accent/5 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 font-sora text-lg text-foreground">
-                  <Share2 className="h-4 w-4 text-sky" /> Share to earn a play
+                <div className="flex items-center gap-2 font-semibold tracking-tight text-lg text-foreground">
+                  <Share2 className="h-4 w-4 text-accent" /> Share to earn a play
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Share any landing result and get a bonus free play. Up to 5/day — free, forever.
                 </p>
               </div>
-              <div className="shrink-0 font-sora text-2xl text-sky">+1</div>
+              <div className="shrink-0 font-semibold tracking-tight text-2xl text-accent">+1</div>
             </div>
             <Button
               onClick={handleShare}
               variant="outline"
-              className="mt-3 w-full border-sky/50 text-sky hover:bg-sky/10"
+              className="mt-3 w-full border-accent/50 text-accent hover:bg-accent/10"
             >
               Share a result
             </Button>
@@ -107,7 +107,7 @@ export function PaywallDialog({ open, onOpenChange, onShareToEarn }: PaywallDial
           >
             Maybe later
           </AlertDialogCancel>
-          <p className="text-right font-jetbrains text-xs text-muted-foreground self-center">
+          <p className="text-right font-mono text-xs text-muted-foreground self-center">
             Free plays: {freePlays}
           </p>
         </AlertDialogFooter>

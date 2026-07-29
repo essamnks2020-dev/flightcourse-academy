@@ -122,12 +122,12 @@ export function Replay({ attempt }: { attempt: Attempt }) {
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-navy">
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-background">
         <GameCanvas ref={canvasRef} className="h-full w-full" />
-        <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/40 px-2 py-1 font-jetbrains text-xs text-sky backdrop-blur">
+        <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-accent backdrop-blur">
           REPLAY · T+{((cur?.t ?? 0) / 1000).toFixed(1)}s
         </div>
-        <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-black/40 px-2 py-1 font-jetbrains text-xs backdrop-blur" style={{ color: qualityColor }}>
+        <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-black/40 px-2 py-1 font-mono text-xs backdrop-blur" style={{ color: qualityColor }}>
           {QUALITY_LABELS[attempt.quality]}
         </div>
       </div>
@@ -177,7 +177,7 @@ export function Replay({ attempt }: { attempt: Attempt }) {
           className="flex-1"
           aria-label="Scrub replay timeline"
         />
-        <span className="w-16 text-right font-jetbrains text-xs text-muted-foreground">
+        <span className="w-16 text-right font-mono text-xs text-muted-foreground">
           {idx + 1}/{tel.length}
         </span>
       </div>

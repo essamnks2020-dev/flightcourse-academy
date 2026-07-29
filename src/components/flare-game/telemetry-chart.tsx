@@ -20,7 +20,7 @@ export function TelemetryChart({ attempt }: { attempt: Attempt }) {
   const tel = attempt.telemetry
   if (!tel || tel.length < 2) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-lg border border-white/10 bg-black/20 text-xs text-muted-foreground">
+      <div className="flex h-32 items-center justify-center rounded-lg border border-border bg-black/20 text-xs text-muted-foreground">
         Not enough telemetry data for a chart.
       </div>
     )
@@ -37,17 +37,17 @@ export function TelemetryChart({ attempt }: { attempt: Attempt }) {
   }))
 
   return (
-    <div className="rounded-lg border border-white/10 bg-black/30 p-2">
+    <div className="rounded-lg border border-border bg-black/30 p-2">
       <div className="mb-1 flex items-center justify-between">
-        <span className="font-jetbrains text-[10px] uppercase tracking-wider text-muted-foreground">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
           Telemetry · altitude (ft) & airspeed (kt) vs time
         </span>
         <div className="flex gap-3 text-[10px]">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-1.5 w-3 rounded bg-sky" /> Alt
+            <span className="inline-block h-1.5 w-3 rounded bg-accent" /> Alt
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-1.5 w-3 rounded bg-horizon-gold" /> Spd
+            <span className="inline-block h-1.5 w-3 rounded bg-primary" /> Spd
           </span>
         </div>
       </div>
@@ -66,8 +66,8 @@ export function TelemetryChart({ attempt }: { attempt: Attempt }) {
           />
           <Tooltip
             contentStyle={{
-              background: 'rgba(11,29,58,0.95)',
-              border: '1px solid rgba(62,146,204,0.3)',
+              background: 'var(--background)',
+              border: '1px solid var(--border)',
               borderRadius: '6px',
               fontSize: '11px',
             }}
@@ -76,24 +76,24 @@ export function TelemetryChart({ attempt }: { attempt: Attempt }) {
           {flareStart >= 0 && (
             <ReferenceLine
               x={data[flareStart].t}
-              stroke="#F2B134"
+              stroke="var(--primary)"
               strokeOpacity={0.5}
               strokeDasharray="3 3"
-              label={{ value: 'FLARE', fontSize: 8, fill: '#F2B134', position: 'top' }}
+              label={{ value: 'FLARE', fontSize: 8, fill: 'var(--primary)', position: 'top' }}
             />
           )}
           {touchdownIdx >= 0 && (
             <ReferenceLine
               x={data[touchdownIdx].t}
-              stroke="#e0584f"
+              stroke="var(--destructive)"
               strokeOpacity={0.6}
-              label={{ value: 'TD', fontSize: 8, fill: '#e0584f', position: 'top' }}
+              label={{ value: 'TD', fontSize: 8, fill: 'var(--destructive)', position: 'top' }}
             />
           )}
           <Line
             type="monotone"
             dataKey="alt"
-            stroke="#3E92CC"
+            stroke="var(--accent)"
             strokeWidth={2}
             dot={false}
             isAnimationActive={false}
@@ -101,7 +101,7 @@ export function TelemetryChart({ attempt }: { attempt: Attempt }) {
           <Line
             type="monotone"
             dataKey="spd"
-            stroke="#F2B134"
+            stroke="var(--primary)"
             strokeWidth={1.5}
             dot={false}
             isAnimationActive={false}

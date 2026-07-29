@@ -428,26 +428,26 @@ export function FlareTrainer({ className }: FlareTrainerProps) {
   return (
     <div className={cn('flex min-h-screen flex-col bg-background', className)}>
       {/* top brand bar */}
-      <header className="z-20 flex items-center justify-between border-b border-white/10 bg-navy/70 px-4 py-2 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <header className="z-20 flex items-center justify-between border-b border-border bg-background/70 px-4 py-2 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-horizon-gold/15 ring-1 ring-horizon-gold/30">
-            <Plane className="h-4 w-4 text-horizon-gold" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 ring-1 ring-primary/30">
+            <Plane className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-sora text-sm font-bold tracking-tight text-foreground sm:text-base">
-            Flight<span className="text-horizon-gold">Course</span>
+          <span className="font-semibold tracking-tight text-sm text-foreground sm:text-base">
+            Flight<span className="text-primary">Course</span>
           </span>
-          <span className="hidden font-jetbrains text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">
+          <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">
             · Landing Flare Trainer
           </span>
         </div>
         <div className="flex items-center gap-2">
           {unlimited ? (
-            <UiBadge className="border-horizon-gold/40 bg-horizon-gold/15 text-horizon-gold">
+            <UiBadge className="border-primary/40 bg-primary/15 text-primary">
               <Zap className="mr-1 h-3 w-3" /> Unlimited
             </UiBadge>
           ) : (
-            <span className="font-jetbrains text-xs text-muted-foreground">
-              <span className={cn('font-bold', freePlays > 0 ? 'text-sky' : 'text-destructive')}>
+            <span className="font-mono text-xs text-muted-foreground">
+              <span className={cn('font-bold', freePlays > 0 ? 'text-accent' : 'text-destructive')}>
                 {freePlays}
               </span>{' '}
               free plays
@@ -529,13 +529,13 @@ export function FlareTrainer({ className }: FlareTrainerProps) {
       </main>
 
       {/* sticky footer */}
-      <footer className="z-20 mt-auto border-t border-white/10 bg-navy/70 px-4 py-2 backdrop-blur-md">
+      <footer className="z-20 mt-auto border-t border-border bg-background/70 px-4 py-2 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-1 text-center sm:flex-row sm:text-left">
-          <p className="font-jetbrains text-[11px] text-muted-foreground">
+          <p className="font-mono text-[11px] text-muted-foreground">
             FlightCourse · Cessna 172 flare practice · Not for real-world flight training
           </p>
-          <p className="font-jetbrains text-[11px] text-muted-foreground">
-            <span className="text-horizon-gold/80">flightcourse.io</span>/flare
+          <p className="font-mono text-[11px] text-muted-foreground">
+            <span className="text-primary/80">flightcourse.io</span>/flare
           </p>
         </div>
       </footer>
@@ -576,14 +576,14 @@ function StartScreen({
   onOpenPaywall: () => void
 }) {
   return (
-    <div className="absolute inset-0 z-10 overflow-y-auto fc-scroll bg-gradient-to-b from-navy/60 via-navy/30 to-navy/75">
+    <div className="absolute inset-0 z-10 overflow-y-auto fc-scroll bg-gradient-to-b from-background/60 via-background/30 to-background/75">
       <div className="mx-auto grid min-h-full max-w-5xl grid-cols-1 items-center gap-6 p-4 sm:p-6 lg:grid-cols-2">
         {/* hero */}
         <div className="space-y-5">
           <div>
-            <UiBadge className="border-sky/40 bg-sky/10 text-sky">Cessna 172 · Short Final</UiBadge>
-            <h1 className="mt-3 font-sora text-4xl font-extrabold leading-tight text-foreground sm:text-5xl">
-              Stick the <span className="text-horizon-gold">greaser.</span>
+            <UiBadge className="border-accent/40 bg-accent/10 text-accent">Cessna 172 · Short Final</UiBadge>
+            <h1 className="mt-3 font-semibold tracking-tight text-4xl font-extrabold leading-tight text-foreground sm:text-5xl">
+              Stick the <span className="text-primary">greaser.</span>
             </h1>
             <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
               Read the PAPI, time your flare, and settle the Cessna onto the runway.
@@ -594,32 +594,32 @@ function StartScreen({
 
           {/* instructions */}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md shadow-lg">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-horizon-gold/15 text-horizon-gold ring-1 ring-horizon-gold/20">
+            <div className="glass flex items-center gap-3 rounded-xl p-3 shadow-lg">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/20">
                 <Space className="h-4 w-4" />
               </div>
               <div>
-                <div className="font-sora text-sm font-semibold">Hold to flare</div>
+                <div className="font-semibold tracking-tight text-sm">Hold to flare</div>
                 <div className="text-xs text-muted-foreground">SPACE / hold-click / tap</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md shadow-lg">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky/15 text-sky ring-1 ring-sky/20">
+            <div className="glass flex items-center gap-3 rounded-xl p-3 shadow-lg">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 text-accent ring-1 ring-accent/20">
                 <Hand className="h-4 w-4" />
               </div>
               <div>
-                <div className="font-sora text-sm font-semibold">Round out at ~15 ft</div>
+                <div className="font-semibold tracking-tight text-sm">Round out at ~15 ft</div>
                 <div className="text-xs text-muted-foreground">When the runway "zooms"</div>
               </div>
             </div>
           </div>
 
           {/* guided mode toggle */}
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md shadow-lg">
+          <div className="glass flex items-center justify-between rounded-xl p-3 shadow-lg">
             <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-horizon-gold" />
+              <GraduationCap className="h-4 w-4 text-primary" />
               <div>
-                <div className="font-sora text-sm font-semibold">Guided mode</div>
+                <div className="font-semibold tracking-tight text-sm">Guided mode</div>
                 <div className="text-xs text-muted-foreground">Radar callouts (50-40-30-20-10), flare cues & live hints</div>
               </div>
             </div>
@@ -627,24 +627,24 @@ function StartScreen({
           </div>
 
           {/* view toggle */}
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md shadow-lg">
+          <div className="glass flex items-center justify-between rounded-xl p-3 shadow-lg">
             <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-sky" />
+              <Eye className="h-4 w-4 text-accent" />
               <div>
-                <div className="font-sora text-sm font-semibold">Camera view</div>
+                <div className="font-semibold tracking-tight text-sm">Camera view</div>
                 <div className="text-xs text-muted-foreground">Cockpit = the real pilot sight picture</div>
               </div>
             </div>
-            <div className="flex rounded-lg border border-white/10 bg-black/30 p-0.5">
+            <div className="flex rounded-lg border border-border bg-black/30 p-0.5">
               <button
                 onClick={() => onView('external')}
-                className={cn('rounded-md px-3 py-1 font-jetbrains text-xs transition', view === 'external' ? 'bg-horizon-gold text-navy' : 'text-muted-foreground hover:text-foreground')}
+                className={cn('rounded-md px-3 py-1 font-mono text-xs transition', view === 'external' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
               >
                 External
               </button>
               <button
                 onClick={() => onView('cockpit')}
-                className={cn('rounded-md px-3 py-1 font-jetbrains text-xs transition', view === 'cockpit' ? 'bg-horizon-gold text-navy' : 'text-muted-foreground hover:text-foreground')}
+                className={cn('rounded-md px-3 py-1 font-mono text-xs transition', view === 'cockpit' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
               >
                 Cockpit
               </button>
@@ -652,10 +652,10 @@ function StartScreen({
           </div>
 
           {/* scenario selector (§1.1) — compact horizontal scroll strip */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md shadow-lg">
+          <div className="glass rounded-xl p-3 shadow-lg">
             <div className="mb-2 flex items-center gap-2">
-              <Wind className="h-4 w-4 text-sky" />
-              <span className="font-sora text-sm font-semibold">Scenario</span>
+              <Wind className="h-4 w-4 text-accent" />
+              <span className="font-semibold tracking-tight text-sm">Scenario</span>
             </div>
             <div className="flex gap-1.5 overflow-x-auto fc-scroll pb-1">
               {SCENARIOS.map((sc) => (
@@ -664,9 +664,9 @@ function StartScreen({
                   onClick={() => onScenario(sc.id)}
                   disabled={!sc.unlockedByDefault}
                   className={cn(
-                    'shrink-0 rounded-lg px-2.5 py-1.5 font-jetbrains text-[11px] whitespace-nowrap transition',
+                    'shrink-0 rounded-lg px-2.5 py-1.5 font-mono text-[11px] whitespace-nowrap transition',
                     scenario === sc.id
-                      ? 'bg-horizon-gold text-navy'
+                      ? 'bg-primary text-primary-foreground'
                       : sc.unlockedByDefault
                         ? 'bg-black/30 text-muted-foreground hover:text-foreground'
                         : 'bg-black/20 text-muted-foreground/40',
@@ -687,7 +687,7 @@ function StartScreen({
             <Button
               onClick={onBegin}
               size="lg"
-              className="w-full bg-horizon-gold text-navy hover:bg-horizon-gold/90 fc-pulse-gold"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse-ring"
             >
               <Plane className="mr-2 h-5 w-5" /> {unlimited ? 'Start approach' : `Start approach — ${freePlays} free plays`}
             </Button>
@@ -699,7 +699,7 @@ function StartScreen({
             {!unlimited && (
               <button
                 onClick={onOpenPaywall}
-                className="mx-auto block font-jetbrains text-xs text-muted-foreground underline-offset-2 hover:text-horizon-gold hover:underline"
+                className="mx-auto block font-mono text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
               >
                 Unlock unlimited — $4.99
               </button>
@@ -766,31 +766,31 @@ function PlayingHud({
       <div className="flex items-start justify-between p-3">
         <div className="flex items-center gap-2">
           <div
-            className="rounded-md px-3 py-1.5 font-jetbrains text-xs text-sky"
+            className="rounded-md px-3 py-1.5 font-mono text-xs text-accent"
             style={bezelPillStyle}
           >
             {crosswind ? 'CROSSWIND · DE-CRAB ON FLARE' : `CALM · RWY ${runwayHeading}`}
           </div>
           <div
-            className="rounded-md px-3 py-1.5 font-jetbrains text-xs text-muted-foreground"
+            className="rounded-md px-3 py-1.5 font-mono text-xs text-muted-foreground"
             style={bezelPillStyle}
           >
             {unlimited ? (
-              <span className="text-horizon-gold">Unlimited</span>
+              <span className="text-primary">Unlimited</span>
             ) : (
               <>
-                <span className={freePlays > 0 ? 'text-sky' : 'text-destructive'}>{freePlays}</span> plays
+                <span className={freePlays > 0 ? 'text-accent' : 'text-destructive'}>{freePlays}</span> plays
               </>
             )}
           </div>
           {guided && (
             <div
-              className="rounded-md px-3 py-1.5 font-jetbrains text-xs text-horizon-gold"
+              className="rounded-md px-3 py-1.5 font-mono text-xs text-primary"
               style={{
                 ...bezelPillStyle,
                 boxShadow:
-                  'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.5), 0 0 10px rgba(242,177,52,0.35)',
-                border: '1px solid rgba(242,177,52,0.4)',
+                  'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.5), 0 0 10px color-mix(in oklch, var(--primary) 35%, transparent)',
+                border: '1px solid var(--primary)',
               }}
             >
               GUIDED
@@ -806,14 +806,14 @@ function PlayingHud({
             <button
               onClick={() => onView('external')}
               className={cn(
-                'rounded-md px-2.5 py-1 font-jetbrains text-[11px] transition',
+                'rounded-md px-2.5 py-1 font-mono text-[11px] transition',
                 view === 'external'
-                  ? 'text-navy'
-                  : 'text-sky/80 hover:text-sky',
+                  ? 'text-primary-foreground'
+                  : 'text-accent/80 hover:text-accent',
               )}
               style={
                 view === 'external'
-                  ? { background: 'linear-gradient(180deg,#ffe9a0,#F2B134)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)' }
+                  ? { background: 'var(--primary)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)' }
                   : undefined
               }
             >
@@ -822,14 +822,14 @@ function PlayingHud({
             <button
               onClick={() => onView('cockpit')}
               className={cn(
-                'rounded-md px-2.5 py-1 font-jetbrains text-[11px] transition',
+                'rounded-md px-2.5 py-1 font-mono text-[11px] transition',
                 view === 'cockpit'
-                  ? 'text-navy'
-                  : 'text-sky/80 hover:text-sky',
+                  ? 'text-primary-foreground'
+                  : 'text-accent/80 hover:text-accent',
               )}
               style={
                 view === 'cockpit'
-                  ? { background: 'linear-gradient(180deg,#ffe9a0,#F2B134)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)' }
+                  ? { background: 'var(--primary)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)' }
                   : undefined
               }
             >
@@ -839,7 +839,7 @@ function PlayingHud({
           <button
             onClick={onGoAround}
             title="Go around (G)"
-            className="inline-flex h-8 items-center rounded-md px-3 font-sora text-xs font-semibold text-horizon-gold transition hover:brightness-110"
+            className="inline-flex h-8 items-center rounded-md px-3 font-semibold tracking-tight text-xs text-primary transition hover:brightness-110"
             style={bezelButtonStyle}
           >
             <Power className="mr-1 h-3 w-3" /> Go around
@@ -847,7 +847,7 @@ function PlayingHud({
           <button
             onClick={onAbandon}
             title="Abandon approach (Esc)"
-            className="hidden h-8 items-center rounded-md px-3 font-sora text-xs font-semibold text-foreground transition hover:brightness-110 sm:inline-flex"
+            className="hidden h-8 items-center rounded-md px-3 font-semibold tracking-tight text-xs text-foreground transition hover:brightness-110 sm:inline-flex"
             style={bezelButtonStyle}
           >
             <RotateCcw className="mr-1 h-3 w-3" /> Abandon
@@ -904,7 +904,7 @@ function ResultScreen({
   const debrief = React.useMemo(() => buildDebrief(attempt), [attempt])
 
   return (
-    <div className="absolute inset-0 z-10 overflow-y-auto fc-scroll bg-navy/85 backdrop-blur-sm">
+    <div className="absolute inset-0 z-10 overflow-y-auto fc-scroll bg-background/85 backdrop-blur-sm">
       <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
         {/* score header */}
         <div className="relative text-center">
@@ -914,25 +914,25 @@ function ResultScreen({
           />
           <div className="relative">
             <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1 font-sora text-sm font-bold shadow-lg"
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1 font-semibold tracking-tight text-sm font-bold shadow-lg"
               style={{ background: `${color}22`, color, border: `1px solid ${color}66`, boxShadow: `0 0 24px ${color}40` }}
             >
               {QUALITY_LABELS[attempt.quality]}
             </div>
             <div className="mt-3 flex items-center justify-center gap-2">
               <span
-                className="font-sora text-7xl font-extrabold tabular-nums sm:text-8xl"
+                className="font-semibold tracking-tight text-7xl font-extrabold tabular-nums sm:text-8xl"
                 style={{ color, textShadow: `0 0 32px ${color}66` }}
               >
                 {attempt.score}
               </span>
-              <span className="mb-2 font-sora text-2xl text-muted-foreground">/100</span>
+              <span className="mb-2 font-semibold tracking-tight text-2xl text-muted-foreground">/100</span>
             </div>
             <p className="mx-auto mt-1 max-w-md text-sm italic text-muted-foreground">
               {debrief.summary}
             </p>
             {isBest && attempt.score > 0 && (
-              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-horizon-gold/40 bg-horizon-gold/10 px-3 py-0.5 text-sm text-horizon-gold">
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-0.5 text-sm text-primary">
                 <Trophy className="h-4 w-4" /> New best score!
               </div>
             )}
@@ -941,11 +941,11 @@ function ResultScreen({
 
         {/* new badges */}
         {newBadges.length > 0 && (
-          <div className="rounded-xl border border-horizon-gold/40 bg-horizon-gold/10 p-3">
-            <div className="mb-2 font-sora text-sm text-horizon-gold">Achievements unlocked</div>
+          <div className="rounded-xl border border-primary/40 bg-primary/10 p-3">
+            <div className="mb-2 font-semibold tracking-tight text-sm text-primary">Achievements unlocked</div>
             <div className="flex flex-wrap gap-2">
               {newBadges.map((b) => (
-                <UiBadge key={b} className="border-horizon-gold/50 bg-horizon-gold/15 text-horizon-gold">
+                <UiBadge key={b} className="border-primary/50 bg-primary/15 text-primary">
                   <Trophy className="mr-1 h-3 w-3" /> {b.replace(/_/g, ' ')}
                 </UiBadge>
               ))}
@@ -954,14 +954,14 @@ function ResultScreen({
         )}
 
         {/* the debrief — the actual learning value */}
-        <DebriefCard debrief={debrief} />
+        <DebriefCard debrief={debrief} score={attempt.score} />
 
         {/* telemetry chart (§2.2) — visualize the flare, don't just report numbers */}
         <TelemetryChart attempt={attempt} />
 
         {/* replay */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md shadow-lg ring-1 ring-white/5">
-          <div className="mb-2 flex items-center gap-2 font-sora text-sm text-muted-foreground">
+        <div className="glass rounded-2xl p-3 shadow-lg">
+          <div className="mb-2 flex items-center gap-2 font-semibold tracking-tight text-sm text-muted-foreground">
             <Gauge className="h-4 w-4" /> Replay · scrub to review your flare
           </div>
           <Replay attempt={attempt} />
@@ -969,31 +969,31 @@ function ResultScreen({
 
         {/* share + paywall (alongside, never instead of) */}
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="rounded-2xl border border-sky/30 bg-sky/[0.06] p-3 backdrop-blur-md shadow-lg ring-1 ring-sky/10">
-            <div className="mb-2 font-sora text-sm text-sky">Share your landing</div>
+          <div className="glass glow-accent rounded-2xl p-3 shadow-lg">
+            <div className="mb-2 font-semibold tracking-tight text-sm text-accent">Share your landing</div>
             <ShareCard attempt={attempt} bestScore={bestScore} />
           </div>
           {outOfPlays ? (
-            <div className="rounded-2xl border border-horizon-gold/40 bg-horizon-gold/[0.07] p-3 backdrop-blur-md shadow-lg ring-1 ring-horizon-gold/15">
-              <div className="mb-2 font-sora text-sm text-horizon-gold">Out of free plays</div>
+            <div className="glass glow-primary rounded-2xl p-3 shadow-lg">
+              <div className="mb-2 font-semibold tracking-tight text-sm text-primary">Out of free plays</div>
               <p className="mb-3 text-xs text-muted-foreground">
                 Share above for +1 bonus play, or unlock unlimited practice.
               </p>
-              <Button onClick={onOpenPaywall} className="w-full bg-horizon-gold text-navy hover:bg-horizon-gold/90">
+              <Button onClick={onOpenPaywall} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                 <Zap className="mr-2 h-4 w-4" /> Unlock options
               </Button>
               {bonusGranted && (
-                <p className="mt-2 text-center text-xs text-sky">+1 bonus play granted for completing this landing</p>
+                <p className="mt-2 text-center text-xs text-accent">+1 bonus play granted for completing this landing</p>
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md shadow-lg ring-1 ring-white/5">
-              <div className="mb-2 font-sora text-sm text-muted-foreground">Next flight</div>
+            <div className="glass rounded-2xl p-3 shadow-lg">
+              <div className="mb-2 font-semibold tracking-tight text-sm text-muted-foreground">Next flight</div>
               <div className="space-y-2">
-                <Button onClick={onFlyAgain} className="w-full bg-horizon-gold text-navy hover:bg-horizon-gold/90">
+                <Button onClick={onFlyAgain} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   <Plane className="mr-2 h-4 w-4" /> Fly again
                 </Button>
-                <Button onClick={onHome} variant="outline" className="w-full border-white/20">
+                <Button onClick={onHome} variant="outline" className="w-full border-border">
                   <Home className="mr-2 h-4 w-4" /> Back to start
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">

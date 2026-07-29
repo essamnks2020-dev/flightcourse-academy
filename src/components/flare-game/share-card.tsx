@@ -350,13 +350,13 @@ export function ShareCard({ attempt, bestScore }: ShareCardProps) {
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button onClick={handleShare} disabled={busy} className="flex-1 bg-horizon-gold text-navy hover:bg-horizon-gold/90">
+        <Button onClick={handleShare} disabled={busy} className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
           <Share2 className="mr-2 h-4 w-4" /> Share result
         </Button>
-        <Button onClick={handleDownload} disabled={busy} variant="outline" className="flex-1 border-sky/40 text-sky hover:bg-sky/10">
+        <Button onClick={handleDownload} disabled={busy} variant="outline" className="flex-1 border-accent/40 text-accent hover:bg-accent/10">
           <Download className="mr-2 h-4 w-4" /> Download
         </Button>
-        <Button onClick={handleCopy} disabled={busy} variant="outline" className="flex-1 border-sky/40 text-sky hover:bg-sky/10">
+        <Button onClick={handleCopy} disabled={busy} variant="outline" className="flex-1 border-accent/40 text-accent hover:bg-accent/10">
           {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
           {copied ? 'Copied' : 'Copy'}
         </Button>
@@ -368,15 +368,14 @@ export function ShareCard({ attempt, bestScore }: ShareCardProps) {
       </p>
 
       <Dialog open={!!previewUrl} onOpenChange={(o) => !o && setPreviewUrl(null)}>
-        <DialogContent className="max-w-md border-sky/30 bg-card">
+        <DialogContent className="max-w-md border-accent/30 bg-card">
           <DialogHeader>
-            <DialogTitle className="font-sora text-horizon-gold">Your share card</DialogTitle>
+            <DialogTitle className="font-semibold tracking-tight text-primary">Your share card</DialogTitle>
             <DialogDescription>
               Long-press to save on mobile, or use the buttons above to download/copy.
             </DialogDescription>
           </DialogHeader>
           {previewUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={previewUrl} alt="FlightCourse share card" className="w-full rounded-lg" />
           )}
         </DialogContent>

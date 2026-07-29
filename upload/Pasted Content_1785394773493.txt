@@ -1,0 +1,5267 @@
+============================================================================
+LANDING FLARE TRAINER — full source bundle + integration instructions
+============================================================================
+This is the source for "Landing Flare Trainer," meant to become Mini-game 1
+of the FlightCourse site (it currently shows as "Locked" on the dashboard,
+next to Mini-game 3, "Pattern Perfect," which is already live). Everything
+below the file markers (`=== FILE: path ===`) is real source code — create
+each file at the given path. Read this whole instructions block before you
+start; it tells you what's already correct, what was broken and has been
+fixed, and what is genuinely still missing and needs to be written.
+
+----------------------------------------------------------------------------
+WHAT I FOUND
+----------------------------------------------------------------------------
+The uploaded files turned out to be pieces of TWO different, incompatible
+builds of this same game, plus a shared `types.ts` that every file imports
+from but that was missing entirely — nothing in this pile would have
+compiled as-is. Specifically:
+
+1. types.ts did not exist. flight-physics.ts, runway-canvas.tsx,
+   hud-overlay.tsx, voice-coach.ts, audio-engine.ts (no dep), scoring-engine.ts,
+   difficulty-scaler.ts, daily-challenge.ts, debrief-screen.tsx and
+   progress-store.ts all do `import type {...} from "./types"`, and that file
+   was never provided. It has been reconstructed below by cross-referencing
+   the exact field names every one of those files actually reads and writes.
+   It is written to be a drop-in match for all of them — see the comments
+   inside types.ts for the reasoning. This was verified with `tsc --strict`
+   against every plain .ts file in this bundle: zero type errors.
+
+2. There were two competing implementations. One ("System A" — everything
+   listed above) is the deeper, more complete build: a full aerodynamic C172
+   model in flight-physics.ts, a five-dimension scoring rubric, a voice
+   coach, procedural audio, screen-shake/particle "juice", and a radar-chart
+   debrief screen. The other is a single self-contained file,
+   `src/lib/aviation.ts`, with its own simpler physics/scoring/scenario
+   system and its own local type definitions — it does not import "./types"
+   and nothing in System A imports it either. It is a complete, unrelated
+   draft. I have NOT wired it in. It's included at the very bottom of this
+   bundle, clearly marked, only because its five hand-written scenario
+   blurbs (Dusk Circuit, Calm Day, Night Landing, Crosswind, Morning Fog) are
+   nicely-written flavor text you may want to mine for the difficulty/
+   scenario picker copy. Do not import it or merge its types with types.ts —
+   the two systems disagree on almost every shape (e.g. its LandingResult
+   and FlightState are structurally different from System A's).
+
+3. Several System A files expected slightly different field names than
+   flight-physics.ts actually produces (case differences like `altitudeAGL`
+   vs. the physics engine's `altitudeAgl`, and names like `airspeed` vs. the
+   physics engine's `airspeedKias`). These files were all written
+   defensively — they try several alias names before falling back to a
+   default — which is exactly why this was fixable without touching their
+   structure: I added the physics engine's real field names to each alias
+   list. Every change is marked inline with a `// PATCHED:` comment
+   explaining what was wrong. Nothing about their existing behavior or
+   back-compat aliases was removed. Files touched: runway-canvas.tsx,
+   hud-overlay.tsx, voice-coach.ts, debrief-screen.tsx.
+
+4. difficulty-scaler.ts set `turbulence` to a string label (`'light'`,
+   `'moderate'`...), but flight-physics.ts's `wxTurbulence()` reads it as a
+   number 0..1 with no string parsing — the value would have been silently
+   ignored at runtime. Fixed to emit a number, with the original label kept
+   alongside as `turbulenceLabel` for any UI copy that wants it.
+
+5. progress-store.ts (originally `progress-store-v2.ts`) imported the
+   cross-game XP store from `@/lib/progress-store`. In the live FlightCourse
+   codebase that store actually lives at `src/lib/store/progress-store.ts`
+   (one extra path segment) — fixed. It also set a default `scenario` of the
+   string `"normal"`, but `DifficultyLevel` is numeric (0..4) everywhere else
+   in this bundle — fixed to a numeric default.
+
+----------------------------------------------------------------------------
+WHAT STILL NEEDS TO BE BUILT — you have every piece, but not the thing that
+connects them. There is no top-level game component, no start/briefing
+screen, and no page route anywhere in the source I was given.
+----------------------------------------------------------------------------
+Build a top-level orchestrator (e.g. `FlareTrainerGame.tsx`) that is a small
+state machine: **briefing → flying → debrief**, matching the structure
+Pattern Perfect already uses on this site so the two mini-games feel like
+one product. Concretely, it needs to:
+
+* BRIEFING screen: a difficulty picker driven by `difficulty-scaler.ts`
+  (`computeDifficulty`, `weatherForDifficulty`, `difficultyLabel`) and a
+  "Today's challenge" entry point via `daily-challenge.ts`
+  (`getTodaysChallenge`, `isChallengeCompleted`). Model this screen after
+  Pattern Perfect's StartScreen.tsx for visual consistency.
+
+* FLYING screen: a requestAnimationFrame loop that, each frame:
+  - reads pilot input (keyboard + on-screen touch controls, mirroring how
+    Pattern Perfect's MobileControls.tsx handles touch) into a
+    `FlightInputs` object;
+  - calls `stepFlight(state, dt, inputs, weather)` from flight-physics.ts
+    and stores the result in a ref (so `<RunwayCanvas stateRef={...}/>` and
+    `<HudOverlay stateRef={...}/>` can read it without a React re-render
+    every frame — both components already expect exactly this pattern);
+  - calls `evaluatePhaseTransition`/`detectLanding` as needed;
+  - calls `gameJuice.update(dt)` and composites `gameJuice.drawParticles()`
+    / `drawOverlays()` on top of the canvas each frame, and calls
+    `gameJuice.triggerTouchdown(quality, point)` at touchdown;
+  - calls `voiceCoach.speak(callout.text, callout.priority)` whenever
+    `getCoachCallout()` returns non-null;
+  - calls the matching `audioEngine.play...()` methods at touchdown
+    (`playTireSqueal`/`playThud`), stall entry/exit
+    (`playStallHorn`/`stopStallHorn`), and crash (`playExplosion`);
+  - owns the GUMPS checklist as its own small piece of UI state (tap-to-check
+    during the downwind leg) and merges it into the object passed to
+    `<HudOverlay/>` as `state.gumps` — nothing else in this bundle sets that
+    field, `hud-overlay.tsx` just reads it defensively;
+  - samples telemetry a few times per second (NOT every physics substep)
+    via `sampleTelemetry()`, pushing into a running array, and — while
+    `state.phase` is `"downwind" | "abeam" | "base" | "final"` — also pushes
+    `airspeedKias` into `approachSpeeds[]`, `glideslopeErrorDeg` into
+    `glideslopeDeviations[]`, and `centerlineOffsetFt` into
+    `approachCenterlineOffsets[]`. Capture `flareStartAltitude` once, the
+    first frame `state.phase` becomes `"roundout"` or `"flare"`.
+
+* On landing (phase becomes `"complete"` or `"crashed"`, or
+  `detectLanding().landed`), assemble a `LandingResult` per the contract
+  documented at the top of `types.ts` — the accumulated arrays above, the
+  touchdown snapshot fields copied off the physics touchdown record
+  (`touchdownVS` → `touchdownVerticalSpeed`, `touchdownSpeedKias` →
+  `touchdownAirspeed`, `touchdownPoint` → `touchdownDistance`,
+  `touchdownCenterlineOffset` → `centerlineOffset`, `crosswindComponentKt`
+  at touchdown → `crosswindComponent`, `|touchdownBankDeg|` →
+  `decrabError`), plus `runwayLength` copied from the active
+  `WeatherConditions`. Then call `scoreLanding(result)` and
+  `generateDiagnosis(score, result)` from scoring-engine.ts, call
+  `useFlareProgress.getState().recordAttempt(result, score)`, and render
+  `<DebriefScreen result={...} score={...} diagnosis={...} .../>`.
+
+* Wire the "Play" action into the FlightCourse dashboard's Mini-game 1 card
+  (currently "Locked"), the same way Mini-game 3 already links to Pattern
+  Perfect, and add a page route for it consistent with how Pattern Perfect
+  is routed in this codebase.
+
+----------------------------------------------------------------------------
+KNOWN LIMITATIONS I DID NOT FIX (design decisions, not bugs — your call)
+----------------------------------------------------------------------------
+* `runwayLength`/`runwayWidth` in difficulty-scaler.ts and daily-challenge.ts
+  are currently cosmetic for the actual flight: flight-physics.ts always
+  simulates a FIXED 3,500 x 100 ft runway via its own `RUNWAY_LENGTH`/
+  `RUNWAY_WIDTH` constants (used at the crash/rollout checks — search for
+  those two constant names in flight-physics.ts). `scoreLanding()` *does*
+  grade the touchdown zone against whatever `runwayLength` you put on
+  `LandingResult`, so right now a "short field" scenario is scored as if the
+  runway were shorter without the physics actually simulating a shorter
+  runway. If you want short-field/wide-runway variety to really change the
+  flying, thread `weather.runwayLength`/`runwayWidth` into those two
+  constants inside `createInitialState`/`stepFlight` instead of the fixed
+  numbers. Left as-is for now rather than guessing at a rebalance.
+* `sTurns` and `glideslopeChasing` on `LandingResult` default to 0 unless the
+  orchestrator computes them — a reasonable heuristic is counting sign
+  changes in `bankDeg` (for S-turns) or in `glideslopeErrorDeg` (for
+  chasing) across the approach, but this wasn't specified anywhere in the
+  original source, so it's left as a documented gap rather than an invented
+  number.
+* `decrabError` is approximated as `|touchdownBankDeg|` — a reasonable
+  proxy, not a true measured heading-vs-runway crab angle. Fine as a first
+  pass; scoring-engine.ts only uses it when `crosswindComponent >= 3`.
+* voice-coach.ts's glide-deviation callout thresholds (±0.12) were written
+  against an unspecified unit scale. They now receive true degrees via
+  `glideslopeErrorDeg` (a ±3° glideslope typically runs a degree or two of
+  error before it's noticeably off). Playtest and retune the 0.12 constant
+  if the "High"/"Low" callouts feel too twitchy or too lax.
+
+----------------------------------------------------------------------------
+FILE MANIFEST (create these paths; every relative "./types" import resolves
+correctly because everything lives in one folder, matching how the original
+files already referenced each other)
+----------------------------------------------------------------------------
+src/lib/flare-game/types.ts            reconstructed shared type contract
+src/lib/flare-game/flight-physics.ts   C172 flight model (unmodified)
+src/lib/flare-game/scoring-engine.ts   5-dimension scoring + diagnosis (unmodified)
+src/lib/flare-game/difficulty-scaler.ts difficulty -> weather presets (patched: turbulence)
+src/lib/flare-game/daily-challenge.ts  daily challenge definitions (unmodified)
+src/lib/flare-game/voice-coach.ts      speech-synthesis CFI callouts (patched: aliases)
+src/lib/flare-game/audio-engine.ts     procedural Web Audio SFX (unmodified)
+src/lib/flare-game/game-juice.ts       screen shake / particles / flash (unmodified)
+src/lib/flare-game/progress-store.ts   Zustand XP/streak/badge store (patched: import path, default)
+src/lib/flare-game/runway-canvas.tsx   cockpit-view canvas renderer (patched: aliases)
+src/lib/flare-game/hud-overlay.tsx     PFD-style HUD overlay (patched: aliases)
+src/lib/flare-game/debrief-screen.tsx  post-landing results UI (patched: alias)
+
+Still to write (see "WHAT STILL NEEDS TO BE BUILT" above):
+src/lib/flare-game/flare-trainer-game.tsx   orchestrator / state machine
+src/lib/flare-game/briefing-screen.tsx      start/difficulty screen
+src/app/.../page.tsx                        route, consistent with Pattern Perfect's
+
+Quarantined, NOT wired in, reference only (see item 2 above):
+reference-only/aviation-alternate-draft.ts
+
+============================================================================
+FILES BEGIN BELOW
+============================================================================
+
+=== FILE: src/lib/flare-game/types.ts ===
+/**
+ * src/lib/flare-game/types.ts
+ * ============================================================================
+ * SHARED TYPE CONTRACT for the Landing Flare Trainer mini-game.
+ *
+ * RECONSTRUCTED FILE. Every other file in this bundle does `import type {...}
+ * from "./types"`, but types.ts itself was not among the uploaded files.
+ * This version was built by cross-referencing the exact field names every
+ * consumer actually reads/writes (flight-physics.ts, runway-canvas.tsx,
+ * hud-overlay.tsx, voice-coach.ts, scoring-engine.ts, debrief-screen.tsx,
+ * difficulty-scaler.ts, daily-challenge.ts, progress-store.ts), so it
+ * compiles against every other file in this bundle unmodified.
+ *
+ * `FlightState` is deliberately identical to flight-physics.ts's own
+ * `PhysicsState` — that file's header says so explicitly ("This module works
+ * against the fully-documented PhysicsState shape... and casts at the public
+ * boundary, so it compiles against any structurally-compatible FlightState").
+ * Treat flight-physics.ts as the source of truth for this shape going
+ * forward; if a field name changes there, mirror it here.
+ * ============================================================================
+ */
+
+/* ----------------------------------------------------------------------- *
+ * Flight phase
+ * ----------------------------------------------------------------------- */
+
+export type FlightPhase =
+  | "downwind"
+  | "abeam"
+  | "base"
+  | "final"
+  | "roundout"
+  | "flare"
+  | "touchdown"
+  | "rollout"
+  | "complete"
+  | "go-around"
+  | "crashed";
+
+/* ----------------------------------------------------------------------- *
+ * Live flight state — the exact shape flight-physics.ts's stepFlight()
+ * consumes and returns every frame. See flight-physics.ts section 4 for
+ * field-by-field documentation (units, sign conventions, coordinate frame).
+ * ----------------------------------------------------------------------- */
+
+export interface FlightState {
+  // bookkeeping
+  time: number;
+  frame: number;
+  phase: FlightPhase;
+  phaseTime: number;
+  rngState: number;
+
+  // position, runway-local feet
+  x: number;
+  y: number;
+  altitudeAgl: number;
+  fieldElevation: number;
+  altitudeMsl: number;
+
+  // velocity
+  airspeedKias: number;
+  airspeedKtas: number;
+  groundSpeedKt: number;
+  verticalSpeedFpm: number;
+  groundTrackDeg: number;
+
+  // attitude
+  pitchDeg: number;
+  bankDeg: number;
+  headingDeg: number;
+  alphaDeg: number;
+  betaDeg: number;
+  flightPathDeg: number;
+
+  // configuration / powerplant
+  flapsDeg: number;
+  flapTargetDeg: number;
+  rpm: number;
+  throttle: number;
+  carbHeat: boolean;
+  powerFraction: number;
+  thrustLb: number;
+  liftLb: number;
+  dragLb: number;
+  loadFactor: number;
+
+  // envelope flags
+  stalled: boolean;
+  stallWarning: boolean;
+  stallSpeedKias: number;
+  overspeed: boolean;
+  onGround: boolean;
+  inGroundEffect: boolean;
+
+  // guidance readouts
+  runwayHeading: number;
+  distanceToThreshold: number;
+  glideslopeErrorFt: number;
+  glideslopeErrorDeg: number;
+  centerlineOffsetFt: number;
+  crosswindComponentKt: number;
+  headwindComponentKt: number;
+
+  // atmosphere / gust integrators
+  densityAltitude: number;
+  densityRatio: number;
+  gustLongitudinal: number;
+  gustVertical: number;
+  gustLateral: number;
+
+  // landing record
+  touchedDown: boolean;
+  touchdownVS: number;
+  touchdownPoint: number;
+  touchdownSpeedKias: number;
+  touchdownCenterlineOffset: number;
+  touchdownPitchDeg: number;
+  touchdownBankDeg: number;
+  bounceCount: number;
+  bounced: boolean;
+  crashed: boolean;
+  crashReason: string;
+  landingComplete: boolean;
+
+  /** UI-only: GUMPS checklist state. Not written by flight-physics.ts — the
+   *  orchestrator/UI owns this (hud-overlay.tsx reads state.gumps). Optional
+   *  so the physics engine's own object literals stay valid without it. */
+  gumps?: Partial<Record<"Gas" | "Undercarriage" | "Mixture" | "Prop" | "Seatbelts", boolean>>;
+}
+
+/* ----------------------------------------------------------------------- *
+ * Weather / scenario environment. Read by flight-physics.ts through its
+ * wx*() accessors (which already tolerate several alias names defensively);
+ * produced by difficulty-scaler.ts and daily-challenge.ts.
+ *
+ * NOTE — runwayLength/runwayWidth here are used by scoring-engine.ts's
+ * zoneScore() for grading, but flight-physics.ts currently simulates a
+ * FIXED 3,500 x 100 ft runway (its own RUNWAY_LENGTH/RUNWAY_WIDTH
+ * constants, ~line 136-137) regardless of what's set here. That's a known
+ * gap, not a bug in this file — see the top-level README block in this
+ * bundle for how to close it if you want short-field scenarios to actually
+ * fly short.
+ * ----------------------------------------------------------------------- */
+
+export interface WeatherConditions {
+  airportICAO?: string;
+  windSpeed: number;
+  windDirection: number;
+  gustSpeed: number;
+  /** Same value as gustSpeed; kept because difficulty-scaler.ts sets both. */
+  windGust?: number;
+  crosswindComponent?: number;
+  /** 0 (glass smooth) .. 1 (white knuckles) — MUST be numeric. flight-physics.ts's
+   *  wxTurbulence() reads this directly as a number with no string parsing. */
+  turbulence: number;
+  /** Optional human-readable label for UI copy, separate from the numeric value above. */
+  turbulenceLabel?: "none" | "light" | "moderate" | "severe";
+  windShear?: boolean;
+  visibility: number;
+  ceiling: number;
+  fog?: boolean;
+  timeOfDay: "dawn" | "day" | "dusk" | "night";
+  runwayWidth: number;
+  runwayLength: number;
+  runwayHeading?: number;
+  fieldElevation?: number;
+  temperature?: number;
+  altimeter?: number;
+  /** Deterministic RNG seed for gusts (see flight-physics.ts wxSeed()). */
+  seed?: number;
+  coachingLevel?: "extra" | "standard" | "minimal";
+}
+
+/* ----------------------------------------------------------------------- *
+ * Difficulty — a numeric index into difficulty-scaler.ts's 5-level preset
+ * table (0 = Calm .. 4 = Mastery). Numeric because difficulty-scaler.ts
+ * indexes an array with it directly (`presets[numericLevel]`).
+ * ----------------------------------------------------------------------- */
+
+export type DifficultyLevel = 0 | 1 | 2 | 3 | 4;
+
+/* ----------------------------------------------------------------------- *
+ * Pilot inputs — flight-physics.ts's stepFlight() third argument.
+ * ----------------------------------------------------------------------- */
+
+export interface FlightInputs {
+  /** Elevator. -1 = full forward (nose down), +1 = full aft (nose up). */
+  pitchInput: number;
+  /** Aileron. -1 = full left, +1 = full right. */
+  rollInput: number;
+  /** Throttle. 0 = idle, 1 = full. */
+  throttleInput: number;
+  /** Commanded flap handle position in degrees: 0, 10, 20 or 30. */
+  flapTarget: number;
+  carbHeat: boolean;
+  /** Rudder. -1 = full left, +1 = full right. */
+  rudderInput: number;
+  brakeInput?: number;
+}
+
+/* ----------------------------------------------------------------------- *
+ * Telemetry — one snapshot per sampleTelemetry() call. Sample this a few
+ * times a second (not every physics substep) and push into an array both
+ * for the debrief mini-replay AND to build the historical arrays
+ * scoring-engine.ts reads off LandingResult (see below).
+ * ----------------------------------------------------------------------- */
+
+export interface TelemetryFrame {
+  t: number;
+  time: number;
+  phase: FlightPhase;
+  x: number;
+  y: number;
+  altitudeAgl: number;
+  airspeedKias: number;
+  verticalSpeedFpm: number;
+  pitchDeg: number;
+  bankDeg: number;
+  headingDeg: number;
+  alphaDeg: number;
+  flapsDeg: number;
+  rpm: number;
+  thrustLb: number;
+  loadFactor: number;
+  stalled: boolean;
+  stallWarning: boolean;
+  onGround: boolean;
+  glideslopeErrorFt: number;
+  centerlineOffsetFt: number;
+}
+
+/* ----------------------------------------------------------------------- *
+ * LandingResult — the CONTRACT the orchestrator must build once a flight
+ * ends, before calling scoreLanding()/generateDiagnosis() (scoring-engine.ts)
+ * and rendering <DebriefScreen/>. scoring-engine.ts is written defensively
+ * (it also accepts several alternate field names — see its own
+ * numberFrom()/numbersFrom() alias lists) but the names below are the ones
+ * it checks FIRST, so populate these.
+ * ----------------------------------------------------------------------- */
+
+export interface LandingResult {
+  quality: "greaser" | "good" | "firm" | "hard" | "bounce" | "crash";
+
+  /** Telemetry for the whole flight (or at minimum the last ~10s) — feeds the debrief mini-replay. */
+  telemetry: TelemetryFrame[];
+
+  // Approach-phase history: push one sample per telemetry tick while
+  // phase is downwind / abeam / base / final.
+  approachSpeeds: number[];
+  glideslopeDeviations: number[];
+  approachCenterlineOffsets: number[];
+  /** Count of bank-direction reversals during the approach (S-turning). 0 if not tracked. */
+  sTurns: number;
+  /** Count of glideslope-deviation sign changes on final ("chasing the needle"). 0 if not tracked. */
+  glideslopeChasing: number;
+
+  // Single-sample snapshots taken at the relevant moment.
+  /** state.altitudeAgl at the instant phase first becomes "roundout" or "flare". */
+  flareStartAltitude: number;
+  /** = touchdownVS from the physics touchdown record. */
+  touchdownVerticalSpeed: number;
+  /** = touchdownSpeedKias from the physics touchdown record. */
+  touchdownAirspeed: number;
+  /** = touchdownPoint from the physics touchdown record. */
+  touchdownDistance: number;
+  /** = touchdownCenterlineOffset from the physics touchdown record. */
+  centerlineOffset: number;
+  /** = crosswindComponentKt at the moment of touchdown. */
+  crosswindComponent: number;
+  /** Proxy for how well the crab was removed before touchdown — |touchdownBankDeg| is a reasonable default. */
+  decrabError: number;
+
+  /** Copy weather.runwayLength here — see the WeatherConditions note above about the current fixed-runway limitation. */
+  runwayLength: number;
+
+  /** Optional pre-computed total, if you want to show something before scoreLanding() finishes. */
+  score?: number;
+}
+
+/* ----------------------------------------------------------------------- *
+ * ScoreBreakdown — scoring-engine.ts's scoreLanding() output.
+ * ----------------------------------------------------------------------- */
+
+export interface ScoreBreakdown {
+  approachStability: number;
+  flareTiming: number;
+  touchdownQuality: number;
+  touchdownZone: number;
+  centerlineControl: number;
+  total: number;
+}
+
+/* ----------------------------------------------------------------------- *
+ * Daily challenge — daily-challenge.ts's getTodaysChallenge() output.
+ * ----------------------------------------------------------------------- */
+
+export interface DailyChallenge {
+  id: string;
+  date: string;
+  dateString: string;
+  type: "crosswind" | "night" | "short-field" | "gusty" | "low-visibility" | "calm";
+  title: string;
+  description: string;
+  weather: WeatherConditions;
+  xpMultiplier: number;
+}
+
+/* ----------------------------------------------------------------------- *
+ * Voice callout — voice-coach.ts's getCoachCallout() output.
+ * ----------------------------------------------------------------------- */
+
+export interface VoiceCallout {
+  id: string;
+  text: string;
+  priority: number;
+}
+
+
+=== FILE: src/lib/flare-game/flight-physics.ts ===
+/**
+ * flight-physics.ts — Cessna 172S flight model for the Flare Trainer.
+ * FlightCourse Academy.
+ *
+ * Design goals
+ * ------------
+ * 1. Skill transfer. Every number below is traceable to the C172S POH or to a
+ *    hand-verified trim/climb/descent check (see PERFORMANCE VALIDATION notes).
+ *    A student who learns to hold 65 KIAS on a 3-degree path here will hold it
+ *    in MSFS or X-Plane.
+ * 2. Determinism. Gusts and turbulence come from an LCG + Ornstein-Uhlenbeck
+ *    process whose seed lives in the state, so a replay of the same inputs
+ *    reproduces the same landing, byte for byte.
+ * 3. Frame budget. No heap traffic inside the integrator: everything is local
+ *    number scratch, and each call returns exactly one plain object literal
+ *    (unavoidable given the immutable `stepFlight` contract). No arrays, no
+ *    closures, no Math.random, no allocations in helpers.
+ *
+ * Coordinate frame (runway-local, feet)
+ * -------------------------------------
+ *   x : along the landing runway. x = 0 is the threshold, +x is the landing
+ *       direction (rollout direction). Runway is RUNWAY_LENGTH long.
+ *   y : lateral, +y is RIGHT of the landing direction. y = 0 is centerline.
+ *   altitudeAgl : feet above the runway surface.
+ *   heading : degrees TRUE. `runwayHeading` (default 0 / Runway 36) maps true
+ *       heading to the local frame, so relative heading 0 = aligned to land.
+ *   Left-hand traffic: downwind sits at negative y, base is flown on 090-rel.
+ *
+ * types.ts contract
+ * -----------------
+ * The exact field list of `FlightState` lives in ./types. This module works
+ * against the fully-documented `PhysicsState` shape below and casts at the
+ * public boundary, so it compiles against any structurally-compatible
+ * `FlightState`. If your `FlightPhase` union uses different string literals,
+ * change ONLY the PHASE table near the top of this file.
+ */
+
+import type {
+  FlightState,
+  FlightPhase,
+  TelemetryFrame,
+  WeatherConditions,
+} from './types';
+
+/* ==========================================================================
+ * 1. PILOT INPUTS
+ * ========================================================================== */
+
+export interface FlightInputs {
+  /** Elevator. -1 = full forward (nose down), +1 = full aft (nose up). */
+  pitchInput: number;
+  /** Aileron. -1 = full left, +1 = full right. */
+  rollInput: number;
+  /** Throttle. 0 = idle (~700 RPM), 1 = full (~2700 RPM). */
+  throttleInput: number;
+  /** Commanded flap handle position in degrees: 0, 10, 20 or 30. */
+  flapTarget: number;
+  /** Carburettor heat. ON costs ~9% power and ~75 RPM. */
+  carbHeat: boolean;
+  /** Rudder. -1 = full left, +1 = full right. */
+  rudderInput: number;
+  /** Optional wheel brakes, 0..1. Ignored in flight. */
+  brakeInput?: number;
+}
+
+/* ==========================================================================
+ * 2. PHASE TABLE  (edit here if your FlightPhase literals differ)
+ * ========================================================================== */
+
+const PHASE = {
+  downwind: 'downwind' as unknown as FlightPhase,
+  abeam: 'abeam' as unknown as FlightPhase,
+  base: 'base' as unknown as FlightPhase,
+  final: 'final' as unknown as FlightPhase,
+  roundout: 'roundout' as unknown as FlightPhase,
+  flare: 'flare' as unknown as FlightPhase,
+  touchdown: 'touchdown' as unknown as FlightPhase,
+  rollout: 'rollout' as unknown as FlightPhase,
+  complete: 'complete' as unknown as FlightPhase,
+  goAround: 'go-around' as unknown as FlightPhase,
+  crashed: 'crashed' as unknown as FlightPhase,
+};
+
+/* ==========================================================================
+ * 3. AIRCRAFT + ENVIRONMENT CONSTANTS  (Cessna 172S, 2300 lb gross)
+ * ========================================================================== */
+
+const G = 32.174; // ft/s^2
+const KT_TO_FPS = 1.68781;
+const FPS_TO_KT = 1 / KT_TO_FPS;
+const FPM_PER_FPS = 60;
+const DEG = Math.PI / 180;
+const RAD = 180 / Math.PI;
+const RHO_SL = 0.0023769; // slug/ft^3, ISA sea level
+
+const WEIGHT = 2300; // lb
+const MASS = WEIGHT / G; // slug
+const WING_AREA = 174; // ft^2
+const WING_SPAN = 36.083; // ft
+const ASPECT_RATIO = (WING_SPAN * WING_SPAN) / WING_AREA; // 7.483
+const OSWALD_E = 0.75;
+const K_INDUCED = 1 / (Math.PI * ASPECT_RATIO * OSWALD_E); // 0.0567
+
+// Lift curve. CL = CL0 + CL_ALPHA * alphaDeg + dCL(flaps), capped at CLmax.
+const CL0 = 0.25;
+const CL_ALPHA = 0.0855; // per degree (3-D, includes downwash)
+
+// Parasite drag.
+const CD0_CLEAN = 0.032;
+// Windmilling-propeller drag increment at idle, faded out with power.
+const CD_PROP_WINDMILL = 0.02;
+
+/** Published stall speeds, KIAS at 2300 lb, wings level. */
+const VS_F0 = 48;
+const VS_F10 = 45;
+const VS_F20 = 42;
+const VS_F30 = 40; // Vs0
+/** Stall warning horn margin above the configured stall speed. */
+const STALL_HORN_MARGIN = 8; // -> 48 KIAS with full flaps
+
+// Reference speeds (KIAS)
+export const V_APPROACH_TARGET = 65;
+export const V_APPROACH_MIN = 60;
+export const V_APPROACH_MAX = 70;
+export const V_TOUCHDOWN_IDEAL = 50;
+export const V_BEST_GLIDE = 65;
+export const V_ROTATE = 55;
+export const VFE_10 = 110; // flaps 0->10 limit
+export const VFE_FULL = 85; // flaps 10->30 limit
+export const VNO = 129;
+export const VNE = 163;
+
+// Pattern geometry
+export const PATTERN_ALTITUDE = 1000; // ft AGL
+export const DOWNWIND_OFFSET = 3000; // ft, left traffic -> negative y
+export const RUNWAY_LENGTH = 3500; // ft
+export const RUNWAY_WIDTH = 100; // ft
+export const AIM_POINT = 300; // ft past threshold (the 1000-footers)
+export const TOUCHDOWN_ZONE_START = 200;
+export const TOUCHDOWN_ZONE_END = 1200;
+export const GLIDESLOPE_DEG = 3;
+/**
+ * Spec target descent on final is 500 fpm. Pure 3-degree geometry at 65 KIAS
+ * gives ~345 fpm; 500 fpm is the classroom number that also covers a 90-KIAS
+ * pattern descent and a headwind-free 1000 ft / 2 nm profile. We coach against
+ * DESCENT_RATE_TARGET and compute true glideslope error from GLIDESLOPE_DEG.
+ */
+export const DESCENT_RATE_TARGET = 500; // fpm
+
+// Engine / propeller (Lycoming IO-360-L2A, fixed pitch, 180 hp)
+const RPM_IDLE = 700;
+const RPM_MAX = 2700;
+export const RPM_CRUISE = 2300;
+export const RPM_PATTERN = 1500; // abeam / base
+const RPM_POWER_EXP = 2.4; // shaft power ~ (rpm/rpmMax)^2.4
+const RATED_HP = 180;
+const PROP_ETA_MAX = 0.78;
+const STATIC_THRUST_MAX = 430; // lb at 2700 RPM, sea level, zero airspeed
+const CARB_HEAT_POWER = 0.91;
+const CARB_HEAT_RPM = 75;
+const ENGINE_TAU = 1.0; // s, spool-up / spool-down lag
+
+// Control authority
+const PITCH_AUTHORITY_DEG = 10; // full aft stick = +10 deg alpha over trim
+const PITCH_TAU = 0.45; // s, alpha response lag
+const ROLL_RATE_MAX = 42; // deg/s at full aileron, approach q
+const BANK_MAX = 60;
+const ROLL_STABILITY = 0.9; // dihedral roll-back toward level, 1/s
+const RUDDER_YAW_RATE = 3.0; // deg/s of nose yaw at full rudder, approach q
+const RUDDER_BETA_MAX = 12; // deg of steady sideslip at full rudder
+const BETA_TAU = 0.6; // s
+const FLAP_RATE = 5; // deg/s of flap travel
+
+// Ground effect
+const GROUND_EFFECT_HEIGHT = 10; // ft AGL where it starts
+const GROUND_EFFECT_DRAG_CUT = 0.5; // induced drag -50% on the surface
+const GROUND_EFFECT_LIFT_GAIN = 0.06;
+
+// Ground handling
+const ROLLING_FRICTION = 0.025;
+const BRAKING_FRICTION = 0.35;
+const NOSEWHEEL_AUTHORITY = 6; // deg/s at 40 kt, full rudder
+const TAXI_COMPLETE_SPEED = 20; // KIAS -> rollout complete
+
+// Touchdown grading, fpm (negative = descending)
+export const VS_GREASER = -200;
+export const VS_FIRM = -400;
+export const VS_HARD = -600;
+const VS_BOUNCE_THRESHOLD = -250;
+const BOUNCE_RESTITUTION = 0.35;
+
+// Integration
+const SUBSTEP_MAX = 1 / 50; // s
+const DT_MAX = 0.1; // s, clamp huge frame hitches
+
+/* ==========================================================================
+ * 4. INTERNAL STATE SHAPE (documents what this engine reads and writes)
+ * ========================================================================== */
+
+export interface PhysicsState {
+  // --- bookkeeping ---
+  time: number; // s since createInitialState
+  frame: number;
+  phase: FlightPhase;
+  phaseTime: number; // s in the current phase
+  rngState: number; // LCG state; makes gusts deterministic + replayable
+
+  // --- position, runway-local feet ---
+  x: number; // + past threshold
+  y: number; // + right of centerline
+  altitudeAgl: number;
+  fieldElevation: number;
+  altitudeMsl: number;
+
+  // --- velocity ---
+  airspeedKias: number;
+  airspeedKtas: number;
+  groundSpeedKt: number;
+  verticalSpeedFpm: number;
+  groundTrackDeg: number; // true
+
+  // --- attitude ---
+  pitchDeg: number; // theta
+  bankDeg: number; // phi
+  headingDeg: number; // psi, true
+  alphaDeg: number;
+  betaDeg: number; // + = relative wind from the right
+  flightPathDeg: number; // gamma, relative to the air mass
+
+  // --- configuration / powerplant ---
+  flapsDeg: number; // actual, travels toward flapTarget
+  flapTargetDeg: number;
+  rpm: number;
+  throttle: number;
+  carbHeat: boolean;
+  powerFraction: number; // 0..1 of rated 180 hp
+  thrustLb: number;
+  liftLb: number;
+  dragLb: number;
+  loadFactor: number;
+
+  // --- envelope flags ---
+  stalled: boolean;
+  stallWarning: boolean;
+  stallSpeedKias: number;
+  overspeed: boolean;
+  onGround: boolean;
+  inGroundEffect: boolean;
+
+  // --- guidance readouts ---
+  runwayHeading: number;
+  distanceToThreshold: number; // ft, + = short of the threshold
+  glideslopeErrorFt: number; // + = high
+  glideslopeErrorDeg: number;
+  centerlineOffsetFt: number;
+  crosswindComponentKt: number; // + from the right
+  headwindComponentKt: number; // + = headwind
+
+  // --- atmosphere / gust integrators ---
+  densityAltitude: number;
+  densityRatio: number;
+  gustLongitudinal: number; // ft/s along the wind vector
+  gustVertical: number; // ft/s, + = updraft
+  gustLateral: number; // ft/s, + toward +y
+
+  // --- landing record ---
+  touchedDown: boolean;
+  touchdownVS: number; // fpm at first contact
+  touchdownPoint: number; // ft past threshold
+  touchdownSpeedKias: number;
+  touchdownCenterlineOffset: number;
+  touchdownPitchDeg: number;
+  touchdownBankDeg: number;
+  bounceCount: number;
+  bounced: boolean;
+  crashed: boolean;
+  crashReason: string;
+  landingComplete: boolean;
+}
+
+/* ==========================================================================
+ * 5. SMALL PURE HELPERS (all allocation-free)
+ * ========================================================================== */
+
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
+function num(v: unknown, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
+
+/** Wrap to [0, 360). */
+function wrap360(deg: number): number {
+  let d = deg % 360;
+  if (d < 0) d += 360;
+  return d;
+}
+
+/** Wrap to (-180, 180]. */
+function wrap180(deg: number): number {
+  let d = (deg + 180) % 360;
+  if (d < 0) d += 360;
+  return d - 180;
+}
+
+/** First-order lag factor for a time constant tau over dt. */
+function lagAlpha(dt: number, tau: number): number {
+  return tau <= 0 ? 1 : 1 - Math.exp(-dt / tau);
+}
+
+/** Snap a flap handle request to a legal detent. */
+export function snapFlapDetent(deg: number): number {
+  if (deg < 5) return 0;
+  if (deg < 15) return 10;
+  if (deg < 25) return 20;
+  return 30;
+}
+
+/** Published stall speed, KIAS, interpolated between detents. */
+export function stallSpeedForFlaps(flapsDeg: number): number {
+  const f = clamp(flapsDeg, 0, 30);
+  if (f <= 10) return VS_F0 + ((VS_F10 - VS_F0) * f) / 10;
+  if (f <= 20) return VS_F10 + ((VS_F20 - VS_F10) * (f - 10)) / 10;
+  return VS_F20 + ((VS_F30 - VS_F20) * (f - 20)) / 10;
+}
+
+/**
+ * CLmax derived directly from the published stall speed, so the model stalls
+ * exactly where the POH says it does:  CLmax = W / (q_stall * S).
+ * Full flaps -> 2.44, clean -> 1.69.
+ */
+export function clMaxForFlaps(flapsDeg: number): number {
+  const vs = stallSpeedForFlaps(flapsDeg) * KT_TO_FPS;
+  return WEIGHT / (0.5 * RHO_SL * vs * vs * WING_AREA);
+}
+
+/** Flap lift increment at zero alpha. */
+function flapLiftIncrement(flapsDeg: number): number {
+  const f = clamp(flapsDeg, 0, 30);
+  if (f <= 10) return (0.35 * f) / 10;
+  if (f <= 20) return 0.35 + (0.3 * (f - 10)) / 10;
+  return 0.65 + (0.25 * (f - 20)) / 10; // 30 deg -> 0.90
+}
+
+/** Flap parasite-drag increment. */
+function flapDragIncrement(flapsDeg: number): number {
+  const f = clamp(flapsDeg, 0, 30);
+  if (f <= 10) return (0.007 * f) / 10;
+  if (f <= 20) return 0.007 + (0.017 * (f - 10)) / 10;
+  return 0.024 + (0.031 * (f - 20)) / 10; // 30 deg -> 0.055
+}
+
+/**
+ * Stalling angle of attack. Falls monotonically with flap extension:
+ * 16.9 / 15.5 / 15.4 / 15.1 degrees for 0 / 10 / 20 / 30.
+ */
+export function stallAlphaForFlaps(flapsDeg: number): number {
+  return (clMaxForFlaps(flapsDeg) - CL0 - flapLiftIncrement(flapsDeg)) / CL_ALPHA;
+}
+
+/** Highest flap setting legal at this indicated airspeed. */
+function flapLimitForSpeed(kias: number): number {
+  if (kias > VFE_10) return 0;
+  if (kias > VFE_FULL) return 10;
+  return 30;
+}
+
+/** ISA density ratio for a density altitude in feet. */
+function densityRatioForAltitude(densityAlt: number): number {
+  const t = 1 - 6.87535e-6 * densityAlt;
+  return t <= 0 ? 0.05 : Math.pow(t, 4.2561);
+}
+
+/* ==========================================================================
+ * 6. WEATHER NORMALISATION
+ * Tolerates several plausible field spellings in WeatherConditions so the
+ * engine never divides by undefined.
+ * ========================================================================== */
+
+function wxWindSpeed(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return Math.max(
+    0,
+    num(o.windSpeed, num(o.windSpeedKts, num(o.windKts, num(o.wind, 0)))),
+  );
+}
+
+/** Direction the wind is coming FROM, degrees true (met convention). */
+function wxWindDirection(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return wrap360(
+    num(o.windDirection, num(o.windDir, num(o.windDirectionDeg, num(o.windHeading, 0)))),
+  );
+}
+
+/** Peak gust speed in knots (total, not the increment). */
+function wxGustSpeed(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return Math.max(
+    0,
+    num(o.gustSpeed, num(o.windGust, num(o.gustKts, num(o.gusts, 0)))),
+  );
+}
+
+/** 0 = glass smooth, 1 = white knuckles. */
+function wxTurbulence(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return clamp(num(o.turbulence, num(o.turbulenceIntensity, num(o.turbulenceLevel, 0))), 0, 1);
+}
+
+function wxTemperatureC(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return num(o.temperature, num(o.temperatureC, num(o.oatC, num(o.oat, 15))));
+}
+
+function wxAltimeterInHg(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return num(o.altimeter, num(o.altimeterSetting, num(o.pressureInHg, num(o.qnh, 29.92))));
+}
+
+function wxFieldElevation(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return num(o.fieldElevation, num(o.elevation, num(o.airportElevation, 0)));
+}
+
+function wxRunwayHeading(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return wrap360(num(o.runwayHeading, num(o.runwayHdg, num(o.runwayCourse, 0))));
+}
+
+function wxSeed(w: WeatherConditions): number {
+  const o = w as unknown as Record<string, unknown>;
+  return num(o.seed, num(o.randomSeed, 0x5eed1e)) >>> 0;
+}
+
+/** Density altitude from field elevation, altimeter setting and OAT. */
+function computeDensityAltitude(w: WeatherConditions): number {
+  const fieldElev = wxFieldElevation(w);
+  const pressureAlt = fieldElev + (29.92 - wxAltimeterInHg(w)) * 1000;
+  const isaTemp = 15 - 0.0019812 * pressureAlt;
+  return pressureAlt + 118.8 * (wxTemperatureC(w) - isaTemp);
+}
+
+/* ==========================================================================
+ * 7. TURBULENCE: LCG + Ornstein-Uhlenbeck
+ * ========================================================================== */
+
+/** Advance the LCG. Returns the new state; caller keeps it in FlightState. */
+function lcgNext(s: number): number {
+  return (Math.imul(s, 1664525) + 1013904223) >>> 0;
+}
+
+/** Uniform 0..1 from an LCG state. */
+function lcgUnit(s: number): number {
+  return s / 4294967296;
+}
+
+/* ==========================================================================
+ * 8. ENGINE MODEL
+ * ========================================================================== */
+
+/** Shaft power fraction of rated 180 hp for a given RPM. */
+function powerFractionForRpm(rpm: number, carbHeat: boolean): number {
+  const f = Math.pow(clamp(rpm, 0, RPM_MAX) / RPM_MAX, RPM_POWER_EXP);
+  return clamp(carbHeat ? f * CARB_HEAT_POWER : f, 0, 1);
+}
+
+/**
+ * Propeller thrust, lb. Momentum-limited at low speed (static thrust ceiling)
+ * and power-limited at high speed (eta * P / V). Validated points at sea level:
+ *   2700 RPM, clean, 74 kt  -> ~762 fpm climb (POH 730)
+ *   2700 RPM, flaps 30, 65  -> ~270 fpm climb
+ *   1500 RPM, flaps 20, 65  -> ~420 fpm descent (pattern power)
+ *   idle,     flaps 30, 65  -> ~1020 fpm descent
+ *   idle,     clean,   65   -> ~10:1 glide (POH 9.1:1)
+ */
+function propellerThrust(powerFraction: number, tasFps: number, densityRatio: number): number {
+  const staticT = STATIC_THRUST_MAX * Math.pow(powerFraction, 0.75) * densityRatio;
+  const shaftFtLbS = RATED_HP * powerFraction * 550 * densityRatio;
+  const v = Math.max(tasFps, 12); // avoid the 1/0 at a standstill
+  const powerLimited = (shaftFtLbS * PROP_ETA_MAX) / v;
+  return Math.min(staticT, powerLimited);
+}
+
+/* ==========================================================================
+ * 9. PUBLIC: createInitialState
+ * ========================================================================== */
+
+/**
+ * Player starts established on the downwind leg: 1000 ft AGL, 90 KIAS,
+ * flaps up, 2300 RPM, wings level, parallel to the runway on the left-traffic
+ * (negative y) side, still upwind of the abeam point.
+ */
+export function createInitialState(weather: WeatherConditions): FlightState {
+  const runwayHeading = wxRunwayHeading(weather);
+  const fieldElevation = wxFieldElevation(weather);
+  const densityAltitude = computeDensityAltitude(weather);
+  const densityRatio = densityRatioForAltitude(densityAltitude + PATTERN_ALTITUDE);
+
+  const kias = 90;
+  const ktas = kias / Math.sqrt(Math.max(densityRatio, 0.2));
+  const flaps = 0;
+
+  // Trim alpha for level flight at 90 KIAS clean.
+  const tasFps = ktas * KT_TO_FPS;
+  const q = 0.5 * RHO_SL * densityRatio * tasFps * tasFps;
+  const clReq = WEIGHT / Math.max(q * WING_AREA, 1);
+  const alpha = clamp((clReq - CL0 - flapLiftIncrement(flaps)) / CL_ALPHA, -4, 12);
+
+  // Downwind: reciprocal heading, runway off the left wing.
+  const headingDeg = wrap360(runwayHeading + 180);
+
+  const windSpeed = wxWindSpeed(weather);
+  const windRel = (wxWindDirection(weather) - runwayHeading) * DEG;
+
+  const s: PhysicsState = {
+    time: 0,
+    frame: 0,
+    phase: PHASE.downwind,
+    phaseTime: 0,
+    rngState: (wxSeed(weather) ^ 0x9e3779b9) >>> 0,
+
+    x: 4000, // ~3700 ft of downwind before the abeam point
+    y: -DOWNWIND_OFFSET,
+    altitudeAgl: PATTERN_ALTITUDE,
+    fieldElevation,
+    altitudeMsl: fieldElevation + PATTERN_ALTITUDE,
+
+    airspeedKias: kias,
+    airspeedKtas: ktas,
+    groundSpeedKt: Math.sqrt(
+      Math.pow(-tasFps - windSpeed * KT_TO_FPS * Math.cos(windRel), 2) +
+        Math.pow(windSpeed * KT_TO_FPS * Math.sin(windRel), 2),
+    ) * FPS_TO_KT,
+    verticalSpeedFpm: 0,
+    groundTrackDeg: wrap360(
+      runwayHeading +
+        Math.atan2(
+          -windSpeed * KT_TO_FPS * Math.sin(windRel),
+          -tasFps - windSpeed * KT_TO_FPS * Math.cos(windRel),
+        ) * RAD,
+    ),
+
+    pitchDeg: alpha,
+    bankDeg: 0,
+    headingDeg,
+    alphaDeg: alpha,
+    betaDeg: 0,
+    flightPathDeg: 0,
+
+    flapsDeg: flaps,
+    flapTargetDeg: flaps,
+    rpm: RPM_CRUISE,
+    throttle: (RPM_CRUISE - RPM_IDLE) / (RPM_MAX - RPM_IDLE),
+    carbHeat: false,
+    powerFraction: powerFractionForRpm(RPM_CRUISE, false),
+    thrustLb: 0,
+    liftLb: WEIGHT,
+    dragLb: 0,
+    loadFactor: 1,
+
+    stalled: false,
+    stallWarning: false,
+    stallSpeedKias: stallSpeedForFlaps(flaps),
+    overspeed: false,
+    onGround: false,
+    inGroundEffect: false,
+
+    runwayHeading,
+    distanceToThreshold: -4000,
+    glideslopeErrorFt: 0,
+    glideslopeErrorDeg: 0,
+    centerlineOffsetFt: -DOWNWIND_OFFSET,
+    crosswindComponentKt: windSpeed * Math.sin(windRel),
+    headwindComponentKt: windSpeed * Math.cos(windRel),
+
+    densityAltitude,
+    densityRatio,
+    gustLongitudinal: 0,
+    gustVertical: 0,
+    gustLateral: 0,
+
+    touchedDown: false,
+    touchdownVS: 0,
+    touchdownPoint: 0,
+    touchdownSpeedKias: 0,
+    touchdownCenterlineOffset: 0,
+    touchdownPitchDeg: 0,
+    touchdownBankDeg: 0,
+    bounceCount: 0,
+    bounced: false,
+    crashed: false,
+    crashReason: '',
+    landingComplete: false,
+  };
+
+  return s as unknown as FlightState;
+}
+
+/* ==========================================================================
+ * 10. PUBLIC: stepFlight
+ * ========================================================================== */
+
+/**
+ * Integrate one frame. Pure: never mutates `state`, returns a fresh plain
+ * object. Internally uses only local number scratch (no arrays, no temp
+ * objects, no closures), and sub-steps at 50 Hz so a dropped frame stays
+ * stable instead of exploding the alpha loop.
+ */
+export function stepFlight(
+  state: FlightState,
+  dt: number,
+  inputs: FlightInputs,
+  weather: WeatherConditions,
+): FlightState {
+  const s = state as unknown as PhysicsState;
+
+  const frameDt = clamp(num(dt, 1 / 60), 0, DT_MAX);
+
+  /* ---- pilot inputs, sanitised ---- */
+  const pitchIn = clamp(num(inputs.pitchInput, 0), -1, 1);
+  const rollIn = clamp(num(inputs.rollInput, 0), -1, 1);
+  const throttleIn = clamp(num(inputs.throttleInput, 0), 0, 1);
+  const rudderIn = clamp(num(inputs.rudderInput, 0), -1, 1);
+  const brakeIn = clamp(num(inputs.brakeInput, 0), 0, 1);
+  const carbHeat = inputs.carbHeat === true;
+  const flapRequest = snapFlapDetent(num(inputs.flapTarget, s.flapsDeg));
+
+  /* ---- environment (constant across the frame) ---- */
+  const runwayHeading = s.runwayHeading;
+  const windSpeedKt = wxWindSpeed(weather);
+  const gustPeakKt = wxGustSpeed(weather);
+  const turbulence = wxTurbulence(weather);
+  const windRelRad = (wxWindDirection(weather) - runwayHeading) * DEG;
+  // Wind velocity vector in the runway frame, ft/s. Wind FROM the runway
+  // heading (windRel = 0) blows toward -x, i.e. a headwind on final.
+  const windXFull = -windSpeedKt * KT_TO_FPS * Math.cos(windRelRad);
+  const windYFull = -windSpeedKt * KT_TO_FPS * Math.sin(windRelRad);
+  const headwindKt = windSpeedKt * Math.cos(windRelRad);
+  const crosswindKt = windSpeedKt * Math.sin(windRelRad);
+  const gustIncrementFps = Math.max(0, gustPeakKt - windSpeedKt) * KT_TO_FPS;
+  const gustSigma = gustIncrementFps * 0.55 + turbulence * 9;
+
+  const densityAltitude = s.densityAltitude;
+  const stallHornSpeedFactor = 1 + STALL_HORN_MARGIN / VS_F30; // 1.20
+
+  /* ---- working copies (locals: stack only) ---- */
+  let time = s.time;
+  let x = s.x;
+  let y = s.y;
+  let alt = s.altitudeAgl;
+  let ktas = s.airspeedKtas;
+  let gamma = s.flightPathDeg;
+  let heading = s.headingDeg;
+  let bank = s.bankDeg;
+  let alpha = s.alphaDeg;
+  let beta = s.betaDeg;
+  let pitch = s.pitchDeg;
+  let flaps = s.flapsDeg;
+  let rpm = s.rpm;
+  let rng = s.rngState;
+  let gustU = s.gustLongitudinal;
+  let gustW = s.gustVertical;
+  let gustV = s.gustLateral;
+  let onGround = s.onGround;
+  let stalled = s.stalled;
+  let bounceCount = s.bounceCount;
+  let bounced = false;
+  let crashed = s.crashed;
+  let crashReason = s.crashReason;
+  let touchedDown = s.touchedDown;
+  let touchdownVS = s.touchdownVS;
+  let touchdownPoint = s.touchdownPoint;
+  let touchdownSpeed = s.touchdownSpeedKias;
+  let touchdownOffset = s.touchdownCenterlineOffset;
+  let touchdownPitch = s.touchdownPitchDeg;
+  let touchdownBank = s.touchdownBankDeg;
+  let landingComplete = s.landingComplete;
+
+  // Per-frame outputs, filled by the last sub-step.
+  let densityRatio = s.densityRatio;
+  let kias = s.airspeedKias;
+  let liftLb = s.liftLb;
+  let dragLb = s.dragLb;
+  let thrustLb = s.thrustLb;
+  let loadFactor = s.loadFactor;
+  let powerFraction = s.powerFraction;
+  let vsFps = s.verticalSpeedFpm / FPM_PER_FPS;
+  let groundSpeedKt = s.groundSpeedKt;
+  let groundTrack = s.groundTrackDeg;
+  let inGroundEffect = s.inGroundEffect;
+  let stallWarning = s.stallWarning;
+  let overspeed = s.overspeed;
+  let stallSpeedKias = s.stallSpeedKias;
+
+  const steps = frameDt <= 0 ? 0 : Math.max(1, Math.ceil(frameDt / SUBSTEP_MAX));
+  const h = steps > 0 ? frameDt / steps : 0;
+
+  for (let step = 0; step < steps; step++) {
+    time += h;
+
+    /* ---------------- atmosphere ---------------- */
+    densityRatio = densityRatioForAltitude(densityAltitude + alt);
+    const rho = RHO_SL * densityRatio;
+    const sqrtSigma = Math.sqrt(Math.max(densityRatio, 0.2));
+
+    /* ---------------- turbulence (OU process) ---------------- */
+    if (gustSigma > 0.01) {
+      const tauG = 2.5;
+      const gainG = Math.sqrt((2 * h) / tauG);
+      // 3-sample Irwin-Hall gaussian approximation, allocation-free.
+      rng = lcgNext(rng);
+      const a1 = lcgUnit(rng);
+      rng = lcgNext(rng);
+      const a2 = lcgUnit(rng);
+      rng = lcgNext(rng);
+      const a3 = lcgUnit(rng);
+      const nU = (a1 + a2 + a3 - 1.5) * 2;
+      rng = lcgNext(rng);
+      const b1 = lcgUnit(rng);
+      rng = lcgNext(rng);
+      const b2 = lcgUnit(rng);
+      rng = lcgNext(rng);
+      const b3 = lcgUnit(rng);
+      const nW = (b1 + b2 + b3 - 1.5) * 2;
+      rng = lcgNext(rng);
+      const c1 = lcgUnit(rng);
+      rng = lcgNext(rng);
+      const c2 = lcgUnit(rng);
+      rng = lcgNext(rng);
+      const c3 = lcgUnit(rng);
+      const nV = (c1 + c2 + c3 - 1.5) * 2;
+
+      gustU += (-gustU / tauG) * h + gustSigma * gainG * nU;
+      gustW += (-gustW / tauG) * h + gustSigma * 0.7 * gainG * nW;
+      gustV += (-gustV / tauG) * h + gustSigma * 0.7 * gainG * nV;
+      // Gusts die out in the surface layer.
+      const gustFade = alt < 30 ? 0.45 + (0.55 * alt) / 30 : 1;
+      gustU = clamp(gustU, -gustSigma * 3, gustSigma * 3) * gustFade;
+      gustW = clamp(gustW, -gustSigma * 2, gustSigma * 2) * gustFade;
+      gustV = clamp(gustV, -gustSigma * 2, gustSigma * 2) * gustFade;
+    } else {
+      gustU *= 1 - lagAlpha(h, 1.5);
+      gustW *= 1 - lagAlpha(h, 1.5);
+      gustV *= 1 - lagAlpha(h, 1.5);
+    }
+
+    /* ---------------- wind gradient ---------------- */
+    const windScale = alt < 50 ? 0.65 + (0.35 * alt) / 50 : 1;
+    const windX = windXFull * windScale;
+    const windY = windYFull * windScale;
+
+    /* ---------------- flaps ---------------- */
+    kias = ktas * sqrtSigma;
+    const flapCeiling = flapLimitForSpeed(kias);
+    const flapCommand = Math.min(flapRequest, Math.max(flapCeiling, 0));
+    if (flaps < flapCommand) flaps = Math.min(flapCommand, flaps + FLAP_RATE * h);
+    else if (flaps > flapCommand) flaps = Math.max(flapCommand, flaps - FLAP_RATE * h);
+
+    /* ---------------- engine ---------------- */
+    // Fixed-pitch prop: RPM also rises with airspeed at a given throttle.
+    let rpmTarget = RPM_IDLE + throttleIn * (RPM_MAX - RPM_IDLE) + (kias - 65) * 2;
+    if (carbHeat) rpmTarget -= CARB_HEAT_RPM;
+    rpmTarget = clamp(rpmTarget, 550, 2750);
+    rpm += (rpmTarget - rpm) * lagAlpha(h, ENGINE_TAU);
+    powerFraction = powerFractionForRpm(rpm, carbHeat);
+
+    /* ---------------- aerodynamics ---------------- */
+    // Effective airspeed includes the longitudinal gust: a gust is felt first
+    // as an airspeed excursion, which then propagates into lift and pitch.
+    const tasFps = ktas * KT_TO_FPS;
+    const vAirFps = Math.max(tasFps + gustU, 5);
+    const q = 0.5 * rho * vAirFps * vAirFps;
+    const qS = q * WING_AREA;
+    const qRatio = clamp(qS / 2488, 0.25, 3); // 2488 = qS at 65 KIAS, SL
+
+    const clMax = clMaxForFlaps(flaps);
+    const dClFlap = flapLiftIncrement(flaps);
+    const alphaStall = stallAlphaForFlaps(flaps);
+    stallSpeedKias = stallSpeedForFlaps(flaps);
+
+    /* ---- pitch: alpha-command with speed stability (self-trimming) ---- */
+    const clTrim = clamp((WEIGHT / Math.max(Math.cos(bank * DEG), 0.4)) / Math.max(qS, 1), -0.4, clMax);
+    const alphaTrim = clamp((clTrim - CL0 - dClFlap) / CL_ALPHA, -6, alphaStall - 0.4);
+    const ctrlEff = stalled ? 0.35 : 1;
+    let alphaTarget = alphaTrim + pitchIn * PITCH_AUTHORITY_DEG * ctrlEff;
+    if (stalled) {
+      // Stall break: the nose falls whether or not the pilot agrees.
+      alphaTarget = Math.min(alphaTarget, alphaStall - 4.5);
+    }
+    if (onGround) {
+      alphaTarget = clamp(alphaTarget, -2, 13);
+    }
+    alpha += (alphaTarget - alpha) * lagAlpha(h, stalled ? 0.7 : PITCH_TAU);
+    // Vertical gust arrives as an instantaneous alpha change.
+    const alphaGust = Math.atan2(gustW, Math.max(vAirFps, 20)) * RAD;
+    const alphaEff = clamp(alpha + alphaGust, -12, 30);
+
+    /* ---- lift coefficient with a smooth post-stall lapse ---- */
+    let cl = CL0 + CL_ALPHA * alphaEff + dClFlap;
+    let postStall = 0;
+    if (alphaEff > alphaStall) {
+      postStall = clamp((alphaEff - alphaStall) / 8, 0, 1);
+      cl = clMax * (1 - 0.55 * postStall);
+    } else if (cl > clMax) {
+      cl = clMax;
+    }
+    // Sideslip spills a little lift.
+    const absBeta = beta < 0 ? -beta : beta;
+    cl *= 1 - 0.004 * absBeta;
+
+    /* ---- ground effect: the source of the float ---- */
+    let inducedFactor = 1;
+    let geLift = 1;
+    inGroundEffect = alt < GROUND_EFFECT_HEIGHT;
+    if (inGroundEffect) {
+      const geFrac = 1 - clamp(alt / GROUND_EFFECT_HEIGHT, 0, 1);
+      inducedFactor = 1 - GROUND_EFFECT_DRAG_CUT * geFrac;
+      geLift = 1 + GROUND_EFFECT_LIFT_GAIN * geFrac;
+    }
+    cl *= geLift;
+
+    /* ---- drag ---- */
+    let cd =
+      CD0_CLEAN +
+      flapDragIncrement(flaps) +
+      CD_PROP_WINDMILL * (1 - powerFraction) +
+      K_INDUCED * cl * cl * inducedFactor;
+    cd += 0.0008 * absBeta * absBeta; // slip drag
+    if (postStall > 0) cd += 0.09 * (alphaEff - alphaStall);
+
+    liftLb = cl * qS;
+    dragLb = cd * qS;
+    thrustLb = propellerThrust(powerFraction, vAirFps, densityRatio);
+
+    const gammaRad = gamma * DEG;
+    const bankRad = bank * DEG;
+    loadFactor = liftLb / WEIGHT;
+
+    /* ---------------- stall bookkeeping ---------------- */
+    const wasStalled = stalled;
+    if (onGround) {
+      stalled = false;
+    } else if (wasStalled) {
+      // Keep the stall latched until both AoA and airspeed have recovered.
+      stalled = !(alphaEff < alphaStall - 2.5 && kias > stallSpeedKias * 1.03);
+    } else {
+      stalled = alphaEff > alphaStall || kias < stallSpeedKias * 0.97;
+    }
+    stallWarning =
+      !onGround &&
+      (kias < stallSpeedKias * stallHornSpeedFactor || alphaEff > alphaStall - 2);
+    overspeed = kias > VNO;
+
+    if (!onGround) {
+      /* ================= AIRBORNE ================= */
+
+      /* ---- longitudinal: dV/dt ---- */
+      const vDot = (thrustLb - dragLb - WEIGHT * Math.sin(gammaRad)) / MASS;
+      let tasFpsNew = tasFps + vDot * h;
+      if (tasFpsNew < 8) tasFpsNew = 8;
+      ktas = tasFpsNew * FPS_TO_KT;
+
+      /* ---- vertical: flight path rotation ---- */
+      const vForPath = Math.max(tasFpsNew, 25);
+      const gammaDot =
+        ((liftLb * Math.cos(bankRad) - WEIGHT * Math.cos(gammaRad)) / (MASS * vForPath)) * RAD;
+      gamma = clamp(gamma + gammaDot * h, -35, 25);
+      if (stalled) gamma = Math.max(gamma - 6 * h, -35); // it mushes down
+
+      /* ---- roll ---- */
+      const rollAuth = clamp(qRatio, 0.3, 1.6) * (stalled ? 0.4 : 1);
+      let rollRate = rollIn * ROLL_RATE_MAX * rollAuth;
+      rollRate -= bank * ROLL_STABILITY * (1 - 0.6 * Math.abs(rollIn));
+      if (stalled) {
+        // Asymmetric wing drop; deterministic but unpredictable to the pilot.
+        rng = lcgNext(rng);
+        rollRate += (lcgUnit(rng) - 0.5) * 26;
+      }
+      if (turbulence > 0) {
+        rng = lcgNext(rng);
+        rollRate += (lcgUnit(rng) - 0.5) * 22 * turbulence;
+      }
+      bank = clamp(bank + rollRate * h, -BANK_MAX, BANK_MAX);
+
+      /* ---- yaw and sideslip ----
+       * Bank turns the aeroplane; rudder yaws the nose. Cross-controlling
+       * (bank into wind + opposite rudder) cancels the turn and leaves a
+       * steady sideslip, which is exactly the crosswind landing technique:
+       * the track (heading + beta) drifts toward the low wing. */
+      const rudderAuth = clamp(qRatio, 0.3, 1.8) * (stalled ? 0.6 : 1);
+      const turnRate = ((G * Math.tan(bankRad)) / vForPath) * RAD * (1 - 0.02 * absBeta);
+      const headingRate = turnRate + rudderIn * RUDDER_YAW_RATE * rudderAuth;
+      heading = wrap360(heading + headingRate * h);
+
+      const betaTarget = -rudderIn * RUDDER_BETA_MAX * clamp(rudderAuth, 0.3, 1.2);
+      beta += (betaTarget - beta) * lagAlpha(h, BETA_TAU);
+
+      /* ---- attitude ---- */
+      pitch = clamp(gamma + alpha, -25, 22);
+
+      /* ---- kinematics in the runway frame ---- */
+      const relTrackRad = (wrap180(heading - runwayHeading) + beta) * DEG;
+      const horiz = tasFpsNew * Math.cos(gamma * DEG);
+      const vxAir = horiz * Math.cos(relTrackRad);
+      const vyAir = horiz * Math.sin(relTrackRad);
+      const vx = vxAir + windX;
+      const vy = vyAir + windY + gustV;
+      vsFps = tasFpsNew * Math.sin(gamma * DEG) + gustW;
+
+      x += vx * h;
+      y += vy * h;
+      alt += vsFps * h;
+
+      groundSpeedKt = Math.sqrt(vx * vx + vy * vy) * FPS_TO_KT;
+      groundTrack = wrap360(runwayHeading + Math.atan2(vy, vx) * RAD);
+
+      /* ---------------- ground contact ---------------- */
+      if (alt <= 0) {
+        const impactVS = vsFps * FPM_PER_FPS;
+        const impactKias = ktas * sqrtSigma;
+
+        if (!touchedDown) {
+          touchedDown = true;
+          touchdownVS = impactVS;
+          touchdownPoint = x;
+          touchdownSpeed = impactKias;
+          touchdownOffset = y;
+          touchdownPitch = pitch;
+          touchdownBank = bank;
+        }
+
+        // Crash screens, in order of severity.
+        if (impactVS <= VS_HARD) {
+          crashed = true;
+          crashReason = 'Excessive descent rate at touchdown — gear collapse.';
+        } else if (Math.abs(bank) > 15) {
+          crashed = true;
+          crashReason = 'Wingtip strike — too much bank at touchdown.';
+        } else if (pitch < 0 && impactVS < -350) {
+          crashed = true;
+          crashReason = 'Nosewheel-first arrival — propeller strike.';
+        } else if (pitch > 16) {
+          crashed = true;
+          crashReason = 'Over-rotated — tail strike.';
+        } else if (x < -20) {
+          crashed = true;
+          crashReason = 'Landed short of the threshold.';
+        } else if (x > RUNWAY_LENGTH) {
+          crashed = true;
+          crashReason = 'Touched down beyond the departure end.';
+        }
+
+        if (crashed) {
+          alt = 0;
+          gamma = 0;
+          vsFps = 0;
+          onGround = true;
+          bank = clamp(bank, -20, 20);
+        } else if (impactVS < VS_BOUNCE_THRESHOLD && impactKias > 45) {
+          // Firm arrival with energy left: it skips.
+          bounced = true;
+          bounceCount++;
+          alt = 0.6;
+          vsFps = -vsFps * BOUNCE_RESTITUTION;
+          gamma = (Math.asin(clamp(vsFps / Math.max(tasFpsNew, 20), -1, 1)) * RAD);
+          alpha = Math.max(alpha - 1.5, alphaTrim - 2);
+          if (bounceCount >= 3) {
+            crashed = true;
+            crashReason = 'Progressive bouncing — go around next time.';
+            onGround = true;
+            alt = 0;
+            gamma = 0;
+            vsFps = 0;
+          }
+        } else {
+          onGround = true;
+          alt = 0;
+          gamma = 0;
+          vsFps = 0;
+          beta = 0;
+        }
+      }
+    } else {
+      /* ================= ON THE GROUND ================= */
+      alt = 0;
+      gamma = 0;
+      vsFps = 0;
+
+      // Nose relaxes toward level unless the pilot holds it off (aerodynamic
+      // braking). Elevator authority fades with airspeed.
+      const holdOff = pitchIn * PITCH_AUTHORITY_DEG * clamp(qRatio, 0, 1);
+      const pitchTargetGround = clamp(holdOff, -1, 12);
+      const pitchRate = pitchTargetGround > pitch ? 8 : -8;
+      if (Math.abs(pitchTargetGround - pitch) < Math.abs(pitchRate * h)) pitch = pitchTargetGround;
+      else pitch += pitchRate * h;
+      pitch = clamp(pitch, -1, 12);
+      alpha = pitch;
+
+      // Wings level themselves on the gear.
+      bank += (0 - bank) * lagAlpha(h, 0.5);
+
+      // Deceleration: aerodynamic drag + wheel friction on the residual weight.
+      const normalLoad = Math.max(WEIGHT - liftLb, 0);
+      const mu = ROLLING_FRICTION + brakeIn * BRAKING_FRICTION;
+      const decel = (dragLb + mu * normalLoad - thrustLb) / MASS;
+      let tasFpsNew = Math.max(0, tasFps - decel * h);
+      ktas = tasFpsNew * FPS_TO_KT;
+
+      // Nosewheel steering, plus weathervaning into the crosswind.
+      const gsKt = tasFpsNew * FPS_TO_KT;
+      const steerAuth = clamp(gsKt / 40, 0, 1.4);
+      let yawRate = rudderIn * NOSEWHEEL_AUTHORITY * steerAuth;
+      yawRate += -crosswindKt * 0.06 * clamp(gsKt / 40, 0, 1);
+      heading = wrap360(heading + yawRate * h);
+      beta = 0;
+
+      const relRad = wrap180(heading - runwayHeading) * DEG;
+      const vx = tasFpsNew * Math.cos(relRad) + windX * 0.15;
+      const vy = tasFpsNew * Math.sin(relRad) + windY * 0.15;
+      x += vx * h;
+      y += vy * h;
+      groundSpeedKt = Math.sqrt(vx * vx + vy * vy) * FPS_TO_KT;
+      groundTrack = gsKt > 1 ? wrap360(runwayHeading + Math.atan2(vy, vx) * RAD) : heading;
+
+      // Departed the paved surface, or ran off the end.
+      if (Math.abs(y) > RUNWAY_WIDTH / 2 + 10 && !crashed) {
+        crashed = true;
+        crashReason = 'Departed the runway surface.';
+      } else if (x > RUNWAY_LENGTH && gsKt > 25 && !crashed) {
+        crashed = true;
+        crashReason = 'Runway overrun.';
+      }
+
+      if (kias < TAXI_COMPLETE_SPEED && !crashed) landingComplete = true;
+
+      stalled = false;
+      stallWarning = false;
+      inGroundEffect = true;
+    }
+  }
+
+  kias = ktas * Math.sqrt(Math.max(densityRatio, 0.2));
+
+  /* ---------------- guidance readouts ---------------- */
+  const distanceToThreshold = -x; // + when short of the threshold
+  const glideDistance = AIM_POINT - x; // ft to the aiming point
+  const idealAlt = glideDistance > 0 ? glideDistance * Math.tan(GLIDESLOPE_DEG * DEG) : 0;
+  const glideslopeErrorFt = alt - idealAlt;
+  const glideslopeErrorDeg =
+    glideDistance > 50 ? Math.atan2(alt, glideDistance) * RAD - GLIDESLOPE_DEG : 0;
+
+  /* ---------------- assemble the new state ---------------- */
+  const next: PhysicsState = {
+    time,
+    frame: s.frame + 1,
+    phase: s.phase,
+    phaseTime: s.phaseTime + frameDt,
+    rngState: rng,
+
+    x,
+    y,
+    altitudeAgl: alt,
+    fieldElevation: s.fieldElevation,
+    altitudeMsl: s.fieldElevation + alt,
+
+    airspeedKias: kias,
+    airspeedKtas: ktas,
+    groundSpeedKt,
+    verticalSpeedFpm: vsFps * FPM_PER_FPS,
+    groundTrackDeg: groundTrack,
+
+    pitchDeg: pitch,
+    bankDeg: bank,
+    headingDeg: heading,
+    alphaDeg: alpha,
+    betaDeg: beta,
+    flightPathDeg: gamma,
+
+    flapsDeg: flaps,
+    flapTargetDeg: flapRequest,
+    rpm,
+    throttle: throttleIn,
+    carbHeat,
+    powerFraction,
+    thrustLb,
+    liftLb,
+    dragLb,
+    loadFactor,
+
+    stalled,
+    stallWarning,
+    stallSpeedKias,
+    overspeed,
+    onGround,
+    inGroundEffect,
+
+    runwayHeading,
+    distanceToThreshold,
+    glideslopeErrorFt,
+    glideslopeErrorDeg,
+    centerlineOffsetFt: y,
+    crosswindComponentKt: crosswindKt,
+    headwindComponentKt: headwindKt,
+
+    densityAltitude,
+    densityRatio,
+    gustLongitudinal: gustU,
+    gustVertical: gustW,
+    gustLateral: gustV,
+
+    touchedDown,
+    touchdownVS,
+    touchdownPoint,
+    touchdownSpeedKias: touchdownSpeed,
+    touchdownCenterlineOffset: touchdownOffset,
+    touchdownPitchDeg: touchdownPitch,
+    touchdownBankDeg: touchdownBank,
+    bounceCount,
+    bounced,
+    crashed,
+    crashReason,
+    landingComplete,
+  };
+
+  // Phase is evaluated from the freshly integrated state; reset the phase
+  // timer on a transition.
+  const newPhase = evaluatePhaseTransition(next as unknown as FlightState);
+  if (newPhase !== next.phase) {
+    next.phase = newPhase;
+    next.phaseTime = 0;
+  }
+
+  return next as unknown as FlightState;
+}
+
+/* ==========================================================================
+ * 11. PUBLIC: evaluatePhaseTransition
+ * ========================================================================== */
+
+/**
+ * Pure phase classifier. Boundaries:
+ *   downwind -> abeam     : abeam the aiming point (x <= 500) at pattern-ish alt
+ *   abeam    -> base      : threshold 45 deg behind the wing (x <= -|y|)
+ *   base     -> final     : within 20 deg of runway heading, inside 300 ft of
+ *                           centerline, approaching from x < 0
+ *   final    -> roundout  : 15 ft AGL
+ *   roundout -> flare     : 6 ft AGL
+ *   flare    -> touchdown : wheels on
+ *   touchdown-> rollout   : on the ground and decelerating
+ *   rollout  -> complete  : below 20 KIAS
+ *   any      -> go-around : full power, climbing away below 400 ft
+ *   any      -> crashed   : crash flag
+ */
+export function evaluatePhaseTransition(state: FlightState): FlightPhase {
+  const s = state as unknown as PhysicsState;
+
+  if (s.crashed) return PHASE.crashed;
+  if (s.landingComplete) return PHASE.complete;
+
+  const phase = s.phase as unknown as string;
+  const relHeading = wrap180(s.headingDeg - s.runwayHeading);
+  const absRel = relHeading < 0 ? -relHeading : relHeading;
+  const absY = s.y < 0 ? -s.y : s.y;
+
+  /* ---- on the ground ---- */
+  if (s.onGround) {
+    if (s.airspeedKias < TAXI_COMPLETE_SPEED) return PHASE.complete;
+    if (phase === 'touchdown' && s.phaseTime > 1) return PHASE.rollout;
+    if (phase === 'rollout') return PHASE.rollout;
+    return PHASE.touchdown;
+  }
+
+  /* ---- go-around: firewalled, climbing, low ---- */
+  const goingAround =
+    s.rpm > 2400 &&
+    s.verticalSpeedFpm > 150 &&
+    (phase === 'final' || phase === 'roundout' || phase === 'flare' || phase === 'go-around');
+  if (goingAround && s.altitudeAgl < 900) return PHASE.goAround;
+
+  if (phase === 'go-around') {
+    // Rejoin the downwind once cleaned up, at altitude, and past the field.
+    if (s.altitudeAgl >= PATTERN_ALTITUDE - 150 && s.x > 1000 && absRel > 150) {
+      return PHASE.downwind;
+    }
+    return PHASE.goAround;
+  }
+
+  /* ---- airborne, in the pattern ---- */
+  if (s.altitudeAgl <= 6) return PHASE.flare;
+  if (s.altitudeAgl <= 15) return PHASE.roundout;
+
+  // Established on final: aligned, near the centerline, still short of the
+  // threshold (or over the first part of the runway).
+  const alignedFinal = absRel < 20 && absY < 300 && s.x < 500;
+  if (alignedFinal) return PHASE.final;
+
+  // Base leg: the threshold has fallen 45 degrees or more behind the wing.
+  if (phase === 'downwind' || phase === 'abeam' || phase === 'base') {
+    if (s.x <= -absY) return PHASE.base;
+    if (phase === 'base') return PHASE.base;
+    // Abeam: still on the downwind heading, past the aiming point.
+    if (absRel > 150 && s.x <= AIM_POINT + 200) return PHASE.abeam;
+    return PHASE.downwind;
+  }
+
+  if (phase === 'final' || phase === 'roundout' || phase === 'flare') return PHASE.final;
+  return s.phase;
+}
+
+/* ==========================================================================
+ * 12. PUBLIC: detectLanding
+ * ========================================================================== */
+
+/**
+ * Landing report. Call when altitude reaches 0 (or any time after — the
+ * touchdown record is latched into the state at first contact).
+ *   touchdownVS       fpm, negative down
+ *   touchdownPoint    ft past the threshold
+ *   centerlineOffset  ft, + right of centerline
+ */
+export function detectLanding(state: FlightState): {
+  landed: boolean;
+  touchdownVS: number;
+  touchdownPoint: number;
+  centerlineOffset: number;
+  bounced: boolean;
+  crashed: boolean;
+} {
+  const s = state as unknown as PhysicsState;
+
+  if (s.touchedDown) {
+    return {
+      landed: !s.crashed,
+      touchdownVS: s.touchdownVS,
+      touchdownPoint: s.touchdownPoint,
+      centerlineOffset: s.touchdownCenterlineOffset,
+      bounced: s.bounceCount > 0,
+      crashed: s.crashed,
+    };
+  }
+
+  // Not latched yet — evaluate the current instant.
+  const contact = s.altitudeAgl <= 0;
+  const vs = s.verticalSpeedFpm;
+  return {
+    landed: contact && !s.crashed,
+    touchdownVS: contact ? vs : 0,
+    touchdownPoint: contact ? s.x : 0,
+    centerlineOffset: contact ? s.y : s.y,
+    bounced: s.bounceCount > 0,
+    crashed: s.crashed || (contact && vs <= VS_HARD),
+  };
+}
+
+/* ==========================================================================
+ * 13. GRADING + TELEMETRY HELPERS
+ * ========================================================================== */
+
+export type TouchdownGrade = 'greaser' | 'firm' | 'hard' | 'crash';
+
+/** -100..-200 greaser, -200..-400 firm, -400..-600 hard, beyond -600 crash. */
+export function gradeTouchdown(touchdownVS: number): TouchdownGrade {
+  if (touchdownVS <= VS_HARD) return 'crash';
+  if (touchdownVS <= VS_FIRM) return 'hard';
+  if (touchdownVS <= VS_GREASER) return 'firm';
+  return 'greaser';
+}
+
+/** Debrief-ready snapshot. One object per call; do not call every frame. */
+export function sampleTelemetry(state: FlightState): TelemetryFrame {
+  const s = state as unknown as PhysicsState;
+  return {
+    t: s.time,
+    time: s.time,
+    phase: s.phase,
+    x: s.x,
+    y: s.y,
+    altitudeAgl: s.altitudeAgl,
+    airspeedKias: s.airspeedKias,
+    verticalSpeedFpm: s.verticalSpeedFpm,
+    pitchDeg: s.pitchDeg,
+    bankDeg: s.bankDeg,
+    headingDeg: s.headingDeg,
+    alphaDeg: s.alphaDeg,
+    flapsDeg: s.flapsDeg,
+    rpm: s.rpm,
+    thrustLb: s.thrustLb,
+    loadFactor: s.loadFactor,
+    stalled: s.stalled,
+    stallWarning: s.stallWarning,
+    onGround: s.onGround,
+    glideslopeErrorFt: s.glideslopeErrorFt,
+    centerlineOffsetFt: s.centerlineOffsetFt,
+  } as unknown as TelemetryFrame;
+}
+
+
+=== FILE: src/lib/flare-game/scoring-engine.ts ===
+import type { LandingResult, ScoreBreakdown } from './types';
+
+type Telemetry = Record<string, unknown>;
+
+const clamp = (value: number, min = 0, max = 20): number =>
+  Math.min(max, Math.max(min, value));
+const points = (value: number): number => Math.round(clamp(value));
+
+function numberFrom(source: Telemetry, names: string[], fallback = 0): number {
+  for (const name of names) {
+    const value = source[name];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+  }
+  return fallback;
+}
+
+function numbersFrom(source: Telemetry, names: string[]): number[] {
+  for (const name of names) {
+    const value = source[name];
+    if (Array.isArray(value)) {
+      const values = value.filter(
+        (item): item is number => typeof item === 'number' && Number.isFinite(item),
+      );
+      if (values.length) return values;
+    }
+  }
+  return [];
+}
+
+function countOutside(values: number[], minimum: number, maximum: number): number {
+  return values.filter((value) => value < minimum || value > maximum).length;
+}
+
+function approachScore(result: Telemetry): number {
+  let score = 20;
+  const speeds = numbersFrom(result, ['approachSpeeds', 'finalApproachSpeeds', 'speedHistory']);
+  const sampledApproachSpeed = numberFrom(
+    result,
+    ['approachSpeed', 'finalApproachSpeed', 'airspeedOnFinal'],
+    65,
+  );
+  const speedExcursions = numberFrom(
+    result,
+    ['speedExcursions'],
+    speeds.length
+      ? countOutside(speeds, 60, 70)
+      : sampledApproachSpeed < 60 || sampledApproachSpeed > 70
+        ? 1
+        : 0,
+  );
+  score -= Math.min(8, speedExcursions * 2);
+  if (!speeds.length) score -= Math.min(4, Math.max(0, Math.abs(sampledApproachSpeed - 65) - 5) * 0.5);
+
+  const glide = numbersFrom(result, [
+    'glideslopeDeviations',
+    'papiDeviations',
+    'glideslopeHistory',
+  ]);
+  const averageGlideError = glide.length
+    ? glide.reduce((sum, value) => sum + Math.abs(value), 0) / glide.length
+    : Math.abs(numberFrom(result, ['glideslopeDeviation', 'papiDeviation'], 0));
+  score -= Math.min(6, averageGlideError * 4);
+  score -= Math.min(4, numberFrom(result, ['glideslopeChasing', 'glideslopeCorrections'], 0));
+
+  const centerline = numbersFrom(result, [
+    'approachCenterlineOffsets',
+    'centerlineHistory',
+    'finalCenterlineOffsets',
+  ]);
+  const averageCenterlineError = centerline.length
+    ? centerline.reduce((sum, value) => sum + Math.abs(value), 0) / centerline.length
+    : Math.abs(numberFrom(result, ['approachCenterlineOffset'], 0));
+  score -= Math.min(5, averageCenterlineError / 6);
+  score -= Math.min(5, numberFrom(result, ['sTurns', 'sTurnCount'], 0) * 2.5);
+
+  return points(score);
+}
+
+function flareScore(result: Telemetry): number {
+  const altitude = numberFrom(result, ['flareStartAltitude', 'flareAltitude'], 0);
+  if (altitude >= 10 && altitude <= 15) return 20;
+  if (altitude > 15) return points(20 - (altitude - 15) * 1.25);
+  return points(20 - (10 - altitude) * 2);
+}
+
+function touchdownScore(result: Telemetry): number {
+  const verticalSpeed = Math.abs(
+    numberFrom(result, ['touchdownVerticalSpeed', 'verticalSpeedAtTouchdown', 'touchdownVS'], 0),
+  );
+  let score: number;
+
+  if (verticalSpeed >= 100 && verticalSpeed <= 200) score = 20;
+  else if (verticalSpeed < 100) score = 18 + (verticalSpeed / 100) * 2;
+  else if (verticalSpeed <= 400) score = 16 - ((verticalSpeed - 200) / 200) * 4;
+  else if (verticalSpeed <= 600) score = 10 - ((verticalSpeed - 400) / 200) * 4;
+  else score = 4 - ((verticalSpeed - 600) / 200) * 4;
+
+  const airspeed = numberFrom(
+    result,
+    ['touchdownAirspeed', 'airspeedAtTouchdown', 'touchdownSpeed'],
+    50,
+  );
+  score -= Math.min(4, Math.abs(airspeed - 50) * 0.4);
+  return points(score);
+}
+
+function zoneScore(result: Telemetry): number {
+  const distance = Math.max(
+    0,
+    numberFrom(result, ['touchdownDistance', 'touchdownDistanceFromThreshold', 'touchdownPoint'], 0),
+  );
+  const runwayLength = numberFrom(result, ['runwayLength', 'runwayLengthFeet'], 9000);
+  const idealLimit = Math.min(3000, runwayLength / 3);
+  if (distance <= idealLimit) return 20;
+  if (distance >= 5000) return 0;
+  return points(20 * (1 - (distance - idealLimit) / (5000 - idealLimit)));
+}
+
+function directionalScore(result: Telemetry): number {
+  const offset = Math.abs(
+    numberFrom(result, ['centerlineOffset', 'touchdownCenterlineOffset'], 0),
+  );
+  let score = offset <= 10 ? 20 : 20 - (offset - 10);
+
+  const crosswind = Math.abs(numberFrom(result, ['crosswindComponent', 'crosswind'], 0));
+  const decrabError = Math.abs(
+    numberFrom(result, ['decrabError', 'touchdownCrabAngle', 'headingErrorAtTouchdown'], 0),
+  );
+  if (crosswind >= 3) score -= Math.min(8, decrabError * 1.25);
+  return points(score);
+}
+
+export function qualityFromTotal(
+  total: number,
+): 'greaser' | 'good' | 'firm' | 'hard' | 'bounce' | 'crash' {
+  const value = Math.min(100, Math.max(0, total));
+  if (value >= 90) return 'greaser';
+  if (value >= 75) return 'good';
+  if (value >= 60) return 'firm';
+  if (value >= 40) return 'hard';
+  if (value >= 20) return 'bounce';
+  return 'crash';
+}
+
+export function scoreLanding(result: LandingResult): ScoreBreakdown {
+  const telemetry = result as unknown as Telemetry;
+  const approachStability = approachScore(telemetry);
+  const flareTiming = flareScore(telemetry);
+  const touchdownQuality = touchdownScore(telemetry);
+  const touchdownZone = zoneScore(telemetry);
+  const centerlineControl = directionalScore(telemetry);
+  const total =
+    approachStability + flareTiming + touchdownQuality + touchdownZone + centerlineControl;
+
+  return {
+    approachStability,
+    flareTiming,
+    touchdownQuality,
+    touchdownZone,
+    centerlineControl,
+    total,
+  } as ScoreBreakdown;
+}
+
+type Diagnosis = {
+  summary: string;
+  fix: string;
+  weakDimension: string;
+  moduleLink: number;
+};
+
+export function generateDiagnosis(
+  score: ScoreBreakdown,
+  result: LandingResult,
+): Diagnosis {
+  const s = score as unknown as Telemetry;
+  const r = result as unknown as Telemetry;
+  const dimensions = [
+    ['Approach stability', numberFrom(s, ['approachStability', 'approach'], 0)],
+    ['Flare timing', numberFrom(s, ['flareTiming', 'flare'], 0)],
+    ['Touchdown quality', numberFrom(s, ['touchdownQuality', 'touchdown'], 0)],
+    ['Touchdown zone', numberFrom(s, ['touchdownZone', 'zone'], 0)],
+    ['Centerline & directional control', numberFrom(s, ['centerlineControl', 'centerline'], 0)],
+  ] as const;
+  const [weakDimension] = dimensions.reduce((weakest, current) =>
+    current[1] < weakest[1] ? current : weakest,
+  );
+
+  const flareAltitude = numberFrom(r, ['flareStartAltitude', 'flareAltitude'], 0);
+  const verticalSpeed = numberFrom(
+    r,
+    ['touchdownVerticalSpeed', 'verticalSpeedAtTouchdown', 'touchdownVS'],
+    0,
+  );
+  const touchdownDistance = numberFrom(
+    r,
+    ['touchdownDistance', 'touchdownDistanceFromThreshold', 'touchdownPoint'],
+    0,
+  );
+  const offset = numberFrom(r, ['centerlineOffset', 'touchdownCenterlineOffset'], 0);
+  const crosswind = Math.abs(numberFrom(r, ['crosswindComponent', 'crosswind'], 0));
+  const speedExcursions = numberFrom(r, ['speedExcursions'], 0);
+
+  switch (weakDimension) {
+    case 'Approach stability':
+      return {
+        summary: `The approach lost the most points, including ${speedExcursions} recorded speed excursion${speedExcursions === 1 ? '' : 's'} outside 60–70 KIAS.`,
+        fix: 'Hold 65 KIAS with small pitch and power corrections, keep a steady PAPI picture, and go around if the final approach is not stabilized.',
+        weakDimension,
+        moduleLink: 7,
+      };
+    case 'Flare timing':
+      return {
+        summary: `The flare began at ${flareAltitude.toFixed(1)} ft AGL, outside the 10–15 ft target window.`,
+        fix: flareAltitude > 15
+          ? 'Carry the landing attitude to 10–15 ft before smoothly raising the nose; avoid an early pull that creates float.'
+          : 'Begin the round-out earlier at 10–15 ft AGL and transition smoothly to the landing attitude.',
+        weakDimension,
+        moduleLink: 9,
+      };
+    case 'Touchdown quality':
+      return {
+        summary: `Touchdown vertical speed was ${verticalSpeed.toFixed(0)} ft/min versus the −100 to −200 ft/min greaser band.`,
+        fix: 'Look toward the runway end, arrest the descent progressively, and hold the airplane just above the runway as speed decays.',
+        weakDimension,
+        moduleLink: 9,
+      };
+    case 'Touchdown zone':
+      return {
+        summary: `Touchdown occurred ${touchdownDistance.toFixed(0)} ft beyond the threshold, reducing usable stopping distance.`,
+        fix: 'Cross the threshold on speed, avoid carrying excess power into the flare, and go around rather than accept a long float.',
+        weakDimension,
+        moduleLink: 9,
+      };
+    default:
+      return {
+        summary: `Touchdown was ${Math.abs(offset).toFixed(1)} ft off centerline with a ${crosswind.toFixed(1)} kt crosswind component.`,
+        fix: 'Decrab with rudder before touchdown, use opposite aileron to stop drift, and keep tracking the centerline through rollout.',
+        weakDimension,
+        moduleLink: 8,
+      };
+  }
+}
+
+
+=== FILE: src/lib/flare-game/difficulty-scaler.ts ===
+import type { DifficultyLevel, WeatherConditions } from './types';
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+function hash(text: string): number {
+  let value = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    value ^= text.charCodeAt(i);
+    value = Math.imul(value, 16777619);
+  }
+  return value >>> 0;
+}
+
+function seededRange(seed: number, minimum: number, maximum: number): number {
+  return minimum + (seed % (maximum - minimum + 1));
+}
+
+export function computeDifficulty(lastScores: number[]): DifficultyLevel {
+  const recent = lastScores
+    .slice(-5)
+    .filter(Number.isFinite)
+    .map((score) => clamp(score, 0, 100));
+  if (recent.length === 0) return 0 as DifficultyLevel;
+
+  const average = recent.reduce((sum, score) => sum + score, 0) / recent.length;
+  if (average < 40) return 0 as DifficultyLevel;
+  if (average < 60) return 1 as DifficultyLevel;
+  if (average < 75) return 2 as DifficultyLevel;
+  if (average < 90) return 3 as DifficultyLevel;
+  return 4 as DifficultyLevel;
+}
+
+export function weatherForDifficulty(
+  level: DifficultyLevel,
+  airportICAO: string,
+): WeatherConditions {
+  const numericLevel = clamp(Number(level), 0, 4);
+  const seed = hash(`${airportICAO.toUpperCase()}:${numericLevel}`);
+  const directions = [30, 60, 90, 120, 240, 270, 300, 330];
+  const windDirection = directions[seed % directions.length];
+
+  const presets = [
+    {
+      windSpeed: 0,
+      windDirection: 0,
+      windGust: 0,
+      gustSpeed: 0,
+      crosswindComponent: 0,
+      visibility: 10,
+      ceiling: 12000,
+      timeOfDay: 'day',
+      runwayWidth: 150,
+      runwayLength: 9000,
+      turbulence: 0, // was a string label; physics wxTurbulence() needs a number 0..1
+      turbulenceLabel: 'none',
+      windShear: false,
+      coachingLevel: 'extra',
+    },
+    {
+      windSpeed: 5,
+      windDirection,
+      windGust: 0,
+      gustSpeed: 0,
+      crosswindComponent: seededRange(seed >>> 3, 2, 4),
+      visibility: 10,
+      ceiling: 8000,
+      timeOfDay: 'day',
+      runwayWidth: 120,
+      runwayLength: 7500,
+      turbulence: 0.12, // was a string label; physics wxTurbulence() needs a number 0..1
+      turbulenceLabel: 'light',
+      windShear: false,
+      coachingLevel: 'standard',
+    },
+    {
+      windSpeed: 10,
+      windDirection,
+      windGust: 0,
+      gustSpeed: 0,
+      crosswindComponent: seededRange(seed >>> 5, 4, 7),
+      visibility: 8,
+      ceiling: 5000,
+      timeOfDay: 'dusk',
+      runwayWidth: 100,
+      runwayLength: 6500,
+      turbulence: 0.18, // was a string label; physics wxTurbulence() needs a number 0..1
+      turbulenceLabel: 'light',
+      windShear: false,
+      coachingLevel: 'standard',
+    },
+    {
+      windSpeed: 15,
+      windDirection,
+      windGust: seededRange(seed >>> 7, 19, 24),
+      gustSpeed: seededRange(seed >>> 7, 19, 24),
+      crosswindComponent: seededRange(seed >>> 9, 10, 15),
+      visibility: 7,
+      ceiling: 3500,
+      timeOfDay: seed % 2 === 0 ? 'dusk' : 'dawn',
+      runwayWidth: 90,
+      runwayLength: 5500,
+      turbulence: 0.35, // was a string label; physics wxTurbulence() needs a number 0..1
+      turbulenceLabel: 'moderate',
+      windShear: false,
+      coachingLevel: 'minimal',
+    },
+    {
+      windSpeed: seededRange(seed >>> 2, 16, 22),
+      windDirection,
+      windGust: seededRange(seed >>> 6, 24, 32),
+      gustSpeed: seededRange(seed >>> 6, 24, 32),
+      crosswindComponent: seededRange(seed >>> 10, 15, 22),
+      visibility: 5,
+      ceiling: 2200,
+      timeOfDay: 'night',
+      runwayWidth: 60,
+      runwayLength: 3500,
+      turbulence: 0.5, // was a string label; physics wxTurbulence() needs a number 0..1
+      turbulenceLabel: 'moderate',
+      windShear: true,
+      coachingLevel: 'minimal',
+    },
+  ];
+
+  return {
+    airportICAO: airportICAO.toUpperCase(),
+    ...presets[numericLevel],
+  } as unknown as WeatherConditions;
+}
+
+export function difficultyLabel(level: DifficultyLevel): string {
+  return ['Calm', 'Light winds', 'Moderate', 'Challenging', 'Mastery'][
+    clamp(Number(level), 0, 4)
+  ];
+}
+
+
+=== FILE: src/lib/flare-game/daily-challenge.ts ===
+import type { DailyChallenge, WeatherConditions } from './types';
+
+type ChallengeKind =
+  | 'crosswind'
+  | 'night'
+  | 'short-field'
+  | 'gusty'
+  | 'low-visibility'
+  | 'calm';
+
+const DAY_MS = 86_400_000;
+
+function localDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function localDayNumber(date: Date): number {
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS);
+}
+
+function weather(values: Record<string, unknown>): WeatherConditions {
+  return values as unknown as WeatherConditions;
+}
+
+const CHALLENGES: Array<{
+  type: ChallengeKind;
+  title: string;
+  description: string;
+  weather: WeatherConditions;
+}> = [
+  {
+    type: 'crosswind',
+    title: 'Crosswind Day',
+    description: 'Land with a 14 kt crosswind while maintaining centerline and completing a clean decrab.',
+    weather: weather({
+      windSpeed: 16,
+      windDirection: 270,
+      windGust: 20,
+      gustSpeed: 20,
+      crosswindComponent: 14,
+      visibility: 10,
+      ceiling: 6000,
+      timeOfDay: 'day',
+      runwayLength: 6500,
+      runwayWidth: 100,
+      turbulence: 'light',
+      windShear: false,
+    }),
+  },
+  {
+    type: 'night',
+    title: 'Night Landing',
+    description: 'Use the PAPI and runway lighting to make a stabilized landing after dark.',
+    weather: weather({
+      windSpeed: 5,
+      windDirection: 210,
+      windGust: 0,
+      gustSpeed: 0,
+      crosswindComponent: 3,
+      visibility: 8,
+      ceiling: 8000,
+      timeOfDay: 'night',
+      runwayLength: 7000,
+      runwayWidth: 100,
+      turbulence: 'none',
+      windShear: false,
+    }),
+  },
+  {
+    type: 'short-field',
+    title: 'Short-Field Precision',
+    description: 'Touch down in the first third of a 3,000 ft runway and stop with runway remaining.',
+    weather: weather({
+      windSpeed: 6,
+      windDirection: 20,
+      windGust: 0,
+      gustSpeed: 0,
+      crosswindComponent: 2,
+      visibility: 10,
+      ceiling: 9000,
+      timeOfDay: 'day',
+      runwayLength: 3000,
+      runwayWidth: 60,
+      turbulence: 'none',
+      windShear: false,
+    }),
+  },
+  {
+    type: 'gusty',
+    title: 'Gust Factor',
+    description: 'Manage gusts without chasing airspeed or glideslope, then touch down under control.',
+    weather: weather({
+      windSpeed: 15,
+      windDirection: 240,
+      windGust: 25,
+      gustSpeed: 25,
+      crosswindComponent: 11,
+      visibility: 7,
+      ceiling: 4000,
+      timeOfDay: 'dusk',
+      runwayLength: 6000,
+      runwayWidth: 100,
+      turbulence: 'moderate',
+      windShear: false,
+    }),
+  },
+  {
+    type: 'low-visibility',
+    title: 'Fog & Low Visibility',
+    description: 'Fly a disciplined stabilized approach in low visibility and land in the touchdown zone.',
+    weather: weather({
+      windSpeed: 3,
+      windDirection: 90,
+      windGust: 0,
+      gustSpeed: 0,
+      crosswindComponent: 2,
+      visibility: 1.5,
+      ceiling: 700,
+      timeOfDay: 'day',
+      runwayLength: 7000,
+      runwayWidth: 120,
+      turbulence: 'none',
+      windShear: false,
+      fog: true,
+    }),
+  },
+  {
+    type: 'calm',
+    title: 'The Perfect Normal Landing',
+    description: 'In calm conditions, put all five dimensions together and aim for a 90+ greaser.',
+    weather: weather({
+      windSpeed: 0,
+      windDirection: 0,
+      windGust: 0,
+      gustSpeed: 0,
+      crosswindComponent: 0,
+      visibility: 10,
+      ceiling: 12000,
+      timeOfDay: 'day',
+      runwayLength: 8000,
+      runwayWidth: 150,
+      turbulence: 'none',
+      windShear: false,
+    }),
+  },
+];
+
+export function getTodaysChallenge(date: Date): DailyChallenge {
+  const dateString = localDateString(date);
+  const definition = CHALLENGES[((localDayNumber(date) % CHALLENGES.length) + CHALLENGES.length) % CHALLENGES.length];
+  return {
+    id: `daily-${dateString}-${definition.type}`,
+    date: dateString,
+    dateString,
+    type: definition.type,
+    title: definition.title,
+    description: definition.description,
+    weather: definition.weather,
+    xpMultiplier: 2,
+  } as unknown as DailyChallenge;
+}
+
+export function isCompleted(dateString: string): boolean {
+  if (typeof globalThis.localStorage === 'undefined') return false;
+  return globalThis.localStorage.getItem(`flare-daily-completed:${dateString}`) === 'true';
+}
+
+export function isChallengeCompleted(challenge: DailyChallenge): boolean {
+  const value = challenge as unknown as Record<string, unknown>;
+  const dateString = typeof value.date === 'string' ? value.date : String(value.id ?? '');
+  return isCompleted(dateString);
+}
+
+export function challengeBonus(score: number): number {
+  return Math.max(0, score) * 2;
+}
+
+
+=== FILE: src/lib/flare-game/voice-coach.ts ===
+import type { FlightPhase, FlightState, VoiceCallout } from "./types";
+
+const MIN_CALLOUT_GAP_MS = 1_500;
+
+type QueuedCallout = {
+  text: string;
+  priority: number;
+  order: number;
+};
+
+type StateLike = Record<string, unknown>;
+
+type CalloutShape = {
+  id: string;
+  text: string;
+  priority: number;
+};
+
+function makeCallout(id: string, text: string, priority: number): VoiceCallout {
+  return { id, text, priority } as unknown as VoiceCallout;
+}
+
+function numberFrom(source: StateLike, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  return undefined;
+}
+
+function booleanFrom(source: StateLike, ...keys: string[]): boolean {
+  return keys.some((key) => source[key] === true);
+}
+
+function normalizedPhase(phase: FlightPhase): string {
+  return String(phase).toLowerCase().replace(/[\s_-]+/g, "");
+}
+
+function lastCalloutIdentity(lastCallout: VoiceCallout | null): string {
+  if (!lastCallout) return "";
+  const value = lastCallout as unknown as Partial<CalloutShape>;
+  return `${value.id ?? ""} ${value.text ?? ""}`.toLowerCase();
+}
+
+function wasLast(lastCallout: VoiceCallout | null, id: string): boolean {
+  return lastCalloutIdentity(lastCallout).includes(id.toLowerCase());
+}
+
+/**
+ * Browser speech-synthesis queue for the FlightCourse Academy CFI, "Coach".
+ * Call speak() from the game loop; duplicate text is suppressed until
+ * resetCallouts() is called for the next landing.
+ */
+export class VoiceCoach {
+  private enabled = false;
+  private volume = 1;
+  private voiceURI: string | null = null;
+  private queue: QueuedCallout[] = [];
+  private fired = new Set<string>();
+  private speaking = false;
+  private currentPriority = 0;
+  private lastFinishedAt = -Infinity;
+  private sequence = 0;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private generation = 0;
+
+  enable(): void {
+    this.setEnabled(true);
+  }
+
+  disable(): void {
+    this.setEnabled(false);
+  }
+
+  setVoice(voiceURI: string): void {
+    this.voiceURI = voiceURI || null;
+  }
+
+  setVolume(value: number): void {
+    this.volume = Math.max(0, Math.min(1, value));
+  }
+
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+    if (!enabled) {
+      this.generation += 1;
+      this.queue.length = 0;
+      this.speaking = false;
+      this.currentPriority = 0;
+      if (this.timer !== null) clearTimeout(this.timer);
+      this.timer = null;
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      return;
+    }
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.resume();
+      this.pump();
+    }
+  }
+
+  speak(text: string, priority = 3): void {
+    const cleanText = text.trim();
+    if (!this.enabled || !cleanText || typeof window === "undefined") return;
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+
+    const key = cleanText.toLocaleLowerCase();
+    if (this.fired.has(key) || this.queue.some((item) => item.text.toLocaleLowerCase() === key)) {
+      return;
+    }
+
+    const safePriority = Math.max(1, Math.min(5, Math.round(priority)));
+    this.fired.add(key);
+
+    if (safePriority === 5 && this.speaking && this.currentPriority < 5) {
+      this.generation += 1;
+      window.speechSynthesis.cancel();
+      this.speaking = false;
+      this.currentPriority = 0;
+      this.queue.unshift({ text: cleanText, priority: safePriority, order: this.sequence++ });
+      this.pump(true);
+      return;
+    }
+
+    this.queue.push({ text: cleanText, priority: safePriority, order: this.sequence++ });
+    this.queue.sort((a, b) => b.priority - a.priority || a.order - b.order);
+    this.pump();
+  }
+
+  resetCallouts(): void {
+    this.fired.clear();
+    this.queue.length = 0;
+    this.generation += 1;
+    this.speaking = false;
+    this.currentPriority = 0;
+    this.lastFinishedAt = -Infinity;
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  private pump(ignoreGap = false): void {
+    if (!this.enabled || this.speaking || this.queue.length === 0) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+
+    const wait = ignoreGap ? 0 : Math.max(0, MIN_CALLOUT_GAP_MS - (Date.now() - this.lastFinishedAt));
+    if (wait > 0) {
+      this.timer = setTimeout(() => {
+        this.timer = null;
+        this.pump();
+      }, wait);
+      return;
+    }
+
+    const next = this.queue.shift();
+    if (!next) return;
+
+    const utterance = new SpeechSynthesisUtterance(next.text);
+    utterance.volume = this.volume;
+    utterance.rate = 0.96;
+    utterance.pitch = 0.93;
+
+    if (this.voiceURI) {
+      const voice = window.speechSynthesis
+        .getVoices()
+        .find((candidate) => candidate.voiceURI === this.voiceURI);
+      if (voice) utterance.voice = voice;
+    }
+
+    const token = this.generation;
+    this.speaking = true;
+    this.currentPriority = next.priority;
+
+    const finish = (): void => {
+      if (token !== this.generation) return;
+      this.speaking = false;
+      this.currentPriority = 0;
+      this.lastFinishedAt = Date.now();
+      this.pump();
+    };
+
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+/** Returns the highest-value Coach callout for the current instant. */
+export function getCoachCallout(
+  state: FlightState,
+  phase: FlightPhase,
+  lastCallout: VoiceCallout | null,
+): VoiceCallout | null {
+  const s = state as unknown as StateLike;
+  const p = normalizedPhase(phase);
+  // PATCHED: "airspeedKias", "centerlineOffsetFt", "glideslopeErrorDeg" and
+  // "verticalSpeedFpm" are flight-physics.ts's real field names. Without
+  // them, `lateral` in particular fell through every alias to the "x"
+  // fallback — which in this engine is the along-runway distance in feet,
+  // not a centerline offset — so the centerline callout would have fired
+  // constantly and nonsensically.
+  const altitude = numberFrom(s, "radarAltitude", "altitudeAgl", "agl", "altitude") ?? Infinity;
+  const airspeed = numberFrom(s, "airspeedKias", "airspeed", "indicatedAirspeed", "ias") ?? 65;
+  const targetSpeed = numberFrom(s, "targetAirspeed", "approachSpeed", "vRef") ?? 65;
+  const lateral = numberFrom(s, "centerlineOffsetFt", "lateralPosition", "crossTrackError", "centerlineOffset") ?? 0;
+  const glideError = numberFrom(s, "glideslopeErrorDeg", "glideslopeError", "glideSlopeError", "verticalPathError") ?? 0;
+  const verticalSpeed = numberFrom(s, "verticalSpeedFpm", "verticalSpeed", "sinkRate", "vspeed") ?? 0;
+  const flaring = booleanFrom(s, "isFlaring", "flaring", "flareStarted") || p.includes("flare");
+  const floating = booleanFrom(s, "isFloating", "floating") || (altitude < 12 && altitude > 1.5 && Math.abs(verticalSpeed) < 80);
+  const landed = booleanFrom(s, "landed", "onGround", "touchdown") || p.includes("landed") || p.includes("rollout");
+
+  if (p.includes("downwind") && !wasLast(lastCallout, "downwind")) {
+    return makeCallout("downwind", "Downwind. GUMPS — gas, undercarriage, mixture, prop, seatbelts.", 2);
+  }
+  if ((p.includes("abeam") || booleanFrom(s, "abeamNumbers")) && !wasLast(lastCallout, "abeam")) {
+    return makeCallout("abeam", "Abeam the numbers. Carb heat on. Power back to fifteen hundred. First notch flaps.", 3);
+  }
+  if (p.includes("base") && !wasLast(lastCallout, "base")) {
+    return makeCallout("base", "Turn base. Flaps twenty. Seventy-five knots.", 3);
+  }
+  if (p.includes("final") && altitude > 100 && !wasLast(lastCallout, "final")) {
+    return makeCallout("final", "Turn final. Flaps thirty. Sixty-five knots.", 3);
+  }
+
+  if (altitude <= 55 && altitude > 45 && !wasLast(lastCallout, "radar-50")) {
+    return makeCallout("radar-50", "Fifty.", 4);
+  }
+  if (altitude <= 45 && altitude > 35 && !wasLast(lastCallout, "radar-40")) {
+    return makeCallout("radar-40", "Forty.", 4);
+  }
+  if (altitude <= 35 && altitude > 25 && !wasLast(lastCallout, "radar-30")) {
+    return makeCallout("radar-30", "Thirty.", 4);
+  }
+  if (altitude <= 25 && altitude > 15 && !wasLast(lastCallout, "radar-20")) {
+    return makeCallout("radar-20", "Twenty.", 4);
+  }
+  if (altitude <= 15 && altitude > 7 && !wasLast(lastCallout, "radar-10")) {
+    return makeCallout("radar-10", "Ten.", 4);
+  }
+  if (altitude <= 7 && altitude > 1.5 && !flaring && !wasLast(lastCallout, "flare-now")) {
+    return makeCallout("flare-now", "Flare. Flare NOW.", 5);
+  }
+  if (altitude <= 7 && altitude > 1.5 && flaring && !wasLast(lastCallout, "radar-flare")) {
+    return makeCallout("radar-flare", "Flare.", 5);
+  }
+
+  if (flaring && altitude > 18) {
+    return makeCallout("flare-high", "Don't flare yet. Too high.", 5);
+  }
+  if (airspeed <= targetSpeed - 7 && altitude > 8) {
+    return makeCallout("speed-low", "Speed. Getting slow. Add power.", 5);
+  }
+  if (airspeed >= targetSpeed + 10 && altitude > 8) {
+    return makeCallout("speed-high", "Watch your speed. You're ten fast — you'll float.", 4);
+  }
+  if (glideError < -0.12 && altitude > 15) {
+    return makeCallout("glide-low", "Low. Add power. Fly the PAPI.", 5);
+  }
+  if (glideError > 0.12 && altitude > 15) {
+    return makeCallout("glide-high", "High. Reduce power. You'll land long.", 4);
+  }
+  if (Math.abs(lateral) > 0.18 && altitude > 5) {
+    return makeCallout("centerline", "Centerline. Get back on centerline.", 4);
+  }
+  if (floating) {
+    return makeCallout("floating", "You're floating. Ease off. Let it settle.", 4);
+  }
+  if (landed && flaring && Math.abs(verticalSpeed) < 240) {
+    return makeCallout("good-flare", "Nice. Hold it off. Good landing.", 3);
+  }
+
+  return null;
+}
+
+
+=== FILE: src/lib/flare-game/audio-engine.ts ===
+type AudioContextConstructor = new () => AudioContext;
+
+type WebkitAudioWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: AudioContextConstructor;
+  };
+
+type StallNodes = {
+  horn: OscillatorNode;
+  pulse: OscillatorNode;
+  pulseDepth: GainNode;
+  gain: GainNode;
+};
+
+/** Procedural Web Audio sound effects for the Flare Trainer. */
+export class AudioEngine {
+  private context: AudioContext | null = null;
+  private master: GainNode | null = null;
+  private muted = false;
+  private stall: StallNodes | null = null;
+
+  /**
+   * Lazily creates and resumes the AudioContext. Call from a click, tap, or
+   * keyboard handler so browser autoplay policies allow sound.
+   */
+  init(): AudioContext | null {
+    if (typeof window === "undefined") return null;
+
+    if (!this.context) {
+      const AudioContextClass =
+        window.AudioContext ?? (window as WebkitAudioWindow).webkitAudioContext;
+      if (!AudioContextClass) return null;
+
+      this.context = new AudioContextClass();
+      this.master = this.context.createGain();
+      this.master.gain.value = this.muted ? 0 : 1;
+      this.master.connect(this.context.destination);
+    }
+
+    if (this.context.state === "suspended") {
+      void this.context.resume();
+    }
+
+    return this.context;
+  }
+
+  setMuted(muted: boolean): void {
+    this.muted = muted;
+    if (!this.context || !this.master) return;
+
+    const now = this.context.currentTime;
+    this.master.gain.cancelScheduledValues(now);
+    this.master.gain.setTargetAtTime(muted ? 0 : 1, now, 0.01);
+  }
+
+  playTireSqueal(intensity: number): void {
+    const audio = this.init();
+    if (!audio || !this.master) return;
+
+    const amount = this.clamp01(intensity);
+    const now = audio.currentTime;
+    const duration = 0.12 + amount * 0.32;
+    const noise = audio.createBufferSource();
+    const filter = audio.createBiquadFilter();
+    const gain = audio.createGain();
+
+    noise.buffer = this.createNoiseBuffer(audio, duration);
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(1_800 + amount * 500, now);
+    filter.Q.setValueAtTime(2.2 + amount * 2.5, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.08 + amount * 0.32, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    noise.connect(filter).connect(gain).connect(this.master);
+    noise.start(now);
+    noise.stop(now + duration + 0.02);
+  }
+
+  playThud(intensity: number): void {
+    const audio = this.init();
+    if (!audio || !this.master) return;
+
+    const amount = this.clamp01(intensity);
+    const now = audio.currentTime;
+    const duration = 0.08 + amount * 0.18;
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(90 - amount * 45, now);
+    oscillator.frequency.exponentialRampToValueAtTime(32, now + duration);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.18 + amount * 0.62, now + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    oscillator.connect(gain).connect(this.master);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.02);
+  }
+
+  playStallHorn(): void {
+    if (this.stall) return;
+    const audio = this.init();
+    if (!audio || !this.master) return;
+
+    const now = audio.currentTime;
+    const horn = audio.createOscillator();
+    const pulse = audio.createOscillator();
+    const pulseDepth = audio.createGain();
+    const gain = audio.createGain();
+
+    horn.type = "square";
+    horn.frequency.setValueAtTime(800, now);
+
+    pulse.type = "square";
+    pulse.frequency.setValueAtTime(3, now);
+    pulseDepth.gain.setValueAtTime(0.075, now);
+    gain.gain.setValueAtTime(0.076, now);
+
+    pulse.connect(pulseDepth).connect(gain.gain);
+    horn.connect(gain).connect(this.master);
+    horn.start(now);
+    pulse.start(now);
+
+    this.stall = { horn, pulse, pulseDepth, gain };
+  }
+
+  stopStallHorn(): void {
+    if (!this.stall || !this.context) return;
+
+    const nodes = this.stall;
+    this.stall = null;
+    const now = this.context.currentTime;
+    nodes.gain.gain.cancelScheduledValues(now);
+    nodes.gain.gain.setTargetAtTime(0, now, 0.015);
+
+    const stopAt = now + 0.08;
+    nodes.horn.stop(stopAt);
+    nodes.pulse.stop(stopAt);
+    nodes.horn.onended = () => {
+      nodes.horn.disconnect();
+      nodes.pulse.disconnect();
+      nodes.pulseDepth.disconnect();
+      nodes.gain.disconnect();
+    };
+  }
+
+  playExplosion(): void {
+    const audio = this.init();
+    if (!audio || !this.master) return;
+
+    const now = audio.currentTime;
+    const duration = 0.55;
+    const noise = audio.createBufferSource();
+    const lowpass = audio.createBiquadFilter();
+    const noiseGain = audio.createGain();
+    const rumble = audio.createOscillator();
+    const rumbleGain = audio.createGain();
+
+    noise.buffer = this.createNoiseBuffer(audio, duration);
+    lowpass.type = "lowpass";
+    lowpass.frequency.setValueAtTime(1_100, now);
+    lowpass.frequency.exponentialRampToValueAtTime(180, now + duration);
+    lowpass.Q.value = 0.8;
+
+    noiseGain.gain.setValueAtTime(0.85, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+
+    rumble.type = "sine";
+    rumble.frequency.setValueAtTime(72, now);
+    rumble.frequency.exponentialRampToValueAtTime(28, now + duration);
+    rumbleGain.gain.setValueAtTime(0.65, now);
+    rumbleGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    noise.connect(lowpass).connect(noiseGain).connect(this.master);
+    rumble.connect(rumbleGain).connect(this.master);
+    noise.start(now);
+    rumble.start(now);
+    noise.stop(now + duration);
+    rumble.stop(now + duration);
+  }
+
+  playClick(): void {
+    const audio = this.init();
+    if (!audio || !this.master) return;
+
+    const now = audio.currentTime;
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(1_000, now);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+
+    oscillator.connect(gain).connect(this.master);
+    oscillator.start(now);
+    oscillator.stop(now + 0.022);
+  }
+
+  private createNoiseBuffer(audio: AudioContext, duration: number): AudioBuffer {
+    const frameCount = Math.max(1, Math.ceil(audio.sampleRate * duration));
+    const buffer = audio.createBuffer(1, frameCount, audio.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < frameCount; i += 1) {
+      samples[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
+  private clamp01(value: number): number {
+    return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+  }
+}
+
+
+=== FILE: src/lib/flare-game/game-juice.ts ===
+export type TouchdownQuality = "greaser" | "good" | "firm" | "hard" | "bounce" | "crash";
+export type Point = { x: number; y: number };
+
+type Particle = {
+  active: boolean;
+  x: number; y: number; vx: number; vy: number;
+  gravity: number; life: number; maxLife: number;
+  color: string; size: number; drag: number;
+  grow: number; alpha: number;
+};
+
+type BurstOptions = {
+  count: number; color: string | string[]; speedMin: number; speedMax: number;
+  angleMin: number; angleMax: number; gravity: number; lifeMin: number; lifeMax: number;
+  sizeMin: number; sizeMax: number; drag?: number; grow?: number; alpha?: number;
+};
+
+type FlashMode = "none" | "full" | "vignette";
+
+const MAX_PARTICLES = 100;
+const TAU = Math.PI * 2;
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+const random = (min: number, max: number) => min + Math.random() * (max - min);
+
+export class GameJuice {
+  private readonly particles: Particle[];
+  private readonly transform: number[] = [0, 0, 1, 0];
+
+  private shakeTime = 0;
+  private shakeDuration = 0;
+  private shakeAmplitude = 0;
+  private zoomTime = 0;
+  private zoomDuration = 0;
+  private zoomAmount = 0;
+
+  private flashTime = 0;
+  private flashDuration = 0;
+  private flashStrength = 0;
+  private flashColor = "255, 70, 55";
+  private flashMode: FlashMode = "none";
+
+  private stallPhase = 0;
+  private stallHold = 0;
+  private stallAlpha = 0;
+
+  constructor() {
+    this.particles = Array.from({ length: MAX_PARTICLES }, () => ({
+      active: false, x: 0, y: 0, vx: 0, vy: 0, gravity: 0,
+      life: 0, maxLife: 1, color: "#fff", size: 1, drag: 1, grow: 0, alpha: 1,
+    }));
+  }
+
+  triggerTouchdown(quality: TouchdownQuality, touchdownPoint: Point): void {
+    switch (quality) {
+      case "greaser":
+        this.dust(touchdownPoint, 10, 0.75);
+        this.setZoom(0.1, -0.007);
+        this.setFlash(0.18, 0.26, "255, 190, 55", "full");
+        break;
+      case "good":
+        this.dust(touchdownPoint, 8, 0.9);
+        this.setZoom(0.1, -0.012);
+        break;
+      case "firm":
+        this.dust(touchdownPoint, 10, 1.15);
+        this.setShake(0.12, 2);
+        this.setZoom(0.12, -0.018);
+        break;
+      case "hard":
+        this.setShake(0.2, 4);
+        this.sparks(touchdownPoint, 15);
+        this.setFlash(0.3, 0.48, "220, 35, 45", "vignette");
+        this.setZoom(0.16, -0.022);
+        break;
+      case "bounce":
+        this.setShake(0.3, 8);
+        this.thud(touchdownPoint, -10);
+        this.thud(touchdownPoint, 10);
+        this.setZoom(0.22, -0.035);
+        break;
+      case "crash":
+        this.setShake(0.5, 12);
+        this.smoke(touchdownPoint, 30);
+        this.explosion(touchdownPoint, 34);
+        this.setFlash(0.38, 0.9, "235, 38, 30", "full");
+        this.setZoom(0.35, -0.07);
+        break;
+    }
+  }
+
+  /** Advances all effects and returns [shakeX, shakeY, zoom, flashAlpha]. */
+  update(dt: number): number[] {
+    const step = Math.max(0, Math.min(dt, 0.05));
+
+    if (this.shakeTime > 0) {
+      this.shakeTime = Math.max(0, this.shakeTime - step);
+      const envelope = this.shakeDuration > 0 ? this.shakeTime / this.shakeDuration : 0;
+      const amplitude = this.shakeAmplitude * envelope * envelope;
+      this.transform[0] = random(-amplitude, amplitude);
+      this.transform[1] = random(-amplitude, amplitude);
+    } else {
+      this.transform[0] = 0;
+      this.transform[1] = 0;
+    }
+
+    if (this.zoomTime > 0) {
+      this.zoomTime = Math.max(0, this.zoomTime - step);
+      const progress = 1 - this.zoomTime / Math.max(this.zoomDuration, 0.001);
+      this.transform[2] = 1 + this.zoomAmount * Math.sin(progress * Math.PI);
+    } else {
+      this.transform[2] = 1;
+    }
+
+    if (this.flashTime > 0) {
+      this.flashTime = Math.max(0, this.flashTime - step);
+      const remaining = this.flashTime / Math.max(this.flashDuration, 0.001);
+      this.transform[3] = this.flashStrength * remaining * remaining;
+    } else {
+      this.transform[3] = 0;
+      this.flashMode = "none";
+    }
+
+    if (this.stallHold > 0) {
+      this.stallHold = Math.max(0, this.stallHold - step);
+      this.stallPhase += step * 9;
+      this.stallAlpha = clamp01(0.08 + (0.5 + 0.5 * Math.sin(this.stallPhase * TAU)) * 0.28);
+    } else {
+      this.stallAlpha = Math.max(0, this.stallAlpha - step * 2.5);
+    }
+
+    for (const p of this.particles) {
+      if (!p.active) continue;
+      p.life -= step;
+      if (p.life <= 0) { p.active = false; continue; }
+      const damping = Math.pow(p.drag, step * 60);
+      p.vx *= damping;
+      p.vy = p.vy * damping + p.gravity * step;
+      p.x += p.vx * step;
+      p.y += p.vy * step;
+      p.size = Math.max(0.1, p.size + p.grow * step);
+    }
+    return this.transform;
+  }
+
+  drawParticles(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
+    for (const p of this.particles) {
+      if (!p.active) continue;
+      const life = clamp01(p.life / p.maxLife);
+      ctx.globalAlpha = p.alpha * life * life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /**
+   * Keeps the stall pulse alive; call while stalled. Returns the current overlay alpha.
+   * The pulse fades automatically when calls stop.
+   */
+  triggerStallWarning(): number {
+    this.stallHold = 0.16;
+    return this.stallAlpha || 0.12;
+  }
+
+  get stallWarningAlpha(): number { return this.stallAlpha; }
+  get currentFlashColor(): string { return `rgb(${this.flashColor})`; }
+  get currentFlashMode(): FlashMode { return this.flashMode; }
+
+  /** Optional convenience renderer for touchdown and stall color overlays. */
+  drawOverlays(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+    const flashAlpha = this.transform[3];
+    if (flashAlpha > 0 && this.flashMode !== "none") {
+      ctx.save();
+      if (this.flashMode === "vignette") {
+        const radius = Math.max(width, height) * 0.72;
+        const gradient = ctx.createRadialGradient(width / 2, height / 2, radius * 0.18, width / 2, height / 2, radius);
+        gradient.addColorStop(0, `rgba(${this.flashColor}, 0)`);
+        gradient.addColorStop(1, `rgba(${this.flashColor}, ${flashAlpha})`);
+        ctx.fillStyle = gradient;
+      } else {
+        ctx.fillStyle = `rgba(${this.flashColor}, ${flashAlpha})`;
+      }
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+    if (this.stallAlpha > 0) {
+      ctx.save();
+      const radius = Math.max(width, height) * 0.72;
+      const gradient = ctx.createRadialGradient(width / 2, height / 2, radius * 0.35, width / 2, height / 2, radius);
+      gradient.addColorStop(0, "rgba(255,0,0,0)");
+      gradient.addColorStop(1, `rgba(225,20,35,${this.stallAlpha})`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+  }
+
+  reset(): void {
+    for (const p of this.particles) p.active = false;
+    this.shakeTime = this.shakeDuration = this.shakeAmplitude = 0;
+    this.zoomTime = this.zoomDuration = this.zoomAmount = 0;
+    this.flashTime = this.flashDuration = this.flashStrength = 0;
+    this.flashMode = "none";
+    this.stallPhase = this.stallHold = this.stallAlpha = 0;
+    this.transform[0] = this.transform[1] = this.transform[3] = 0;
+    this.transform[2] = 1;
+  }
+
+  private setShake(duration: number, amplitude: number): void {
+    this.shakeTime = this.shakeDuration = Math.max(this.shakeTime, duration);
+    this.shakeAmplitude = Math.max(this.shakeAmplitude, amplitude);
+  }
+
+  private setZoom(duration: number, amount: number): void {
+    this.zoomTime = this.zoomDuration = duration;
+    this.zoomAmount = amount;
+  }
+
+  private setFlash(duration: number, strength: number, rgb: string, mode: FlashMode): void {
+    this.flashTime = this.flashDuration = duration;
+    this.flashStrength = strength;
+    this.flashColor = rgb;
+    this.flashMode = mode;
+  }
+
+  private emit(point: Point, options: BurstOptions): void {
+    let emitted = 0;
+    for (const p of this.particles) {
+      if (p.active) continue;
+      const angle = random(options.angleMin, options.angleMax);
+      const speed = random(options.speedMin, options.speedMax);
+      const life = random(options.lifeMin, options.lifeMax);
+      const colors = Array.isArray(options.color) ? options.color : [options.color];
+      p.active = true;
+      p.x = point.x + random(-3, 3);
+      p.y = point.y + random(-2, 2);
+      p.vx = Math.cos(angle) * speed;
+      p.vy = Math.sin(angle) * speed;
+      p.gravity = options.gravity;
+      p.life = p.maxLife = life;
+      p.color = colors[(Math.random() * colors.length) | 0];
+      p.size = random(options.sizeMin, options.sizeMax);
+      p.drag = options.drag ?? 0.985;
+      p.grow = options.grow ?? 0;
+      p.alpha = options.alpha ?? 1;
+      if (++emitted >= options.count) break;
+    }
+  }
+
+  private dust(point: Point, count: number, intensity: number): void {
+    this.emit(point, { count, color: ["#8b8f91", "#a5a19a", "#6f7476"], speedMin: 14, speedMax: 40 * intensity,
+      angleMin: Math.PI * 1.05, angleMax: Math.PI * 1.95, gravity: -4, lifeMin: 0.45, lifeMax: 0.9,
+      sizeMin: 2, sizeMax: 5, drag: 0.94, grow: 7, alpha: 0.65 });
+  }
+
+  private sparks(point: Point, count: number): void {
+    this.emit(point, { count, color: ["#ffd54a", "#ff9d00", "#fff2a1"], speedMin: 65, speedMax: 175,
+      angleMin: Math.PI * 1.08, angleMax: Math.PI * 1.92, gravity: 310, lifeMin: 0.25, lifeMax: 0.65,
+      sizeMin: 1, sizeMax: 2.4, drag: 0.99 });
+  }
+
+  private thud(point: Point, xOffset: number): void {
+    this.emit({ x: point.x + xOffset, y: point.y }, { count: 12, color: ["#92969a", "#676b70"], speedMin: 35, speedMax: 95,
+      angleMin: Math.PI * 1.05, angleMax: Math.PI * 1.95, gravity: 90, lifeMin: 0.3, lifeMax: 0.7,
+      sizeMin: 2, sizeMax: 5, drag: 0.95, grow: 5, alpha: 0.72 });
+  }
+
+  private smoke(point: Point, count: number): void {
+    this.emit(point, { count, color: ["#272b2e", "#3b3f42", "#55595b"], speedMin: 15, speedMax: 65,
+      angleMin: Math.PI * 1.18, angleMax: Math.PI * 1.82, gravity: -38, lifeMin: 1.1, lifeMax: 2.2,
+      sizeMin: 4, sizeMax: 9, drag: 0.965, grow: 11, alpha: 0.72 });
+  }
+
+  private explosion(point: Point, count: number): void {
+    this.emit(point, { count, color: ["#fff1a3", "#ffc21a", "#ff6a00", "#d92c18"], speedMin: 80, speedMax: 245,
+      angleMin: 0, angleMax: TAU, gravity: 180, lifeMin: 0.35, lifeMax: 0.95,
+      sizeMin: 2, sizeMax: 5.5, drag: 0.985, grow: -1 });
+  }
+}
+
+export default GameJuice;
+
+
+=== FILE: src/lib/flare-game/progress-store.ts ===
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { DifficultyLevel, LandingResult, ScoreBreakdown } from "./types";
+// PATCHED: the sibling FlightCourse site's cross-game store actually lives at
+// src/lib/store/progress-store.ts (confirmed against the live Pattern Perfect
+// codebase), not "@/lib/progress-store". Adjust this path if your project
+// structure differs.
+import { useProgress } from "@/lib/store/progress-store";
+
+/** The persisted shape deliberately contains only serialisable values. */
+export interface FlareProgressState {
+  attempts: LandingResult[];
+  bestScore: number;
+  bestQuality: string;
+  totalLandings: number;
+  totalFlights: number;
+  greaserCount: number;
+  badges: string[];
+  freePlays: number;
+  freePlaysUsed: number;
+  unlimitedUnlocked: boolean;
+  bonusPlaysEarned: number;
+  sharesToday: number;
+  lastShareDate: string | null;
+  playerId: string;
+  scenario: DifficultyLevel;
+  soundOn: boolean;
+  voiceCallouts: boolean;
+  reducedMotion: boolean;
+  colorblindMode: boolean;
+  landingStreak: number;
+  bestStreak: number;
+  lastLandingDate: string | null;
+  dailyChallengeCompleted: Record<string, boolean>;
+  weeklyGoalProgress: number;
+  scoreHistory: ScoreBreakdown[];
+  /** Empty until at least three scored landings make a diagnosis meaningful. */
+  weakDimension: string;
+  voiceCoachEnabled: boolean;
+  voiceURI: string;
+
+  canPlay: () => boolean;
+  consumePlay: () => boolean;
+  recordAttempt: (result: LandingResult, score: ScoreBreakdown) => void;
+  grantShareBonus: (plays?: number) => void;
+  purchaseUnlock: () => void;
+  registerShare: () => boolean;
+  setScenario: (scenario: DifficultyLevel) => void;
+  setSound: (enabled: boolean) => void;
+  setVoiceCallouts: (enabled: boolean) => void;
+  setReducedMotion: (enabled: boolean) => void;
+  setColorblindMode: (enabled: boolean) => void;
+  setVoiceCoachEnabled: (enabled: boolean) => void;
+  setVoiceURI: (uri: string) => void;
+  completeDailyChallenge: (dateString: string, score: number) => boolean;
+  resetWeeklyGoal: () => void;
+  getWeakDimension: () => string | null;
+  reset: () => void;
+}
+
+type StoredProgress = Omit<FlareProgressState, keyof FlareProgressActions>;
+type FlareProgressActions = Pick<
+  FlareProgressState,
+  | "canPlay"
+  | "consumePlay"
+  | "recordAttempt"
+  | "grantShareBonus"
+  | "purchaseUnlock"
+  | "registerShare"
+  | "setScenario"
+  | "setSound"
+  | "setVoiceCallouts"
+  | "setReducedMotion"
+  | "setColorblindMode"
+  | "setVoiceCoachEnabled"
+  | "setVoiceURI"
+  | "completeDailyChallenge"
+  | "resetWeeklyGoal"
+  | "getWeakDimension"
+  | "reset"
+>;
+
+const STORE_NAME = "flare-progress";
+const STORE_VERSION = 2;
+const MAX_HISTORY = 50;
+const DAILY_SHARE_CAP = 5;
+const MILESTONES: Record<number, { xp: number; badge: string }> = {
+  3: { xp: 1, badge: "streak-3" },
+  5: { xp: 2, badge: "streak-5" },
+  10: { xp: 3, badge: "streak-10" },
+  25: { xp: 5, badge: "streak-25" },
+  50: { xp: 10, badge: "streak-50" },
+};
+
+/** Local date is intentional: daily limits reset on the player's device date, not UTC. */
+export const localDateKey = (date = new Date()): string => {
+  const offsetDate = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60_000,
+  );
+  return offsetDate.toISOString().slice(0, 10);
+};
+
+const newPlayerId = (): string => {
+  const random =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return `flare-${random}`;
+};
+
+const initialStoredState = (): StoredProgress => ({
+  attempts: [],
+  bestScore: 0,
+  bestQuality: "",
+  totalLandings: 0,
+  totalFlights: 0,
+  greaserCount: 0,
+  badges: [],
+  freePlays: 5,
+  freePlaysUsed: 0,
+  unlimitedUnlocked: false,
+  bonusPlaysEarned: 0,
+  sharesToday: 0,
+  lastShareDate: null,
+  playerId: newPlayerId(),
+  // PATCHED: DifficultyLevel is numeric (0..4, see types.ts) — "normal" was
+  // never a valid value. 1 ("Light winds") is a reasonable default.
+  scenario: 1 as DifficultyLevel,
+  soundOn: true,
+  voiceCallouts: true,
+  reducedMotion: false,
+  colorblindMode: false,
+  landingStreak: 0,
+  bestStreak: 0,
+  lastLandingDate: null,
+  dailyChallengeCompleted: {},
+  weeklyGoalProgress: 0,
+  scoreHistory: [],
+  weakDimension: "",
+  voiceCoachEnabled: false,
+  voiceURI: "",
+});
+
+const qualityOf = (result: LandingResult): string => {
+  const value = (result as unknown as { quality?: unknown }).quality;
+  return typeof value === "string" ? value.toLowerCase() : "hard";
+};
+
+const weakDimensionFor = (history: ScoreBreakdown[]): string | null => {
+  if (history.length < 3) return null;
+
+  const sums = new Map<string, { total: number; count: number }>();
+  for (const score of history) {
+    for (const [key, rawValue] of Object.entries(
+      score as unknown as Record<string, unknown>,
+    )) {
+      if (
+        key === "total" ||
+        typeof rawValue !== "number" ||
+        !Number.isFinite(rawValue)
+      )
+        continue;
+      const current = sums.get(key) ?? { total: 0, count: 0 };
+      current.total += rawValue;
+      current.count += 1;
+      sums.set(key, current);
+    }
+  }
+
+  let weakest: string | null = null;
+  let lowestAverage = Infinity;
+  for (const [key, value] of sums) {
+    if (value.count < 3) continue;
+    const average = value.total / value.count;
+    if (average < lowestAverage) {
+      weakest = key;
+      lowestAverage = average;
+    }
+  }
+  return weakest;
+};
+
+/** Bridge Flare awards into the main FlightCourse Academy progression store. */
+const awardMainXp = (amount: number): void => {
+  if (amount <= 0) return;
+  useProgress.setState((state) => ({ xp: state.xp + amount }));
+};
+
+export const useFlareProgressV2 = create<FlareProgressState>()(
+  persist(
+    (set, get) => ({
+      ...initialStoredState(),
+      canPlay: () => get().unlimitedUnlocked || get().freePlays > 0,
+      consumePlay: () => {
+        const state = get();
+        if (state.unlimitedUnlocked) return true;
+        if (state.freePlays <= 0) return false;
+        set({
+          freePlays: state.freePlays - 1,
+          freePlaysUsed: state.freePlaysUsed + 1,
+        });
+        return true;
+      },
+      recordAttempt: (result, score) => {
+        const state = get();
+        const quality = qualityOf(result);
+        const total = Math.max(
+          0,
+          Number((score as unknown as { total?: number }).total) || 0,
+        );
+        const successful = total >= 60;
+        const streak = successful ? state.landingStreak + 1 : 0;
+        const history = [...state.scoreHistory, score].slice(-MAX_HISTORY);
+        const milestone = MILESTONES[streak];
+        const hasMilestone = Boolean(
+          milestone && state.badges.includes(milestone.badge),
+        );
+        const badges =
+          milestone && !hasMilestone
+            ? [...state.badges, milestone.badge]
+            : state.badges;
+        const baseXp =
+          quality === "greaser"
+            ? 5
+            : quality === "good"
+              ? 3
+              : quality === "firm"
+                ? 2
+                : 0;
+        const milestoneXp = milestone && !hasMilestone ? milestone.xp : 0;
+        set({
+          attempts: [...state.attempts, result].slice(-MAX_HISTORY),
+          bestScore: Math.max(state.bestScore, total),
+          bestQuality:
+            !state.bestQuality ||
+            rankQuality(quality) > rankQuality(state.bestQuality)
+              ? quality
+              : state.bestQuality,
+          totalLandings: state.totalLandings + 1,
+          totalFlights: state.totalFlights + 1,
+          greaserCount: state.greaserCount + (quality === "greaser" ? 1 : 0),
+          badges,
+          landingStreak: streak,
+          bestStreak: Math.max(state.bestStreak, streak),
+          lastLandingDate: localDateKey(),
+          weeklyGoalProgress: successful
+            ? Math.min(5, state.weeklyGoalProgress + 1)
+            : state.weeklyGoalProgress,
+          scoreHistory: history,
+          weakDimension: weakDimensionFor(history) ?? "",
+        });
+        awardMainXp(baseXp);
+        awardMainXp(milestoneXp);
+      },
+      grantShareBonus: (plays = 1) => {
+        const amount = Math.max(0, Math.floor(plays));
+        if (amount)
+          set((state) => ({
+            freePlays: state.freePlays + amount,
+            bonusPlaysEarned: state.bonusPlaysEarned + amount,
+          }));
+      },
+      purchaseUnlock: () => set({ unlimitedUnlocked: true }),
+      registerShare: () => {
+        const state = get();
+        const today = localDateKey();
+        const current = state.lastShareDate === today ? state.sharesToday : 0;
+        if (current >= DAILY_SHARE_CAP) return false;
+        set({
+          sharesToday: current + 1,
+          lastShareDate: today,
+          freePlays: state.freePlays + 1,
+          bonusPlaysEarned: state.bonusPlaysEarned + 1,
+        });
+        return true;
+      },
+      setScenario: (scenario) => set({ scenario }),
+      setSound: (soundOn) => set({ soundOn }),
+      setVoiceCallouts: (voiceCallouts) => set({ voiceCallouts }),
+      setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+      setColorblindMode: (colorblindMode) => set({ colorblindMode }),
+      setVoiceCoachEnabled: (voiceCoachEnabled) => set({ voiceCoachEnabled }),
+      setVoiceURI: (voiceURI) => set({ voiceURI }),
+      completeDailyChallenge: (dateString, score) => {
+        if (
+          !/^\d{4}-\d{2}-\d{2}$/.test(dateString) ||
+          !Number.isFinite(score) ||
+          score < 60 ||
+          get().dailyChallengeCompleted[dateString]
+        )
+          return false;
+        set((state) => ({
+          dailyChallengeCompleted: {
+            ...state.dailyChallengeCompleted,
+            [dateString]: true,
+          },
+        }));
+        return true;
+      },
+      resetWeeklyGoal: () => set({ weeklyGoalProgress: 0 }),
+      getWeakDimension: () => weakDimensionFor(get().scoreHistory),
+      reset: () => {
+        const state = get();
+        const fresh = initialStoredState();
+        set({
+          ...fresh,
+          playerId: state.playerId,
+          scenario: state.scenario,
+          soundOn: state.soundOn,
+          voiceCallouts: state.voiceCallouts,
+          reducedMotion: state.reducedMotion,
+          colorblindMode: state.colorblindMode,
+          voiceCoachEnabled: state.voiceCoachEnabled,
+          voiceURI: state.voiceURI,
+        });
+      },
+    }),
+    {
+      name: STORE_NAME,
+      version: STORE_VERSION,
+      migrate: (persisted) => ({
+        ...initialStoredState(),
+        ...(persisted as Partial<StoredProgress>),
+        scoreHistory: Array.isArray(
+          (persisted as Partial<StoredProgress>)?.scoreHistory,
+        )
+          ? (persisted as Partial<StoredProgress>).scoreHistory!.slice(
+              -MAX_HISTORY,
+            )
+          : [],
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<StoredProgress>),
+      }),
+    },
+  ),
+);
+
+function rankQuality(quality: string): number {
+  return (
+    (
+      { crash: 0, hard: 1, firm: 2, good: 3, greaser: 4 } as Record<
+        string,
+        number
+      >
+    )[quality] ?? 0
+  );
+}
+
+/** Alias for projects whose original flare store imported this conventional name. */
+export const useFlareProgress = useFlareProgressV2;
+
+
+
+=== FILE: src/lib/flare-game/runway-canvas.tsx ===
+"use client";
+
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  type CSSProperties,
+  type RefObject,
+} from "react";
+import type { FlightState, WeatherConditions } from "./types";
+
+export interface RunwayCanvasHandle {
+  draw(state: FlightState, weather: WeatherConditions): void;
+}
+
+export interface RunwayCanvasProps {
+  stateRef: RefObject<FlightState | null>;
+  weather: WeatherConditions;
+  className?: string;
+  style?: CSSProperties;
+}
+
+type AnyRecord = Record<string, unknown>;
+
+type Palette = Readonly<{
+  skyTop: string;
+  skyBottom: string;
+  haze: string;
+  terrain: string;
+  groundTop: string;
+  groundBottom: string;
+  horizon: string;
+  runwayTop: string;
+  runwayBottom: string;
+  marking: string;
+}>;
+
+type SceneCache = {
+  width: number;
+  height: number;
+  paletteId: number;
+  palette: Palette;
+  sky: CanvasGradient | null;
+  ground: CanvasGradient | null;
+  runway: CanvasGradient | null;
+  cowling: CanvasGradient | null;
+};
+
+const TAU = Math.PI * 2;
+const DEG = Math.PI / 180;
+const NO_DASH: number[] = [];
+
+const DAY: Palette = {
+  skyTop: "#2783d1",
+  skyBottom: "#b8ddf4",
+  haze: "#e1eceb",
+  terrain: "#53675d",
+  groundTop: "#647455",
+  groundBottom: "#20271f",
+  horizon: "rgba(244,249,250,.78)",
+  runwayTop: "#62676a",
+  runwayBottom: "#34383a",
+  marking: "#f7f6ed",
+};
+
+const DUSK: Palette = {
+  skyTop: "#302752",
+  skyBottom: "#dc765f",
+  haze: "#f0b17d",
+  terrain: "#403442",
+  groundTop: "#403d3c",
+  groundBottom: "#17191a",
+  horizon: "rgba(255,211,173,.82)",
+  runwayTop: "#515157",
+  runwayBottom: "#292b2e",
+  marking: "#f4eee5",
+};
+
+const NIGHT: Palette = {
+  skyTop: "#02050d",
+  skyBottom: "#111b2c",
+  haze: "#26364b",
+  terrain: "#090d12",
+  groundTop: "#111817",
+  groundBottom: "#030506",
+  horizon: "rgba(111,137,161,.55)",
+  runwayTop: "#292f34",
+  runwayBottom: "#15191c",
+  marking: "#e9ede8",
+};
+
+const DAWN: Palette = {
+  skyTop: "#596b9d",
+  skyBottom: "#eea7ad",
+  haze: "#f8d0c1",
+  terrain: "#59535d",
+  groundTop: "#555954",
+  groundBottom: "#202321",
+  horizon: "rgba(255,229,216,.86)",
+  runwayTop: "#5a5d60",
+  runwayBottom: "#303336",
+  marking: "#f7f1e9",
+};
+
+const PALETTES: readonly Palette[] = [DAY, DUSK, NIGHT, DAWN];
+const caches = new WeakMap<CanvasRenderingContext2D, SceneCache>();
+
+/* Static normalized geometry: generated once, never inside the animation loop. */
+const CENTERLINE = new Float32Array([
+  .14, .18, .215, .255, .295, .34, .385, .435,
+  .485, .54, .595, .655, .715, .78, .84, .91,
+]);
+
+const TDZ = new Float32Array([
+  .22, .252, 3, .29, .324, 3, .375, .411, 2,
+  .47, .51, 2, .58, .624, 1,
+]);
+
+const STAR_COUNT = 88;
+const STARS = new Float32Array(STAR_COUNT * 3);
+const TERRAIN_COUNT = 49;
+const TERRAIN = new Float32Array(TERRAIN_COUNT * 2);
+
+let randomSeed = 0x71ac93d5;
+function seededRandom(): number {
+  randomSeed ^= randomSeed << 13;
+  randomSeed ^= randomSeed >>> 17;
+  randomSeed ^= randomSeed << 5;
+  return (randomSeed >>> 0) / 4294967296;
+}
+
+for (let i = 0; i < STAR_COUNT; i += 1) {
+  const p = i * 3;
+  STARS[p] = seededRandom();
+  STARS[p + 1] = seededRandom() * .72;
+  STARS[p + 2] = .45 + seededRandom() * 1.2;
+}
+
+for (let i = 0; i < TERRAIN_COUNT; i += 1) {
+  const p = i * 2;
+  TERRAIN[p] = -.25 + (i / (TERRAIN_COUNT - 1)) * 1.5;
+  TERRAIN[p + 1] = .018 + Math.sin(i * .69) * .009 +
+    Math.sin(i * 1.83) * .004 + seededRandom() * .006;
+}
+
+function clamp(value: number, low: number, high: number): number {
+  return Math.max(low, Math.min(high, value));
+}
+
+function record(value: unknown): AnyRecord | null {
+  return value !== null && typeof value === "object"
+    ? value as AnyRecord
+    : null;
+}
+
+function numberAt(source: AnyRecord | null, key: string): number {
+  if (!source) return Number.NaN;
+  const value = source[key];
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : Number.NaN;
+}
+
+function firstNumber(
+  primary: AnyRecord,
+  nested: AnyRecord | null,
+  key1: string,
+  key2: string,
+  key3: string,
+  fallback: number,
+): number {
+  let value = numberAt(primary, key1);
+  if (!Number.isFinite(value)) value = numberAt(primary, key2);
+  if (!Number.isFinite(value)) value = numberAt(primary, key3);
+  if (!Number.isFinite(value)) value = numberAt(nested, key1);
+  if (!Number.isFinite(value)) value = numberAt(nested, key2);
+  if (!Number.isFinite(value)) value = numberAt(nested, key3);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function timeOfDay(weather: WeatherConditions): unknown {
+  const source = weather as unknown as AnyRecord;
+  return source.timeOfDay ?? source.time ?? source.lighting ?? "day";
+}
+
+function paletteId(value: unknown): number {
+  if (typeof value === "number") {
+    const hour = ((value % 24) + 24) % 24;
+    if (hour < 5 || hour >= 21) return 2;
+    if (hour < 7) return 3;
+    if (hour >= 18) return 1;
+    return 0;
+  }
+  const label = String(value).toLowerCase();
+  if (label.includes("night")) return 2;
+  if (label.includes("dawn") || label.includes("sunrise")) return 3;
+  if (label.includes("dusk") || label.includes("sunset") || label.includes("evening")) return 1;
+  return 0;
+}
+
+function cacheFor(
+  ctx: CanvasRenderingContext2D,
+  weather: WeatherConditions,
+  width: number,
+  height: number,
+): SceneCache {
+  const id = paletteId(timeOfDay(weather));
+  let cache = caches.get(ctx);
+  if (!cache) {
+    cache = {
+      width: -1,
+      height: -1,
+      paletteId: -1,
+      palette: PALETTES[id],
+      sky: null,
+      ground: null,
+      runway: null,
+      cowling: null,
+    };
+    caches.set(ctx, cache);
+  }
+
+  if (cache.width !== width || cache.height !== height || cache.paletteId !== id) {
+    cache.width = width;
+    cache.height = height;
+    cache.paletteId = id;
+    cache.palette = PALETTES[id];
+
+    cache.sky = ctx.createLinearGradient(0, 0, 0, height * .75);
+    cache.sky.addColorStop(0, cache.palette.skyTop);
+    cache.sky.addColorStop(.72, cache.palette.skyBottom);
+    cache.sky.addColorStop(1, cache.palette.haze);
+
+    cache.ground = ctx.createLinearGradient(0, height * .35, 0, height);
+    cache.ground.addColorStop(0, cache.palette.groundTop);
+    cache.ground.addColorStop(1, cache.palette.groundBottom);
+
+    cache.runway = ctx.createLinearGradient(0, height * .35, 0, height);
+    cache.runway.addColorStop(0, cache.palette.runwayTop);
+    cache.runway.addColorStop(1, cache.palette.runwayBottom);
+
+    cache.cowling = ctx.createLinearGradient(0, height * .82, 0, height);
+    cache.cowling.addColorStop(0, "#596773");
+    cache.cowling.addColorStop(.2, "#252d33");
+    cache.cowling.addColorStop(1, "#080b0d");
+  }
+  return cache;
+}
+
+function depthCurve(depth: number): number {
+  return depth * depth;
+}
+
+function projectedY(top: number, bottom: number, depth: number): number {
+  return top + (bottom - top) * depthCurve(depth);
+}
+
+function projectedValue(top: number, bottom: number, depth: number): number {
+  return top + (bottom - top) * depthCurve(depth);
+}
+
+function runwayQuad(
+  ctx: CanvasRenderingContext2D,
+  topCenter: number,
+  bottomCenter: number,
+  topHalf: number,
+  bottomHalf: number,
+  topY: number,
+  bottomY: number,
+  nearDepth: number,
+  farDepth: number,
+  left: number,
+  right: number,
+): void {
+  const y1 = projectedY(topY, bottomY, nearDepth);
+  const y2 = projectedY(topY, bottomY, farDepth);
+  const c1 = projectedValue(topCenter, bottomCenter, nearDepth);
+  const c2 = projectedValue(topCenter, bottomCenter, farDepth);
+  const h1 = projectedValue(topHalf, bottomHalf, nearDepth);
+  const h2 = projectedValue(topHalf, bottomHalf, farDepth);
+  ctx.beginPath();
+  ctx.moveTo(c1 + h1 * left, y1);
+  ctx.lineTo(c1 + h1 * right, y1);
+  ctx.lineTo(c2 + h2 * right, y2);
+  ctx.lineTo(c2 + h2 * left, y2);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawStars(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+  ctx.fillStyle = "#fff";
+  for (let i = 0; i < STAR_COUNT; i += 1) {
+    const p = i * 3;
+    ctx.globalAlpha = .35 + ((i * 37) % 60) / 100;
+    ctx.beginPath();
+    ctx.arc(STARS[p] * w, STARS[p + 1] * h, STARS[p + 2], 0, TAU);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawTerrain(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  horizonY: number,
+  cache: SceneCache,
+): void {
+  ctx.fillStyle = cache.ground ?? cache.palette.groundTop;
+  ctx.fillRect(-w * 2, horizonY, w * 5, h * 2);
+  ctx.fillStyle = cache.palette.terrain;
+  ctx.beginPath();
+  ctx.moveTo(-w, horizonY + h);
+  for (let i = 0; i < TERRAIN_COUNT; i += 1) {
+    const p = i * 2;
+    ctx.lineTo(TERRAIN[p] * w, horizonY - TERRAIN[p + 1] * h);
+  }
+  ctx.lineTo(w * 2, horizonY + h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = cache.palette.horizon;
+  ctx.lineWidth = Math.max(1, h * .0015);
+  ctx.beginPath();
+  ctx.moveTo(-w, horizonY);
+  ctx.lineTo(w * 2, horizonY);
+  ctx.stroke();
+}
+
+function drawPapi(
+  ctx: CanvasRenderingContext2D,
+  deviation: number,
+  topCenter: number,
+  bottomCenter: number,
+  topHalf: number,
+  bottomHalf: number,
+  topY: number,
+  bottomY: number,
+  h: number,
+): void {
+  let whites = 2;
+  if (deviation > .75) whites = 4;
+  else if (deviation > .25) whites = 3;
+  else if (deviation < -.75) whites = 0;
+  else if (deviation < -.25) whites = 1;
+
+  const depth = .27;
+  const half = projectedValue(topHalf, bottomHalf, depth);
+  const center = projectedValue(topCenter, bottomCenter, depth);
+  const y = projectedY(topY, bottomY, depth);
+  const radius = clamp(half * .035, 2.1, h * .008);
+  const spacing = radius * 2.9;
+  const x0 = center - half - spacing * 4.25;
+
+  ctx.fillStyle = "#121313";
+  ctx.fillRect(x0 - radius * 1.7, y - radius * 1.7, spacing * 4.55, radius * 3.4);
+  for (let i = 0; i < 4; i += 1) {
+    /* On-path PAPI reads red-red-white-white from left to right. */
+    const white = i >= 4 - whites;
+    ctx.shadowBlur = radius * 2.2;
+    ctx.shadowColor = white ? "#fff9d7" : "#ff241b";
+    ctx.fillStyle = white ? "#fffbe8" : "#f1261d";
+    ctx.beginPath();
+    ctx.arc(x0 + i * spacing, y, radius, 0, TAU);
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
+}
+
+function drawCowling(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  cache: SceneCache,
+): void {
+  ctx.fillStyle = cache.cowling ?? "#20272d";
+  ctx.beginPath();
+  ctx.moveTo(-w * .04, h);
+  ctx.lineTo(w * .05, h * .94);
+  ctx.bezierCurveTo(w * .18, h * .85, w * .37, h * .855, w * .5, h * .88);
+  ctx.bezierCurveTo(w * .63, h * .855, w * .82, h * .85, w * .95, h * .94);
+  ctx.lineTo(w * 1.04, h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(190,207,216,.27)";
+  ctx.lineWidth = Math.max(1, h * .002);
+  ctx.beginPath();
+  ctx.moveTo(w * .08, h * .935);
+  ctx.bezierCurveTo(w * .27, h * .86, w * .4, h * .875, w * .5, h * .892);
+  ctx.bezierCurveTo(w * .6, h * .875, w * .73, h * .86, w * .92, h * .935);
+  ctx.stroke();
+}
+
+/** Draw one frame in logical (CSS-pixel) coordinates. */
+export function drawScene(
+  ctx: CanvasRenderingContext2D,
+  state: FlightState,
+  weather: WeatherConditions,
+  w: number,
+  h: number,
+): void {
+  if (!(w > 0 && h > 0)) return;
+
+  const source = state as unknown as AnyRecord;
+  const position = record(source.position);
+  const attitude = record(source.attitude);
+  // PATCHED: added the exact field names flight-physics.ts's FlightState
+  // actually uses (altitudeAgl, pitchDeg, bankDeg, centerlineOffsetFt,
+  // glideslopeErrorDeg) as first-choice aliases — the originals here didn't
+  // match flight-physics.ts's casing/naming and would have silently fallen
+  // back to defaults every frame.
+  const altitude = Math.max(0, firstNumber(source, position, "altitudeAgl", "altitudeAGL", "altitude", 300));
+  const pitch = firstNumber(source, attitude, "pitchDeg", "pitch", "pitchDegrees", 0);
+  const bank = firstNumber(source, attitude, "bankDeg", "bank", "bankDegrees", 0);
+  const lateral = firstNumber(source, position, "centerlineOffsetFt", "lateralOffset", "centerlineOffset", 0);
+  const distance = Math.max(1, firstNumber(source, position, "distanceToThreshold", "distanceFromThreshold", "runwayDistance", 2500));
+  let glideDeviation = firstNumber(source, null, "glideslopeErrorDeg", "glideslopeDeviation", "glideSlopeDeviation", Number.NaN);
+  if (!Number.isFinite(glideDeviation)) {
+    glideDeviation = Math.atan2(altitude, distance) / DEG - 3;
+  }
+
+  const cache = cacheFor(ctx, weather, w, h);
+  const altitudeFactor = clamp(altitude / 1400, 0, 1);
+  const distanceFactor = clamp(distance / 6500, 0, 1);
+  const pitchShift = clamp(pitch, -15, 22) * h * .0062;
+  const horizonY = clamp(h * .39 + pitchShift, h * .15, h * .68);
+
+  /* At altitude the runway is smaller and its visual center sits lower. */
+  const runwaySpan = h * (.68 - altitudeFactor * .28 - distanceFactor * .05);
+  const runwayCenterY = horizonY + h * (.36 + altitudeFactor * .06);
+  const runwayTop = Math.max(horizonY + 2, runwayCenterY - runwaySpan * .5 - pitchShift * .28);
+  const runwayBottom = clamp(runwayCenterY + runwaySpan * .5 - pitchShift * .72, runwayTop + h * .16, h * 1.16);
+
+  const offset = clamp(lateral, -300, 300);
+  const topCenter = w * .5 - offset * w * .0007;
+  const bottomCenter = w * .5 - offset * w * .0032;
+  const topHalf = w * (.0065 + (1 - distanceFactor) * .005);
+  const bottomHalf = w * (.51 - altitudeFactor * .22 - distanceFactor * .05);
+  const bankRadians = -clamp(bank, -50, 50) * DEG;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = cache.sky ?? cache.palette.skyTop;
+  ctx.fillRect(0, 0, w, h);
+  if (cache.paletteId === 2) drawStars(ctx, w, h);
+
+  ctx.save();
+  ctx.translate(w * .5, horizonY);
+  ctx.rotate(bankRadians);
+  ctx.translate(-w * .5, -horizonY);
+
+  drawTerrain(ctx, w, h, horizonY, cache);
+
+  ctx.fillStyle = cache.runway ?? cache.palette.runwayTop;
+  ctx.beginPath();
+  ctx.moveTo(topCenter - topHalf, runwayTop);
+  ctx.lineTo(topCenter + topHalf, runwayTop);
+  ctx.lineTo(bottomCenter + bottomHalf, runwayBottom);
+  ctx.lineTo(bottomCenter - bottomHalf, runwayBottom);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = cache.palette.marking;
+  ctx.lineWidth = Math.max(1.2, h * .0028);
+  ctx.setLineDash(NO_DASH);
+  ctx.beginPath();
+  ctx.moveTo(topCenter - topHalf, runwayTop);
+  ctx.lineTo(bottomCenter - bottomHalf, runwayBottom);
+  ctx.moveTo(topCenter + topHalf, runwayTop);
+  ctx.lineTo(bottomCenter + bottomHalf, runwayBottom);
+  ctx.stroke();
+
+  ctx.fillStyle = cache.palette.marking;
+  for (let i = 0; i < 10; i += 1) {
+    const left = -.89 + i * .18;
+    runwayQuad(ctx, topCenter, bottomCenter, topHalf, bottomHalf, runwayTop, runwayBottom, .105, .133, left, left + .095);
+  }
+
+  for (let i = 0; i < CENTERLINE.length; i += 2) {
+    runwayQuad(ctx, topCenter, bottomCenter, topHalf, bottomHalf, runwayTop, runwayBottom, CENTERLINE[i], CENTERLINE[i + 1], -.026, .026);
+  }
+
+  /* 1000-foot aiming-point blocks. */
+  runwayQuad(ctx, topCenter, bottomCenter, topHalf, bottomHalf, runwayTop, runwayBottom, .31, .37, -.68, -.43);
+  runwayQuad(ctx, topCenter, bottomCenter, topHalf, bottomHalf, runwayTop, runwayBottom, .31, .37, .43, .68);
+
+  for (let i = 0; i < TDZ.length; i += 3) {
+    const start = TDZ[i];
+    const end = TDZ[i + 1];
+    const count = TDZ[i + 2];
+    for (let marker = 0; marker < count; marker += 1) {
+      const inset = marker * .13;
+      runwayQuad(ctx, topCenter, bottomCenter, topHalf, bottomHalf, runwayTop, runwayBottom, start, end, -.76 + inset, -.69 + inset);
+      runwayQuad(ctx, topCenter, bottomCenter, topHalf, bottomHalf, runwayTop, runwayBottom, start, end, .69 - inset, .76 - inset);
+    }
+  }
+
+  drawPapi(ctx, glideDeviation, topCenter, bottomCenter, topHalf, bottomHalf, runwayTop, runwayBottom, h);
+  ctx.restore();
+  drawCowling(ctx, w, h, cache);
+}
+
+export const RunwayCanvas = forwardRef<RunwayCanvasHandle, RunwayCanvasProps>(
+  function RunwayCanvas({ stateRef, weather, className, style }, forwardedRef) {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const weatherRef = useRef(weather);
+    const widthRef = useRef(1);
+    const heightRef = useRef(1);
+    const ratioRef = useRef(1);
+    const contextRef = useRef<CanvasRenderingContext2D | null>(null);
+    weatherRef.current = weather;
+
+    const resize = useCallback((): void => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      const ratio = clamp(window.devicePixelRatio || 1, 1, 3);
+      const pixelWidth = Math.max(1, Math.round(width * ratio));
+      const pixelHeight = Math.max(1, Math.round(height * ratio));
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+      }
+      widthRef.current = width;
+      heightRef.current = height;
+      ratioRef.current = ratio;
+      const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+      contextRef.current = ctx;
+      if (ctx) {
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+      }
+    }, []);
+
+    useImperativeHandle(forwardedRef, () => ({
+      draw(nextState: FlightState, nextWeather: WeatherConditions): void {
+        if (!contextRef.current) resize();
+        const ctx = contextRef.current;
+        if (!ctx) return;
+        const ratio = ratioRef.current;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        drawScene(ctx, nextState, nextWeather, widthRef.current, heightRef.current);
+      },
+    }), [resize]);
+
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      let frame = 0;
+      let running = true;
+      let previous = 0;
+      resize();
+      const observer = new ResizeObserver(resize);
+      observer.observe(canvas);
+
+      const render = (time: number): void => {
+        if (!running) return;
+        /* Cap work at 60fps while keeping one persistent animation loop. */
+        if (time - previous >= 1000 / 60 - .5) {
+          previous = time;
+          const ctx = contextRef.current;
+          const current = stateRef.current;
+          if (ctx && current) {
+            const ratio = ratioRef.current;
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            drawScene(ctx, current, weatherRef.current, widthRef.current, heightRef.current);
+          }
+        }
+        frame = requestAnimationFrame(render);
+      };
+
+      frame = requestAnimationFrame(render);
+      return () => {
+        running = false;
+        cancelAnimationFrame(frame);
+        observer.disconnect();
+      };
+    }, [resize, stateRef]);
+
+    return (
+      <canvas
+        ref={canvasRef}
+        className={className}
+        role="img"
+        aria-label="Cockpit perspective view of the runway"
+        style={{ display: "block", width: "100%", height: "100%", touchAction: "none", ...style }}
+      />
+    );
+  },
+);
+
+RunwayCanvas.displayName = "RunwayCanvas";
+export default RunwayCanvas;
+
+
+=== FILE: src/lib/flare-game/hud-overlay.tsx ===
+"use client";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import type { FlightState } from "./types";
+
+export interface HudOverlayProps {
+  stateRef: React.RefObject<FlightState | null>;
+  className?: string;
+}
+
+type UnknownState = FlightState & Record<string, unknown>;
+type GumKey = "Gas" | "Undercarriage" | "Mixture" | "Prop" | "Seatbelts";
+
+type HudState = {
+  airspeed: number;
+  speedTrend: number;
+  altitudeAGL: number;
+  altitudeMSL: number;
+  verticalSpeed: number;
+  heading: number;
+  rpm: number;
+  phase: string;
+  flaps: number;
+  papi: string;
+  stalled: boolean;
+  gumps: Record<GumKey, boolean>;
+};
+
+const GUMPS: GumKey[] = ["Gas", "Undercarriage", "Mixture", "Prop", "Seatbelts"];
+const initialHud: HudState = {
+  airspeed: 0, speedTrend: 0, altitudeAGL: 0, altitudeMSL: 0,
+  verticalSpeed: 0, heading: 0, rpm: 0, phase: "PREFLIGHT", flaps: 0,
+  papi: "2R 2W ON PATH", stalled: false,
+  gumps: { Gas: false, Undercarriage: false, Mixture: false, Prop: false, Seatbelts: false },
+};
+
+const numberFrom = (s: UnknownState, keys: string[], fallback = 0): number => {
+  for (const key of keys) {
+    const value = s[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  return fallback;
+};
+
+const boolFrom = (s: UnknownState, keys: string[], fallback = false): boolean => {
+  for (const key of keys) if (typeof s[key] === "boolean") return s[key] as boolean;
+  return fallback;
+};
+
+function papiText(s: UnknownState): string {
+  const direct = s.papiStatus ?? s.papi;
+  if (typeof direct === "string" && direct.trim()) return direct.toUpperCase();
+
+  const red = numberFrom(s, ["papiRed", "papiRedLights"], NaN);
+  const white = numberFrom(s, ["papiWhite", "papiWhiteLights"], NaN);
+  if (Number.isFinite(red) && Number.isFinite(white)) {
+    const status = red === 2 ? "ON PATH" : red > 2 ? "LOW" : "HIGH";
+    return `${red}R ${white}W ${status}`;
+  }
+
+  // PATCHED: added flight-physics.ts's real field name ("glideslopeErrorDeg").
+  const deviation = numberFrom(s, ["glideslopeErrorDeg", "glideSlopeDeviation", "glideslopeDeviation"], 0);
+  if (deviation > 0.35) return "1R 3W HIGH";
+  if (deviation < -0.35) return "3R 1W LOW";
+  return "2R 2W ON PATH";
+}
+
+function readGumps(s: UnknownState): HudState["gumps"] {
+  const source = (s.gumps ?? s.gumpsChecklist ?? {}) as Record<string, unknown>;
+  const aliases: Record<GumKey, string[]> = {
+    Gas: ["Gas", "gas", "fuel"],
+    Undercarriage: ["Undercarriage", "undercarriage", "gear"],
+    Mixture: ["Mixture", "mixture"],
+    Prop: ["Prop", "prop", "propeller"],
+    Seatbelts: ["Seatbelts", "seatbelts", "belts"],
+  };
+  return Object.fromEntries(GUMPS.map((item) => [item, aliases[item].some((key) => source[key] === true)])) as HudState["gumps"];
+}
+
+const normalizeHeading = (degrees: number) => ((degrees % 360) + 360) % 360;
+const headingLabel = (degrees: number) => {
+  const h = normalizeHeading(degrees);
+  if (h === 0) return "N";
+  if (h === 90) return "E";
+  if (h === 180) return "S";
+  if (h === 270) return "W";
+  return String(Math.round(h / 10)).padStart(2, "0");
+};
+
+function airspeedColor(kias: number): string {
+  return kias < 48 ? "var(--destructive)" : kias < 60 ? "var(--primary)" : kias <= 70 ? "var(--success)" : "var(--accent)";
+}
+
+function Tape({ value, step, side, formatter, color }: {
+  value: number; step: number; side: "left" | "right"; formatter: (n: number) => string; color?: string;
+}) {
+  const ticks = useMemo(() => [-3, -2, -1, 0, 1, 2, 3].map((offset) => ({
+    offset,
+    value: Math.max(0, Math.round((value + offset * step) / step) * step),
+  })), [value, step]);
+  return (
+    <div className={`fc-tape fc-tape-${side}`}>
+      <div className="fc-tape-line" />
+      {ticks.map(({ offset, value: tick }) => (
+        <div className="fc-tick nums" key={`${offset}-${tick}`} style={{ top: `${50 - offset * 13}%` }}>
+          {side === "right" && <i />}{formatter(tick)}{side === "left" && <i />}
+        </div>
+      ))}
+      <div className="fc-readout nums glow-primary" style={{ color }}>{formatter(Math.round(value))}</div>
+    </div>
+  );
+}
+
+export function HudOverlay({ stateRef, className = "" }: HudOverlayProps) {
+  const [hud, setHud] = useState(initialHud);
+  const frameRef = useRef(0);
+  const previousRef = useRef({ speed: 0, time: 0, trend: 0 });
+
+  useEffect(() => {
+    let raf = 0;
+    const sample = (time: number) => {
+      frameRef.current += 1;
+      if ((frameRef.current & 1) === 0 && stateRef.current) {
+        const s = stateRef.current as UnknownState;
+        const airspeed = numberFrom(s, ["airspeedKias", "airspeed", "indicatedAirspeed", "speed"]);
+        const elapsed = Math.max(1 / 60, (time - previousRef.current.time) / 1000);
+        const rawTrend = previousRef.current.time ? (airspeed - previousRef.current.speed) / elapsed : 0;
+        const speedTrend = previousRef.current.trend * 0.8 + Math.max(-20, Math.min(20, rawTrend)) * 0.2;
+        previousRef.current = { speed: airspeed, time, trend: speedTrend };
+        const phaseValue = s.phase ?? s.flightPhase ?? "PREFLIGHT";
+        setHud({
+          airspeed,
+          speedTrend,
+          // PATCHED: flight-physics.ts's FlightState uses "altitudeAgl" /
+          // "altitudeMsl" (lower-case g/l) — JS object keys are
+          // case-sensitive, so the original "altitudeAGL"/"altitudeMSL"
+          // aliases never matched and this tape silently showed 0. Same for
+          // "flapsDeg".
+          altitudeAGL: numberFrom(s, ["altitudeAgl", "altitudeAGL", "agl", "altitudeAboveGround"]),
+          altitudeMSL: numberFrom(s, ["altitudeMsl", "altitudeMSL", "msl", "altitude"]),
+          verticalSpeed: numberFrom(s, ["verticalSpeedFpm", "verticalSpeed", "vspeed"]),
+          heading: normalizeHeading(numberFrom(s, ["heading", "headingDeg", "magneticHeading"])),
+          rpm: numberFrom(s, ["rpm", "engineRpm"]),
+          phase: String(phaseValue).replaceAll("_", " ").toUpperCase(),
+          flaps: numberFrom(s, ["flapsDeg", "flaps", "flapSetting"]),
+          papi: papiText(s),
+          stalled: boolFrom(s, ["stalled", "isStalled", "stallWarning"]),
+          gumps: readGumps(s),
+        });
+      }
+      raf = requestAnimationFrame(sample);
+    };
+    raf = requestAnimationFrame(sample);
+    return () => cancelAnimationFrame(raf);
+  }, [stateRef]);
+
+  const headingTicks = [-30, -20, -10, 0, 10, 20, 30];
+  const rpmRatio = Math.max(0, Math.min(1, hud.rpm / 2700));
+  const rpmDash = 188.5 * rpmRatio;
+  const phaseIsDownwind = hud.phase.includes("DOWNWIND");
+  const vsColor = hud.verticalSpeed < -30 ? "var(--destructive)" : hud.verticalSpeed > 30 ? "var(--success)" : "var(--muted-foreground)";
+  const papiColor = hud.papi.includes("ON PATH") ? "var(--success)" : "var(--primary)";
+  const trendHeight = Math.min(56, Math.abs(hud.speedTrend) * 2.8);
+
+  return (
+    <div className={`fc-hud ${className}`} aria-label="Primary flight display">
+      <style>{HUD_CSS}</style>
+
+      <section className="glass fc-phase"><span className="label-instrument">FLIGHT PHASE</span><strong>{hud.phase}</strong></section>
+
+      <section className="glass fc-heading">
+        <span className="label-instrument">MAG HDG</span>
+        <div className="fc-compass nums">
+          {headingTicks.map((offset) => <span key={offset} className={offset === 0 ? "active" : ""}>{headingLabel(Math.round((hud.heading + offset) / 10) * 10)}</span>)}
+        </div>
+        <b className="nums">{String(Math.round(hud.heading)).padStart(3, "0")}°</b><div className="fc-caret">▼</div>
+      </section>
+
+      <section className="fc-speed">
+        <span className="label-instrument">KIAS</span>
+        <Tape value={hud.airspeed} step={5} side="left" formatter={(n) => String(n).padStart(3, "0")} color={airspeedColor(hud.airspeed)} />
+        <div className={`fc-trend ${hud.speedTrend >= 0 ? "up" : "down"}`} style={{ height: trendHeight, borderColor: airspeedColor(hud.airspeed) }} />
+      </section>
+
+      <section className="fc-altitude">
+        <span className="label-instrument">ALT AGL</span>
+        <Tape value={hud.altitudeAGL} step={20} side="right" formatter={(n) => String(n).padStart(4, "0")} />
+        <div className="glass fc-msl"><span className="label-instrument">MSL</span><b className="nums">{Math.round(hud.altitudeMSL).toLocaleString()} FT</b></div>
+      </section>
+
+      <section className="glass fc-vsi">
+        <span className="label-instrument">V/S FPM</span>
+        <b className="nums" style={{ color: vsColor }}>{hud.verticalSpeed > 30 ? "+" : ""}{Math.round(hud.verticalSpeed)}</b>
+        <div className="fc-vsi-scale"><i style={{ height: `${Math.min(50, Math.abs(hud.verticalSpeed) / 40)}%`, background: vsColor, bottom: hud.verticalSpeed >= 0 ? "50%" : undefined, top: hud.verticalSpeed < 0 ? "50%" : undefined }} /></div>
+      </section>
+
+      <section className="glass fc-rpm">
+        <span className="label-instrument">ENGINE RPM</span>
+        <svg viewBox="0 0 120 70" aria-hidden="true"><path className="track" d="M10 65 A50 50 0 0 1 110 65"/><path className="value" style={{ strokeDasharray: `${rpmDash} 188.5` }} d="M10 65 A50 50 0 0 1 110 65"/></svg>
+        <b className="nums">{Math.round(hud.rpm)}</b><small className="nums">0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2700</small>
+      </section>
+
+      <section className="glass fc-flaps"><span className="label-instrument">CONFIG</span><b className="nums">FLAPS {Math.round(hud.flaps)}°</b></section>
+      <section className="glass fc-papi"><span className="label-instrument">PAPI</span><b className="nums" style={{ color: papiColor }}>{hud.papi}</b></section>
+
+      {hud.stalled && <div className="glass fc-stall animate-pulse-ring" role="alert"><b>STALL</b><span>PUSH • POWER • LEVEL</span></div>}
+
+      {phaseIsDownwind && (
+        <section className="glass fc-gumps">
+          <span className="label-instrument">BEFORE LANDING</span><h3>GUMPS CHECK</h3>
+          {GUMPS.map((item) => <div key={item} className={hud.gumps[item] ? "checked" : "pending"}><span>{hud.gumps[item] ? "✓" : "○"}</span><b>{item}</b><small>{hud.gumps[item] ? "SET" : "CHECK"}</small></div>)}
+        </section>
+      )}
+    </div>
+  );
+}
+
+const HUD_CSS = `
+.fc-hud{position:absolute;inset:0;z-index:20;pointer-events:none;overflow:hidden;color:#eef7ff;font-family:Inter,system-ui,sans-serif;text-shadow:0 1px 3px #00111f}.fc-hud *{box-sizing:border-box}.fc-hud .glass{background:color-mix(in srgb,var(--background) 64%,transparent);border:1px solid var(--border);backdrop-filter:blur(9px);box-shadow:inset 0 1px rgba(255,255,255,.06),0 8px 24px rgba(0,0,0,.18)}.fc-hud .label-instrument{display:block;color:var(--muted-foreground);font-size:9px;line-height:1;letter-spacing:.16em;font-weight:800}.fc-hud .nums{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}.fc-phase{position:absolute;left:22px;top:20px;min-width:150px;padding:10px 13px;border-radius:7px;border-left:3px solid var(--primary)!important}.fc-phase strong{display:block;margin-top:6px;font-size:13px;letter-spacing:.08em}.fc-heading{position:absolute;left:50%;top:16px;width:370px;height:76px;transform:translateX(-50%);padding:9px 15px;text-align:center;border-radius:8px}.fc-compass{display:flex;justify-content:space-between;align-items:end;margin-top:8px;color:var(--muted-foreground);font-size:11px}.fc-compass span:before{content:'';display:block;width:1px;height:6px;margin:0 auto 3px;background:currentColor}.fc-compass .active{color:var(--primary);font-size:15px;font-weight:900}.fc-heading>b{position:absolute;top:7px;right:12px;color:var(--primary);font-size:14px}.fc-caret{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);color:var(--primary);filter:drop-shadow(0 0 5px var(--primary))}.fc-speed,.fc-altitude{position:absolute;top:19%;height:57%;width:106px}.fc-speed{left:20px}.fc-altitude{right:72px}.fc-speed>.label-instrument,.fc-altitude>.label-instrument{position:absolute;z-index:3;top:-17px;width:100%;text-align:center}.fc-tape{position:absolute;inset:0;background:linear-gradient(90deg,color-mix(in srgb,var(--background) 78%,transparent),color-mix(in srgb,var(--background) 45%,transparent));border:1px solid var(--border);overflow:hidden;clip-path:polygon(0 2%,100% 0,100% 47%,92% 50%,100% 53%,100% 100%,0 98%)}.fc-tape-right{background:linear-gradient(270deg,color-mix(in srgb,var(--background) 78%,transparent),color-mix(in srgb,var(--background) 45%,transparent));clip-path:polygon(0 0,100% 2%,100% 98%,0 100%,0 53%,8% 50%,0 47%)}.fc-tape-line{position:absolute;top:0;bottom:0;right:9px;width:1px;background:var(--border)}.fc-tape-right .fc-tape-line{left:9px;right:auto}.fc-tick{position:absolute;left:8px;right:14px;transform:translateY(-50%);display:flex;justify-content:flex-end;align-items:center;gap:6px;color:var(--muted-foreground);font-size:11px}.fc-tape-right .fc-tick{left:14px;right:8px;justify-content:flex-start}.fc-tick i{width:7px;height:1px;background:currentColor}.fc-readout{position:absolute;left:0;right:0;top:50%;height:36px;transform:translateY(-50%);display:grid;place-items:center;background:var(--background);border:1px solid var(--primary);font-size:22px;font-weight:900;letter-spacing:.03em}.fc-trend{position:absolute;z-index:4;right:-8px;top:50%;width:8px;min-height:2px;border-right:2px solid}.fc-trend.up{transform:translateY(-100%)}.fc-trend.up:before,.fc-trend.down:after{content:'';position:absolute;right:-4px;border:3px solid transparent}.fc-trend.up:before{top:-3px;border-bottom-color:inherit}.fc-trend.down:after{bottom:-3px;border-top-color:inherit}.fc-msl{position:absolute;top:calc(100% + 8px);left:0;right:0;padding:7px;text-align:center;border-radius:5px}.fc-msl b{display:block;margin-top:4px;font-size:12px}.fc-vsi{position:absolute;right:15px;top:27%;width:51px;height:39%;padding:8px 5px;text-align:center;border-radius:5px}.fc-vsi b{display:block;margin-top:8px;font-size:12px}.fc-vsi-scale{position:absolute;top:49px;bottom:11px;left:50%;width:4px;transform:translateX(-50%);background:color-mix(in srgb,var(--border) 70%,transparent);border-radius:9px}.fc-vsi-scale:after{content:'';position:absolute;top:50%;left:-4px;width:12px;height:1px;background:#fff}.fc-vsi-scale i{position:absolute;left:0;width:4px;border-radius:9px}.fc-rpm{position:absolute;left:22px;bottom:21px;width:150px;height:106px;padding:9px;border-radius:8px;text-align:center}.fc-rpm svg{position:absolute;left:15px;right:15px;bottom:7px;width:120px;height:70px;overflow:visible}.fc-rpm path{fill:none;stroke-width:8;stroke-linecap:round;path-length:188.5}.fc-rpm .track{stroke:color-mix(in srgb,var(--border) 75%,transparent)}.fc-rpm .value{stroke:var(--primary);filter:drop-shadow(0 0 4px var(--primary))}.fc-rpm b{position:absolute;left:0;right:0;bottom:21px;font-size:19px}.fc-rpm small{position:absolute;left:18px;right:18px;bottom:7px;color:var(--muted-foreground);font-size:8px}.fc-flaps{position:absolute;left:50%;bottom:20px;min-width:145px;transform:translateX(-50%);padding:9px 15px;text-align:center;border-radius:7px}.fc-flaps b,.fc-papi b{display:block;margin-top:5px;font-size:14px}.fc-papi{position:absolute;right:20px;bottom:20px;min-width:145px;padding:9px 12px;border-radius:7px}.fc-stall{position:absolute;left:50%;top:31%;transform:translateX(-50%);padding:14px 27px;text-align:center;border:2px solid var(--destructive)!important;background:color-mix(in srgb,var(--destructive) 30%,var(--background) 70%)!important;box-shadow:0 0 28px color-mix(in srgb,var(--destructive) 70%,transparent)!important;animation:fc-stall .5s steps(2,end) infinite}.fc-stall b{display:block;color:#fff;font-size:31px;line-height:1;letter-spacing:.18em}.fc-stall span{display:block;margin-top:7px;font-size:9px;font-weight:800;letter-spacing:.14em}.fc-gumps{position:absolute;left:22px;top:105px;width:206px;padding:13px;border-radius:8px}.fc-gumps h3{margin:7px 0 9px;color:var(--primary);font-size:14px;letter-spacing:.1em}.fc-gumps>div{display:grid;grid-template-columns:20px 1fr auto;align-items:center;padding:5px 0;border-top:1px solid color-mix(in srgb,var(--border) 55%,transparent);font-size:11px}.fc-gumps small{font-size:8px;letter-spacing:.1em}.fc-gumps .checked{color:var(--success)}.fc-gumps .pending span,.fc-gumps .pending small{color:var(--primary)}@keyframes fc-stall{50%{opacity:.45;transform:translateX(-50%) scale(1.04)}}@media(max-width:720px){.fc-heading{width:270px}.fc-phase{left:10px}.fc-speed{left:8px}.fc-altitude{right:58px}.fc-vsi{right:5px}.fc-gumps{left:10px;width:185px}.fc-rpm{left:10px}.fc-papi{right:10px}.fc-hud{font-size:90%}}
+`;
+
+export default HudOverlay;
+
+
+=== FILE: src/lib/flare-game/debrief-screen.tsx ===
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Flame,
+  Lightbulb,
+} from "lucide-react";
+import type {
+  LandingResult,
+  ScoreBreakdown,
+  TelemetryFrame,
+} from "./types";
+
+type Diagnosis = {
+  summary: string;
+  fix: string;
+  weakDimension: string;
+  moduleLink: number;
+};
+
+type DebriefScreenProps = {
+  result: LandingResult;
+  score: ScoreBreakdown;
+  diagnosis: Diagnosis;
+  streakCount: number;
+  bestStreak: number;
+  onRetry: () => void;
+  onDailyChallenge: () => void;
+  onOpenModule: (id: number) => void;
+  onViewReplay: () => void;
+};
+
+type Dimension = {
+  key: "approach" | "flare" | "touchdown" | "zone" | "centerline";
+  label: string;
+  value: number;
+};
+
+type ReplayPoint = { time: number; altitude: number; speed: number };
+
+type Quality = "greaser" | "good" | "firm" | "hard" | "bounce" | "crash";
+
+const clamp = (value: number, min = 0, max = 100) =>
+  Math.min(max, Math.max(min, value));
+
+function numericValue(record: Record<string, unknown>, keys: string[], fallback = 0) {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  return fallback;
+}
+
+function qualityStyle(quality: Quality) {
+  switch (quality) {
+    case "greaser":
+      return { color: "var(--primary)", textShadow: "0 0 22px color-mix(in srgb, var(--primary) 65%, transparent)" };
+    case "good":
+      return { color: "var(--success)" };
+    case "firm":
+      return { color: "var(--primary)" };
+    case "hard":
+    case "bounce":
+    case "crash":
+      return { color: "var(--destructive)", textShadow: "0 0 18px color-mix(in srgb, var(--destructive) 55%, transparent)" };
+  }
+}
+
+function RadarChart({ dimensions, weakDimension }: { dimensions: Dimension[]; weakDimension: string }) {
+  const center = 120;
+  const radius = 76;
+  const labelRadius = 104;
+  const point = (index: number, distance: number) => {
+    const angle = -Math.PI / 2 + (index * Math.PI * 2) / dimensions.length;
+    return [center + Math.cos(angle) * distance, center + Math.sin(angle) * distance] as const;
+  };
+  const polygon = (scale: number) =>
+    dimensions.map((_, index) => point(index, radius * scale).join(",")).join(" ");
+  const scorePolygon = dimensions
+    .map((dimension, index) => point(index, radius * (clamp(dimension.value) / 100)).join(","))
+    .join(" ");
+  const normalizedWeak = weakDimension.toLowerCase().replace(/[\s_-]/g, "");
+
+  return (
+    <div className="glass" style={{ padding: "18px", display: "grid", placeItems: "center" }}>
+      <div className="label-instrument" style={{ justifySelf: "start", width: "100%" }}>PERFORMANCE PROFILE</div>
+      <svg viewBox="0 0 240 240" role="img" aria-label="Five-dimension landing score chart" style={{ width: "min(100%, 310px)", overflow: "visible" }}>
+        {[0.25, 0.5, 0.75, 1].map((scale) => (
+          <polygon key={scale} points={polygon(scale)} fill="none" stroke="var(--border)" strokeWidth="1" opacity={scale === 1 ? 0.9 : 0.45} />
+        ))}
+        {dimensions.map((dimension, index) => {
+          const [x, y] = point(index, radius);
+          const [lx, ly] = point(index, labelRadius);
+          const isWeak = dimension.key.replace(/[\s_-]/g, "") === normalizedWeak;
+          return (
+            <g key={dimension.key}>
+              <line x1={center} y1={center} x2={x} y2={y} stroke={isWeak ? "var(--accent)" : "var(--border)"} strokeWidth={isWeak ? 2 : 1} />
+              <circle cx={x} cy={y} r={isWeak ? 4 : 2} fill={isWeak ? "var(--accent)" : "var(--border)"} />
+              <text x={lx} y={ly - 3} textAnchor="middle" dominantBaseline="middle" className="label-instrument" fill={isWeak ? "var(--accent)" : "var(--muted-foreground)"} fontSize="8">
+                {dimension.label.toUpperCase()}
+              </text>
+              <text x={lx} y={ly + 9} textAnchor="middle" dominantBaseline="middle" className="nums" fill={isWeak ? "var(--accent)" : "currentColor"} fontSize="9">
+                {Math.round(dimension.value)}
+              </text>
+            </g>
+          );
+        })}
+        <polygon points={scorePolygon} fill="var(--primary)" fillOpacity="0.2" stroke="var(--primary)" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+}
+
+function MiniReplay({ frames }: { frames: ReplayPoint[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [progress, setProgress] = useState(0);
+  const dragging = useRef(false);
+
+  useEffect(() => {
+    const started = performance.now();
+    let frameId = 0;
+    const animate = (now: number) => {
+      if (!dragging.current) setProgress(((now - started) % 5000) / 5000);
+      frameId = requestAnimationFrame(animate);
+    };
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || frames.length < 2) return;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const width = rect.width;
+    const height = rect.height;
+    const pad = 10;
+    const minTime = frames[0].time;
+    const maxTime = frames[frames.length - 1].time || minTime + 1;
+    const altMax = Math.max(1, ...frames.map((frame) => frame.altitude));
+    const speeds = frames.map((frame) => frame.speed);
+    const speedMin = Math.min(...speeds);
+    const speedMax = Math.max(speedMin + 1, ...speeds);
+    const x = (time: number) => pad + ((time - minTime) / (maxTime - minTime)) * (width - pad * 2);
+    const drawTrace = (color: string, value: (frame: ReplayPoint) => number, min: number, max: number) => {
+      ctx.beginPath();
+      frames.forEach((frame, index) => {
+        const px = x(frame.time);
+        const py = height - pad - ((value(frame) - min) / (max - min)) * (height - pad * 2);
+        if (index === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    };
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "color-mix(in srgb, var(--background) 72%, transparent)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "var(--border)";
+    ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+    drawTrace("var(--primary)", (frame) => frame.altitude, 0, altMax);
+    drawTrace("var(--accent)", (frame) => frame.speed, speedMin, speedMax);
+    const cursorX = pad + progress * (width - pad * 2);
+    ctx.strokeStyle = "rgba(255,255,255,.8)";
+    ctx.beginPath();
+    ctx.moveTo(cursorX, 4);
+    ctx.lineTo(cursorX, height - 4);
+    ctx.stroke();
+  }, [frames, progress]);
+
+  const scrub = useCallback((clientX: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    setProgress(clamp((clientX - rect.left) / rect.width, 0, 1));
+  }, []);
+
+  return (
+    <div style={{ marginTop: "20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "7px" }}>
+        <span className="label-instrument">LAST 10 SECONDS</span>
+        <span className="label-instrument"><span style={{ color: "var(--primary)" }}>ALT</span> / <span style={{ color: "var(--accent)" }}>KIAS</span></span>
+      </div>
+      <canvas
+        ref={canvasRef}
+        aria-label="Landing altitude and airspeed replay; drag to scrub"
+        style={{ width: "100%", height: "64px", display: "block", cursor: "ew-resize", touchAction: "none" }}
+        onPointerDown={(event) => { dragging.current = true; event.currentTarget.setPointerCapture(event.pointerId); scrub(event.clientX); }}
+        onPointerMove={(event) => { if (dragging.current) scrub(event.clientX); }}
+        onPointerUp={(event) => { dragging.current = false; event.currentTarget.releasePointerCapture(event.pointerId); }}
+        onPointerCancel={() => { dragging.current = false; }}
+      />
+    </div>
+  );
+}
+
+export function DebriefScreen({
+  result,
+  score,
+  diagnosis,
+  streakCount,
+  bestStreak,
+  onRetry,
+  onDailyChallenge,
+  onOpenModule,
+  onViewReplay,
+}: DebriefScreenProps) {
+  const scoreRecord = score as unknown as Record<string, unknown>;
+  const resultRecord = result as unknown as Record<string, unknown>;
+  const total = Math.round(clamp(numericValue(scoreRecord, ["total", "overall", "score", "totalScore"], numericValue(resultRecord, ["score", "totalScore"], 0))));
+  const rawQuality = String(resultRecord.quality ?? resultRecord.rating ?? resultRecord.grade ?? "good").toLowerCase();
+  const quality: Quality = (["greaser", "good", "firm", "hard", "bounce", "crash"] as const).includes(rawQuality as Quality) ? rawQuality as Quality : "good";
+
+  const dimensions = useMemo<Dimension[]>(() => {
+    const nested = (scoreRecord.dimensions && typeof scoreRecord.dimensions === "object" ? scoreRecord.dimensions : {}) as Record<string, unknown>;
+    const value = (keys: string[]) => clamp(numericValue(scoreRecord, keys, numericValue(nested, keys, 0)));
+    return [
+      { key: "approach", label: "Approach", value: value(["approach", "approachScore", "approachStability"]) },
+      { key: "flare", label: "Flare", value: value(["flare", "flareScore", "flareTiming"]) },
+      { key: "touchdown", label: "Touchdown", value: value(["touchdown", "touchdownScore", "smoothness"]) },
+      { key: "zone", label: "Zone", value: value(["zone", "zoneScore", "touchdownZone"]) },
+      { key: "centerline", label: "Centerline", value: value(["centerline", "centerlineScore", "alignment"]) },
+    ];
+  }, [scoreRecord]);
+
+  const replayFrames = useMemo<ReplayPoint[]>(() => {
+    const source = resultRecord.telemetry ?? resultRecord.frames ?? resultRecord.replay;
+    if (!Array.isArray(source)) return [];
+    const typed = source as TelemetryFrame[];
+    const points = typed.map((frame, index) => {
+      const item = frame as unknown as Record<string, unknown>;
+      return {
+        time: numericValue(item, ["time", "timestamp", "t"], index / 60),
+        altitude: numericValue(item, ["altitude", "agl", "altitudeAgl"], 0),
+        // PATCHED: sampleTelemetry() in flight-physics.ts emits "airspeedKias",
+        // which wasn't in this alias list — the KIAS trace would have been flat 0.
+        speed: numericValue(item, ["airspeedKias", "airspeed", "speed", "kias"], 0),
+      };
+    });
+    const end = points.at(-1)?.time ?? 0;
+    return points.filter((point) => point.time >= end - 10);
+  }, [resultRecord]);
+
+  const isPositive = quality === "greaser" || quality === "good";
+  const streakActive = streakCount > 0;
+  const streakMessage = streakActive
+    ? `${streakCount}-landing streak. ${streakCount >= bestStreak ? "One more to set a new best." : "One more to beat your best."}`
+    : "Streak broken. Start a new one?";
+  const DiagnosisIcon = isPositive ? CheckCircle : AlertTriangle;
+
+  return (
+    <section aria-labelledby="debrief-title" className="animate-fade-up" style={{ width: "min(920px, calc(100vw - 32px))", margin: "0 auto", padding: "32px 0", color: "inherit" }}>
+      <header style={{ textAlign: "center", marginBottom: "24px" }}>
+        <div className="label-instrument">LANDING DEBRIEF</div>
+        <div id="debrief-title" className="nums" style={{ fontSize: "clamp(72px, 14vw, 144px)", lineHeight: 0.92, letterSpacing: "-0.07em", color: quality === "crash" ? "var(--destructive)" : "var(--primary)", margin: "12px 0 10px" }}>
+          {total}
+        </div>
+        <div className={`label-instrument ${quality === "greaser" ? "glow-primary" : ""}`} style={{ ...qualityStyle(quality), fontSize: "clamp(16px, 3vw, 24px)", letterSpacing: ".2em" }}>
+          {quality.toUpperCase()}
+        </div>
+      </header>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 310px), 1fr))", gap: "16px", alignItems: "stretch" }}>
+        <RadarChart dimensions={dimensions} weakDimension={diagnosis.weakDimension} />
+        <div style={{ display: "grid", gap: "16px" }}>
+          <article className="glass" style={{ padding: "20px", display: "grid", gridTemplateColumns: "auto 1fr", gap: "14px", alignItems: "start" }}>
+            <DiagnosisIcon size={22} aria-hidden="true" style={{ color: isPositive ? "var(--success)" : "var(--destructive)" }} />
+            <div>
+              <div className="label-instrument" style={{ marginBottom: "8px" }}>DIAGNOSIS</div>
+              <p style={{ margin: 0, lineHeight: 1.55 }}>{diagnosis.summary}</p>
+            </div>
+          </article>
+
+          <article className="glass" style={{ padding: "20px", borderLeft: "3px solid var(--primary)", display: "grid", gridTemplateColumns: "auto 1fr", gap: "14px", alignItems: "start" }}>
+            <Lightbulb size={22} aria-hidden="true" style={{ color: "var(--primary)" }} />
+            <div>
+              <div className="label-instrument" style={{ marginBottom: "8px", color: "var(--primary)" }}>THE FIX</div>
+              <p style={{ margin: "0 0 14px", lineHeight: 1.55 }}>{diagnosis.fix}</p>
+              <button type="button" className="fp-outline-btn" onClick={() => onOpenModule(diagnosis.moduleLink)}>
+                Module <span className="nums">{diagnosis.moduleLink}</span> covers this →
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div className="glass" style={{ marginTop: "16px", padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", textAlign: "center" }}>
+        <Flame size={23} aria-hidden="true" className={streakActive ? "animate-pulse-ring" : ""} style={{ color: streakActive ? "var(--primary)" : "var(--muted-foreground)", flex: "0 0 auto" }} />
+        <p style={{ margin: 0 }}>
+          {streakActive && <strong className="nums">{streakCount}</strong>} {streakActive ? streakMessage.replace(`${streakCount}-`, "") : streakMessage}
+        </p>
+      </div>
+
+      <div style={{ marginTop: "22px", display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "12px" }}>
+        <button type="button" className="fp-toggle-btn" onClick={onRetry}>Fly again</button>
+        <button type="button" className="fp-outline-btn" onClick={onDailyChallenge}>Daily challenge</button>
+        <button type="button" onClick={onViewReplay} style={{ border: 0, background: "transparent", color: "var(--accent)", padding: "10px 12px", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "4px", font: "inherit" }}>
+          View replay
+        </button>
+      </div>
+
+      {replayFrames.length > 1 && <MiniReplay frames={replayFrames} />}
+    </section>
+  );
+}
+
+export default DebriefScreen;
+
+
+=== FILE: reference-only/aviation-alternate-draft.ts ===
+// QUARANTINED — NOT imported by anything, NOT wired in.
+// This is the second, incompatible implementation described in the
+// instructions block at the top of this bundle. It has its own local
+// types (its own LandingState, Scenario, etc.) that do NOT match
+// src/lib/flare-game/types.ts. Do not import it from any System A
+// file, and do not merge its types into types.ts. Kept only for its
+// hand-written scenario flavor text (search for SCENARIOS below) in
+// case that copy is useful for the briefing/difficulty picker screen.
+/**
+ * Small, deterministic C172 landing model.  It is intentionally a game model,
+ * not a flight-planning or aircraft-certification model.
+ */
+export type LandingQuality = "greaser" | "good" | "firm" | "hard" | "crash";
+export type FlightPhase =
+  | "parked"
+  | "taxi"
+  | "takeoff"
+  | "climb"
+  | "cruise"
+  | "descent"
+  | "approach"
+  | "flare"
+  | "landed"
+  | "crashed";
+export type ScenarioId =
+  | "dusk"
+  | "day"
+  | "night"
+  | "crosswind"
+  | "fog"
+  | "gusty"
+  | "shortField";
+
+export const STALL_SPEED = 40; // kt indicated, flaps down, approximate C172 value
+export const STALL_HORN_SPEED = 48;
+export const APPROACH_SPEED = 65;
+export const TOUCHDOWN_SPEED_IDEAL = 50;
+export const BEST_GLIDE = 65;
+export const PATTERN_ALTITUDE = 1000;
+export const FREE_PLAYS_INITIAL = 5;
+export const UNLOCK_PRICE = 4.99;
+export const DAILY_SHARE_CAP = 5;
+
+export interface Runway {
+  heading: number; // degrees true, direction of landing roll
+  length: number; // feet
+  width: number; // feet
+  elevation: number; // feet MSL
+  identifier: string;
+}
+
+export interface Scenario {
+  id: ScenarioId;
+  name: string;
+  description: string;
+  runway: Runway;
+  windDirection: number; // degrees true, direction wind comes FROM
+  windSpeed: number; // kt
+  gustSpeed: number; // additional kt
+  visibility: number; // statute miles
+  cloudBase: number | null; // feet AGL
+  timeOfDay: "day" | "dusk" | "night";
+  turbulence: number; // 0..1
+  approachStartAltitude: number; // feet AGL
+}
+
+export const SCENARIOS: Scenario[] = [
+  {
+    id: "dusk",
+    name: "Dusk Circuit",
+    description: "Soft light, a modest breeze, and a familiar pattern.",
+    runway: {
+      identifier: "27",
+      heading: 270,
+      length: 4200,
+      width: 60,
+      elevation: 420,
+    },
+    windDirection: 250,
+    windSpeed: 7,
+    gustSpeed: 2,
+    visibility: 8,
+    cloudBase: 4000,
+    timeOfDay: "dusk",
+    turbulence: 0.12,
+    approachStartAltitude: 950,
+  },
+  {
+    id: "day",
+    name: "Calm Day",
+    description: "A long runway and light, steady wind.",
+    runway: {
+      identifier: "18",
+      heading: 180,
+      length: 5000,
+      width: 75,
+      elevation: 0,
+    },
+    windDirection: 170,
+    windSpeed: 5,
+    gustSpeed: 0,
+    visibility: 10,
+    cloudBase: 5000,
+    timeOfDay: "day",
+    turbulence: 0.05,
+    approachStartAltitude: 900,
+  },
+  {
+    id: "night",
+    name: "Night Landing",
+    description: "Runway lights are clear, but outside visual cues are sparse.",
+    runway: {
+      identifier: "09",
+      heading: 90,
+      length: 4500,
+      width: 75,
+      elevation: 180,
+    },
+    windDirection: 80,
+    windSpeed: 4,
+    gustSpeed: 0,
+    visibility: 10,
+    cloudBase: null,
+    timeOfDay: "night",
+    turbulence: 0.08,
+    approachStartAltitude: 900,
+  },
+  {
+    id: "crosswind",
+    name: "Crosswind",
+    description:
+      "A brisk crosswind rewards a stable crab and timely alignment.",
+    runway: {
+      identifier: "36",
+      heading: 360,
+      length: 4600,
+      width: 75,
+      elevation: 95,
+    },
+    windDirection: 280,
+    windSpeed: 14,
+    gustSpeed: 4,
+    visibility: 9,
+    cloudBase: 3500,
+    timeOfDay: "day",
+    turbulence: 0.25,
+    approachStartAltitude: 1000,
+  },
+  {
+    id: "fog",
+    name: "Morning Fog",
+    description:
+      "Limited visibility makes a disciplined, stabilized approach essential.",
+    runway: {
+      identifier: "22",
+      heading: 220,
+      length: 5200,
+      width: 100,
+      elevation: 35,
+    },
+    windDirection: 210,
+    windSpeed: 6,
+    gustSpeed: 1,
+    visibility: 1.5,
+    cloudBase: 700,
+    timeOfDay: "day",
+    turbulence: 0.08,
+    approachStartAltitude: 850,
+  },
+  {
+    id: "gusty",
+    name: "Gusty Afternoon",
+    description: "Variable wind tests airspeed control in the flare.",
+    runway: {
+      identifier: "14",
+      heading: 140,
+      length: 4800,
+      width: 75,
+      elevation: 260,
+    },
+    windDirection: 130,
+    windSpeed: 12,
+    gustSpeed: 10,
+    visibility: 10,
+    cloudBase: 4500,
+    timeOfDay: "day",
+    turbulence: 0.55,
+    approachStartAltitude: 1000,
+  },
+  {
+    id: "shortField",
+    name: "Short Field",
+    description: "A narrow margin: touch down on speed and stop promptly.",
+    runway: {
+      identifier: "31",
+      heading: 310,
+      length: 2400,
+      width: 50,
+      elevation: 710,
+    },
+    windDirection: 300,
+    windSpeed: 8,
+    gustSpeed: 2,
+    visibility: 10,
+    cloudBase: 5000,
+    timeOfDay: "day",
+    turbulence: 0.15,
+    approachStartAltitude: 800,
+  },
+];
+
+const SCENARIO_BY_ID = Object.fromEntries(
+  SCENARIOS.map((scenario) => [scenario.id, scenario]),
+) as Record<ScenarioId, Scenario>;
+
+export const QUALITY_LABELS: Record<LandingQuality, string> = {
+  greaser: "Greaser",
+  good: "Good landing",
+  firm: "Firm landing",
+  hard: "Hard landing",
+  crash: "Crash",
+};
+export const QUALITY_COLORS: Record<LandingQuality, string> = {
+  greaser: "#22c55e",
+  good: "#84cc16",
+  firm: "#facc15",
+  hard: "#f97316",
+  crash: "#ef4444",
+};
+export const QUALITY_BLURBS: Record<LandingQuality, string> = {
+  greaser: "Exceptionally smooth. You made the runway meet the wheels.",
+  good: "A controlled, safe touchdown with good energy management.",
+  firm: "Safe, but there is room for a gentler flare or better speed control.",
+  hard: "The touchdown was survivable, but the approach needs work.",
+  crash: "The aircraft was not under control enough for a safe landing.",
+};
+
+export const RADAR_CALLOUTS = [50, 40, 30, 20, 10] as const;
+export function nextRadarCallout(
+  altitudeAGL: number,
+  alreadyCalled: readonly number[] = [],
+): number | null {
+  return (
+    RADAR_CALLOUTS.find(
+      (height) => altitudeAGL <= height && !alreadyCalled.includes(height),
+    ) ?? null
+  );
+}
+
+export interface TelemetryFrame {
+  time: number;
+  altitudeAGL: number;
+  altitudeMSL: number;
+  airspeed: number;
+  groundSpeed: number;
+  verticalSpeed: number; // ft/min; negative is descending
+  heading: number; // degrees
+  pitch: number; // degrees
+  bank: number; // degrees, right positive
+  throttle: number; // 0..1
+  flap: number; // 0, 10, 20, 30 degrees
+  x: number; // feet down runway, threshold = 0
+  y: number; // feet right of centreline
+  onGround: boolean;
+  phase: FlightPhase;
+  stallWarning: boolean;
+}
+
+export interface FlightState extends TelemetryFrame {
+  distanceTravelled: number;
+  touchdown?: {
+    time: number;
+    airspeed: number;
+    verticalSpeed: number;
+    bank: number;
+    x: number;
+    y: number;
+  };
+  crashed: boolean;
+}
+
+export interface FlightInput {
+  pitch?: number; // -1..1 yoke input
+  roll?: number; // -1..1 yoke input
+  rudder?: number; // -1..1
+  throttle?: number; // desired 0..1
+  flaps?: number; // requested detent, 0/10/20/30
+  brake?: number; // 0..1
+}
+
+export interface GameEnv {
+  scenario: Scenario;
+  runway: Runway;
+  windDirection: number;
+  windSpeed: number;
+  gustSpeed: number;
+  turbulence: number;
+  gravity: number;
+  seed: number;
+}
+
+export interface ScoreBreakdown {
+  total: number;
+  verticalSpeed: number;
+  airspeed: number;
+  alignment: number;
+  centerline: number;
+  runway: number;
+}
+
+export interface LandingResult {
+  quality: LandingQuality;
+  score: ScoreBreakdown;
+  touchdownSpeed: number;
+  verticalSpeed: number;
+  bank: number;
+  centerlineOffset: number;
+  headingError: number;
+  stoppingDistance: number;
+  message: string;
+}
+
+export interface Attempt {
+  id: string;
+  scenario: ScenarioId;
+  result: LandingResult;
+  timestamp: string;
+}
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+const normalizeDegrees = (value: number) => ((value % 360) + 360) % 360;
+const signedAngle = (value: number) => ((value + 540) % 360) - 180;
+const approach = (current: number, target: number, rate: number, dt: number) =>
+  current + clamp(target - current, -rate * dt, rate * dt);
+
+export function createEnv(
+  scenario: ScenarioId | Scenario = "day",
+  overrides: Partial<Omit<GameEnv, "scenario" | "runway">> = {},
+): GameEnv {
+  const base =
+    typeof scenario === "string" ? SCENARIO_BY_ID[scenario] : scenario;
+  return {
+    scenario: base,
+    runway: { ...base.runway },
+    windDirection: base.windDirection,
+    windSpeed: base.windSpeed,
+    gustSpeed: base.gustSpeed,
+    turbulence: base.turbulence,
+    gravity: 32.174,
+    seed: 1,
+    ...overrides,
+  };
+}
+
+export function createInitialState(env: GameEnv = createEnv()): FlightState {
+  const heading = env.runway.heading;
+  return {
+    time: 0,
+    altitudeAGL: env.scenario.approachStartAltitude,
+    altitudeMSL: env.runway.elevation + env.scenario.approachStartAltitude,
+    airspeed: APPROACH_SPEED,
+    groundSpeed: APPROACH_SPEED,
+    verticalSpeed: -500,
+    heading,
+    pitch: 2,
+    bank: 0,
+    throttle: 0.28,
+    flap: 30,
+    x: -6000,
+    y: 0,
+    onGround: false,
+    phase: "approach",
+    stallWarning: false,
+    distanceTravelled: 0,
+    crashed: false,
+  };
+}
+
+/** Advances a game-friendly approximation of a C172 by dt seconds. */
+export function stepFlight(
+  previous: FlightState,
+  input: FlightInput = {},
+  dt = 1 / 60,
+  env: GameEnv = createEnv(),
+): FlightState {
+  if (!Number.isFinite(dt) || dt <= 0) return { ...previous };
+  const state = { ...previous };
+  dt = Math.min(dt, 0.1); // prevents tab-resume physics explosions
+  const targetThrottle = clamp(input.throttle ?? state.throttle, 0, 1);
+  state.throttle = approach(state.throttle, targetThrottle, 1.2, dt);
+  const targetFlap = [0, 10, 20, 30].reduce(
+    (best, f) =>
+      Math.abs(f - (input.flaps ?? state.flap)) <
+      Math.abs(best - (input.flaps ?? state.flap))
+        ? f
+        : best,
+    0,
+  );
+  state.flap = approach(state.flap, targetFlap, 20, dt);
+  const rollInput = clamp(input.roll ?? 0, -1, 1);
+  const pitchInput = clamp(input.pitch ?? 0, -1, 1);
+  const rudder = clamp(input.rudder ?? 0, -1, 1);
+  const gust =
+    Math.sin((state.time + env.seed) * 1.73) * env.gustSpeed +
+    Math.sin((state.time + env.seed) * 5.11) * env.turbulence * 2;
+  const wind = Math.max(0, env.windSpeed + gust);
+  const relativeWind = ((env.windDirection - state.heading) * Math.PI) / 180;
+  const headwind = Math.cos(relativeWind) * wind;
+  const crosswind = Math.sin(relativeWind) * wind;
+
+  state.bank = clamp(
+    state.bank + (rollInput * 28 - state.bank * 1.7) * dt,
+    -60,
+    60,
+  );
+  const turnRate =
+    state.airspeed > 20
+      ? (1091 * Math.tan((state.bank * Math.PI) / 180)) /
+        Math.max(state.airspeed, 20)
+      : 0;
+  state.heading = normalizeDegrees(
+    state.heading + (turnRate + rudder * 3) * dt,
+  );
+  state.pitch = clamp(
+    approach(state.pitch, pitchInput * 12 + (state.onGround ? 0 : 2), 18, dt),
+    -15,
+    20,
+  );
+
+  const liftFactor =
+    clamp((state.airspeed - STALL_SPEED) / 25, 0, 1.35) *
+    (1 + state.flap / 150);
+  const drag =
+    0.008 * state.airspeed +
+    (state.flap / 30) * 0.22 +
+    Math.abs(state.bank) * 0.003;
+  const thrustAccel = state.throttle * 9;
+  const pitchDrag = Math.max(0, state.pitch) * 0.18;
+  state.airspeed = clamp(
+    state.airspeed +
+      (thrustAccel - drag - pitchDrag - Math.max(0, 0.55 - liftFactor) * 3) *
+        dt,
+    0,
+    160,
+  );
+  const commandedVS =
+    (state.pitch - 2) * 95 +
+    (liftFactor - 0.85) * 420 -
+    state.bank * state.bank * 0.08;
+  state.verticalSpeed = approach(state.verticalSpeed, commandedVS, 900, dt);
+  if (state.airspeed < STALL_SPEED && !state.onGround)
+    state.verticalSpeed = Math.min(
+      state.verticalSpeed,
+      -900 + state.airspeed * 8,
+    );
+
+  state.groundSpeed = Math.max(0, state.airspeed - headwind);
+  state.x +=
+    Math.cos(((state.heading - env.runway.heading) * Math.PI) / 180) *
+    state.groundSpeed *
+    1.68781 *
+    dt;
+  state.y +=
+    (Math.sin(((state.heading - env.runway.heading) * Math.PI) / 180) *
+      state.groundSpeed +
+      crosswind) *
+    1.68781 *
+    dt;
+  state.distanceTravelled += state.groundSpeed * 1.68781 * dt;
+  state.altitudeAGL += (state.verticalSpeed / 60) * dt;
+  state.time += dt;
+
+  if (!state.onGround && state.altitudeAGL <= 0) {
+    state.altitudeAGL = 0;
+    state.onGround = true;
+    state.touchdown = {
+      time: state.time,
+      airspeed: state.airspeed,
+      verticalSpeed: state.verticalSpeed,
+      bank: state.bank,
+      x: state.x,
+      y: state.y,
+    };
+    const unsafe =
+      Math.abs(state.verticalSpeed) > 950 ||
+      Math.abs(state.bank) > 28 ||
+      state.airspeed < 35 ||
+      Math.abs(state.y) > env.runway.width;
+    state.crashed = unsafe;
+    state.phase = unsafe ? "crashed" : "landed";
+  }
+  if (state.onGround) {
+    const braking = clamp(input.brake ?? 0, 0, 1);
+    state.airspeed = Math.max(0, state.airspeed - (3 + braking * 18) * dt);
+    state.groundSpeed = state.airspeed;
+    state.verticalSpeed = 0;
+    state.pitch = approach(state.pitch, 0, 12, dt);
+    if (
+      state.x > env.runway.length + 100 ||
+      Math.abs(state.y) > env.runway.width
+    ) {
+      state.crashed = true;
+      state.phase = "crashed";
+    }
+  } else if (state.altitudeAGL < 60 && state.verticalSpeed < -50)
+    state.phase = "flare";
+  else if (state.altitudeAGL < 1200) state.phase = "approach";
+  state.altitudeMSL = env.runway.elevation + state.altitudeAGL;
+  state.stallWarning = !state.onGround && state.airspeed <= STALL_HORN_SPEED;
+  return state;
+}
+
+export function frameFromState(state: FlightState): TelemetryFrame {
+  const { distanceTravelled, touchdown, crashed, ...frame } = state;
+  return frame;
+}
+
+export function evaluateLanding(
+  state: FlightState,
+  env: GameEnv = createEnv(),
+): LandingResult {
+  const touchdown = state.touchdown ?? {
+    airspeed: state.airspeed,
+    verticalSpeed: state.verticalSpeed,
+    bank: state.bank,
+    x: state.x,
+    y: state.y,
+    time: state.time,
+  };
+  const headingError = Math.abs(
+    signedAngle(state.heading - env.runway.heading),
+  );
+  const centerlineOffset = Math.abs(touchdown.y);
+  const sink = Math.abs(touchdown.verticalSpeed);
+  const speedError = Math.abs(touchdown.airspeed - TOUCHDOWN_SPEED_IDEAL);
+  const verticalSpeed = Math.round(
+    clamp(100 - Math.max(0, sink - 100) / 7, 0, 100),
+  );
+  const airspeed = Math.round(clamp(100 - speedError * 7, 0, 100));
+  const alignment = Math.round(
+    clamp(100 - headingError * 5 - Math.abs(touchdown.bank) * 2, 0, 100),
+  );
+  const centerline = Math.round(clamp(100 - centerlineOffset * 2.5, 0, 100));
+  const runway = Math.round(
+    clamp(
+      100 -
+        (Math.max(0, touchdown.x - env.runway.length * 0.55) /
+          Math.max(1, env.runway.length)) *
+          180 -
+        (state.crashed ? 100 : 0),
+      0,
+      100,
+    ),
+  );
+  const total = Math.round(
+    verticalSpeed * 0.35 +
+      airspeed * 0.2 +
+      alignment * 0.2 +
+      centerline * 0.15 +
+      runway * 0.1,
+  );
+  const crashed =
+    state.crashed ||
+    sink > 950 ||
+    touchdown.x < -20 ||
+    touchdown.x > env.runway.length ||
+    centerlineOffset > env.runway.width / 2;
+  const quality: LandingQuality = crashed
+    ? "crash"
+    : total >= 92 && sink < 180 && speedError <= 4
+      ? "greaser"
+      : total >= 75
+        ? "good"
+        : total >= 55
+          ? "firm"
+          : "hard";
+  return {
+    quality,
+    score: {
+      total: crashed ? 0 : total,
+      verticalSpeed,
+      airspeed,
+      alignment,
+      centerline,
+      runway,
+    },
+    touchdownSpeed: Math.round(touchdown.airspeed),
+    verticalSpeed: Math.round(touchdown.verticalSpeed),
+    bank: Math.round(touchdown.bank * 10) / 10,
+    centerlineOffset: Math.round(centerlineOffset * 10) / 10,
+    headingError: Math.round(headingError * 10) / 10,
+    stoppingDistance: Math.max(0, Math.round(state.x - touchdown.x)),
+    message: QUALITY_BLURBS[quality],
+  };
+}
