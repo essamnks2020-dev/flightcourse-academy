@@ -749,3 +749,43 @@ Stage Summary:
 - The flare game now has a full tutorial that teaches how to play (5 steps, controls, instruments, scoring)
 - Real-time coaching during gameplay tells you exactly what to do and when
 - Game loop properly stops on touchdown
+
+---
+Task ID: V24-THEME-TRANSITION-PROACTIVE-FIXES
+Agent: Main (Z.ai Code)
+Task: Make theme transitions smoother + proactively fix errors and restore lost features
+
+Work Log:
+1. THEME TRANSITION UPGRADE:
+   - Restored the View Transitions API circular reveal in navbar (was lost in a revert)
+   - Added `vt-active` class toggle so the CSS color transitions don't interfere with the view transition clipPath animation
+   - Added global CSS: all color properties (background, color, border, fill, stroke) transition smoothly over 0.4s with ease-out-expo — this means when the View Transitions API isn't supported (older browsers), the theme change still animates smoothly instead of snapping
+   - During a view transition, the `vt-active` class disables the CSS transitions so only the clipPath reveal animates (no double-animation)
+   - Duration increased from 500ms to 600ms for a more premium feel
+   - Added hover:scale-105 + active:scale-95 micro-interactions on the toggle button
+
+2. PROACTIVE ERROR CHECKS:
+   - Audited all imports: no broken references to deleted files
+   - Confirmed no Three.js imports in the flare game (was causing OOM)
+   - Confirmed no dead GameCanvas/CockpitCanvas/CessnaSvg references in the flare game
+   - ProgressDashboard is defined but unused — harmless dead code, left it
+   - Server log: 0 errors, 0 warnings at runtime
+
+3. RESTORED LOST FEATURES:
+   - MouseTracker component was lost in a revert — recreated it (spring-physics follow dot, grows on hover, hidden on touch/reduced-motion)
+   - ErrorBoundary component was lost — recreated it (catches React errors, shows friendly fallback with refresh/go-home buttons)
+   - Wired MouseTracker into page.tsx (renders inside the main app div)
+   - Wired ErrorBoundary into layout.tsx (wraps all children inside ThemeProvider)
+   - Added mouse-tracker CSS + smooth scrollbar styling to globals.css
+
+VERIFICATION:
+- Server: HTTP 200, stable (31s compile)
+- 0 runtime errors
+- Theme toggle: View Transitions API circular reveal + smooth color transitions as fallback
+- Mouse tracker: restored and wired
+- Error boundary: restored and wired
+
+Stage Summary:
+- Theme transitions are now smooth (View Transitions API + CSS color transitions)
+- Mouse tracker and error boundary restored
+- No errors found in proactive audit
