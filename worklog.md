@@ -569,3 +569,34 @@ Stage Summary:
 - All buttons now premium: squircle, gradient, depth, hover lift, arrow animation.
 - Logo wordmark is cleaner and more premium (tighter tracking, better hierarchy).
 - Flare Trainer result screen shows a 3D Cessna that tilts based on landing quality — no more flat 2D exit screen.
+
+---
+Task ID: V20-3D-PLANE-GAMEPLAY
+Agent: Main (Z.ai Code)
+Task: Replace 2D side-profile Cessna SVG with real 3D GLB model during gameplay
+
+Work Log:
+- User issue: the 2D Cessna SVG (side profile) is shown during gameplay overlaid on a forward-perspective runway — "not faced correctly to the road." The plane faces sideways while the runway goes into the distance. Looks broken.
+- Created game-cessna-3d.tsx — a 3D Cessna 172 GLB model rendered with react-three-fiber, positioned in a chase-camera view (behind and above the plane, looking forward down the runway). The plane now FACES FORWARD, matching the runway perspective.
+- Features:
+  * Real GLB model (cessna172-opt.glb, 805KB)
+  * Live pitch/bank/yaw driven by the physics engine (setPitch, setBank, setYaw imperative methods)
+  * Spinning propeller (speed scales with throttle)
+  * Contact shadows for depth
+  * Sunset environment lighting
+  * Chase camera position [0, 1.2, 5.5] with 40° FOV
+- Wired into game-canvas.tsx:
+  * Added cessna3DRef alongside the old cessnaRef
+  * In the render loop, the 3D model receives pitch (-state.pitch), bank (crosswind correction), yaw (crab * 0.4), and throttle
+  * Replaced the <CessnaSvg> overlay with <GameCessna3D> in the aircraft div
+  * The old CessnaSvg + CessnaHandle are kept for backward compatibility (not rendered)
+
+- Also restarted the server (was down when user reported "not opening")
+
+VERIFICATION:
+- Lint: 0 errors, 3 pre-existing warnings
+- Server: HTTP 200, stable (34s compile — the 3D model adds some compile time)
+- The 3D plane now faces forward down the runway, matching the perspective
+
+Stage Summary:
+- The gameplay plane is now a real 3D Cessna 172 that faces forward down the runway (chase view). No more sideways 2D SVG on a forward-perspective background. The propeller spins, the plane banks/pitches/yaws with the physics.

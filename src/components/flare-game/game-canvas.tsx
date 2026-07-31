@@ -3,6 +3,7 @@
 
 import * as React from 'react'
 import { CessnaSvg, type CessnaHandle } from './cessna-svg'
+import { GameCessna3D, type GameCessnaHandle } from './game-cessna-3d'
 import type { FlightState, GameEnv } from '@/lib/aviation'
 import { cn } from '@/lib/utils'
 
@@ -50,6 +51,7 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
     const canvasRef = React.useRef<HTMLCanvasElement>(null)
     const aircraftRef = React.useRef<HTMLDivElement>(null)
     const cessnaRef = React.useRef<CessnaHandle>(null)
+    const cessna3DRef = React.useRef<GameCessnaHandle>(null)
     const sizeRef = React.useRef({ w: 0, h: 0, dpr: 1 })
     const particles = React.useRef<Particle[]>([])
     const shake = React.useRef(0)
@@ -972,6 +974,12 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
       const targetBank = state.crab > 0 ? -3 : state.crab < 0 ? 3 : 0
       cessnaRef.current?.setBank(targetBank)
 
+      // Drive the 3D model's pitch/bank/yaw
+      cessna3DRef.current?.setPitch(-state.pitch)
+      cessna3DRef.current?.setBank(targetBank)
+      cessna3DRef.current?.setYaw(state.crab * 0.4)
+      cessna3DRef.current?.setThrottle(state.throttle ?? 0.5)
+
       const ac = aircraftRef.current
       if (ac) {
         const aw = w * 0.3 * scale
@@ -1026,7 +1034,7 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
           className="pointer-events-none absolute left-0 top-0"
           style={{ transformOrigin: '50% 55%' }}
         >
-          <CessnaSvg ref={cessnaRef} stalled={stalled} onGround={onGround} gearCompress={gearCompress} className="w-full" />
+          <GameCessna3D ref={cessna3DRef} className="w-full h-[180px]" />
         </div>
         <div className="pointer-events-none absolute inset-0 fc-vignette" />
       </div>
