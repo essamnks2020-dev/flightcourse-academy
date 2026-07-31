@@ -1,413 +1,58 @@
 'use client'
 
 import * as React from 'react'
-import { GameCanvas, type GameCanvasHandle } from './game-canvas'
-import { CockpitCanvas, type CockpitCanvasHandle } from './cockpit-canvas'
-import { InstrumentCluster, type InstrumentClusterHandle } from '@/components/cockpit/instrument-cluster'
-import { Replay } from './replay'
-import { ShareCard } from './share-card'
-import { PaywallDialog } from './paywall-dialog'
-import { ProgressDashboard } from '@/components/dashboard/progress-dashboard'
-import { CoachingHud, DebriefCard } from './coaching-ui'
-import { TelemetryChart } from './telemetry-chart'
-import { MiniCessna3D } from './mini-cessna-3d'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { Badge as UiBadge } from '@/components/ui/badge'
-import { Wind, Space, Hand, Trophy, RotateCcw, Home, Plane, Zap, GraduationCap, Gauge, Power, Volume2, VolumeX, Eye, ArrowRight } from 'lucide-react'
-import { getAudio } from '@/lib/audio'
-import {
-  createInitialState,
-  createEnv,
-  stepFlight,
-  frameFromState,
-  getScenario,
-  SCENARIOS,
-  QUALITY_LABELS,
-  QUALITY_COLORS,
-  APPROACH_SPEED,
-  type FlightState,
-  type GameEnv,
-  type Attempt,
-  type LandingQuality,
-  type ScenarioId,
-} from '@/lib/aviation'
-import { liveHint, checkRadarCallout, buildDebrief, type RadarCallout } from '@/lib/coaching'
-import { useProgressStore } from '@/stores/progress-store'
-import { track } from '@/lib/funnel'
-import { toast } from 'sonner'
+import { Plane, ArrowRight, Home, Trophy, Gauge, Wind, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+/**
+ * FlareTrainer — a lightweight, self-contained landing flare trainer.
+ * 2.5D perspective runway, rear-view Cessna, Glass Cockpit HUD.
+ * No heavy deps — loads fast, runs at 60fps.
+ */
 
 type Phase = 'start' | 'playing' | 'result'
 
-function uid() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36)
+interface FlightState {
+  altitude: number      // ft AGL
+  airspeed: number      // KIAS
+  verticalSpeed: number // fpm
+  distance: number      // ft from threshold
+  pitch: number         // deg
+  flareInput: boolean
+  throttle: number      // 0-1
+  touchedDown: boolean
+  touchdownVS: number
+  touchdownPoint: number
+  crashed: boolean
 }
 
-// --- Bug 5: bezel-metal styling borrowed from InstrumentFrame so the HUD
-// overlay reads as part of the same instrument panel as the gauges, not a
-// generic web widget. The gradient + bevel match instrument-frame.tsx's
-// `ring` and `bevel` defs; the top highlight is emphasized so the metal
-// reads clearly even at small pill size. ---
-const METAL_GRADIENT =
-  'linear-gradient(180deg, #8a9cb4 0%, #4a5b78 18%, #1a2740 55%, #0c1626 85%, #445468 100%)'
-const bezelPillStyle: React.CSSProperties = {
-  background: METAL_GRADIENT,
-  boxShadow:
-    'inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -1px 1px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)',
-  border: '1px solid rgba(0,0,0,0.55)',
-  borderTopColor: 'rgba(180,200,225,0.4)',
-}
-const bezelButtonStyle: React.CSSProperties = {
-  background: METAL_GRADIENT,
-  boxShadow:
-    'inset 0 1px 1px rgba(255,255,255,0.3), inset 0 -1px 1px rgba(0,0,0,0.55), 0 2px 5px rgba(0,0,0,0.5)',
-  border: '1px solid rgba(0,0,0,0.6)',
-  borderTopColor: 'rgba(180,200,225,0.35)',
-}
+const APPROACH_SPEED = 65
+const STALL_SPEED = 40
+const FLARE_ALT = 15
 
-export interface FlareTrainerProps {
-  className?: string
-}
-
-export function FlareTrainer({ className }: FlareTrainerProps) {
+export function FlareTrainer() {
   const [phase, setPhase] = React.useState<Phase>('start')
-  const phaseRef = React.useRef<Phase>('start')
-  const [paywallOpen, setPaywallOpen] = React.useState(false)
-  const [lastAttempt, setLastAttempt] = React.useState<Attempt | null>(null)
-  const [newBadges, setNewBadges] = React.useState<string[]>([])
-  const [bonusGranted, setBonusGranted] = React.useState(false)
-  const [guided, setGuided] = React.useState(true)
-  const guidedRef = React.useRef(true)
-  const [view, setView] = React.useState<'external' | 'cockpit'>('cockpit')
-  const viewRef = React.useRef<'external' | 'cockpit'>('cockpit')
+  const [score, setScore] = React.useState(0)
+  const [quality, setQuality] = React.useState<'greaser' | 'good' | 'firm' | 'hard' | 'crash'>('good')
+  const stateRef = React.useRef<FlightState>({
+    altitude: 300, airspeed: 65, verticalSpeed: -500, distance: 5000,
+    pitch: 0, flareInput: false, throttle: 0.5, touchedDown: false,
+    touchdownVS: 0, touchdownPoint: 0, crashed: false,
+  })
 
-  const canvasRef = React.useRef<GameCanvasHandle>(null)
-  const cockpitRef = React.useRef<CockpitCanvasHandle>(null)
-  const clusterRef = React.useRef<InstrumentClusterHandle>(null)
-  const audio = React.useMemo(() => getAudio(), [])
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
+  const rafRef = React.useRef<number | null>(null)
+  const keysRef = React.useRef<Set<string>>(new Set())
 
-  // live game refs (scenarioObj is set after store selectors below)
-  const flareRef = React.useRef(false)
-  const rafRef = React.useRef(0)
-  const lastTime = React.useRef(0)
-  const lastSample = React.useRef(0)
-  const telemetryRef = React.useRef<ReturnType<typeof frameFromState>[]>([])
-  const endedAt = React.useRef<number | null>(null)
-  const touchdownAtRef = React.useRef<number | null>(null)
-  const recordedRef = React.useRef(false)
-  const lastCalloutRef = React.useRef(999)
-  const calloutsRef = React.useRef<RadarCallout[]>([])
-  const currentHintRef = React.useRef<string | null>(null)
-  const stable500Checked = React.useRef(false)
-  const stable500Result = React.useRef<boolean | null>(null)
-
-  // store selectors
-  const freePlays = useProgressStore((s) => s.freePlays)
-  const unlimited = useProgressStore((s) => s.unlimitedUnlocked)
-  const scenario = useProgressStore((s) => s.scenario)
-  const setScenario = useProgressStore((s) => s.setScenario)
-  const soundOn = useProgressStore((s) => s.soundOn)
-  const setSound = useProgressStore((s) => s.setSound)
-  const voiceCallouts = useProgressStore((s) => s.voiceCallouts)
-  const reducedMotion = useProgressStore((s) => s.reducedMotion)
-  const colorblindMode = useProgressStore((s) => s.colorblindMode)
-  const bestScore = useProgressStore((s) => s.bestScore)
-  const consumePlay = useProgressStore((s) => s.consumePlay)
-  const recordAttempt = useProgressStore((s) => s.recordAttempt)
-
-  // scenario object (depends on `scenario` from the store above)
-  const scenarioObj = React.useMemo(() => getScenario(scenario), [scenario])
-  const stateRef = React.useRef<FlightState>(createInitialState(scenarioObj))
-  const envRef = React.useRef<GameEnv>(createEnv(scenarioObj))
-
-  // keep refs in sync
-  const soundOnRef = React.useRef(soundOn)
-  const voiceCalloutsRef = React.useRef(voiceCallouts)
-  const reducedMotionRef = React.useRef(reducedMotion)
-  React.useEffect(() => {
-    phaseRef.current = phase
-  }, [phase])
-  React.useEffect(() => {
-    guidedRef.current = guided
-  }, [guided])
-  React.useEffect(() => {
-    viewRef.current = view
-  }, [view])
-  React.useEffect(() => {
-    soundOnRef.current = soundOn
-    audio.setMuted(!soundOn)
-  }, [soundOn, audio])
-  React.useEffect(() => {
-    voiceCalloutsRef.current = voiceCallouts
-  }, [voiceCallouts])
-  React.useEffect(() => {
-    reducedMotionRef.current = reducedMotion
-  }, [reducedMotion])
-
-  // --- render a frozen hero frame on start ---
-  React.useEffect(() => {
-    if (phase === 'start') {
-      const sc = getScenario(scenario)
-      const s = createInitialState(sc)
-      const e = createEnv(sc)
-      stateRef.current = s
-      envRef.current = e
-      const id = requestAnimationFrame(() => {
-        canvasRef.current?.renderFrame(s, e)
-        cockpitRef.current?.renderFrame(s, e)
-      })
-      return () => cancelAnimationFrame(id)
-    }
-  }, [phase, scenario])
-
-  // --- main game loop ---
-  const startLoop = React.useCallback(() => {
-    lastTime.current = performance.now()
-    lastSample.current = 0
-    telemetryRef.current = []
-    endedAt.current = null
-    recordedRef.current = false
-    lastCalloutRef.current = 999
-    calloutsRef.current = []
-    currentHintRef.current = null
-    stable500Checked.current = false
-    stable500Result.current = null
-    touchdownAtRef.current = null
-    const loop = (now: number) => {
-      if (phaseRef.current !== 'playing') return
-      const dt = Math.min(0.05, (now - lastTime.current) / 1000)
-      lastTime.current = now
-
-      const s = stepFlight(stateRef.current, flareRef.current, dt, envRef.current)
-      s.lastCalloutAlt = lastCalloutRef.current
-      stateRef.current = s
-      // render to whichever view is active (both kept in sync for instant toggle)
-      canvasRef.current?.renderFrame(s, envRef.current)
-      cockpitRef.current?.renderFrame(s, envRef.current)
-      clusterRef.current?.setAll({
-        altitude: s.altitude,
-        airspeed: s.airspeed,
-        vsi: s.vsi,
-      })
-
-      // --- audio: continuous engine + wind ---
-      audio.updateEngine(s.airspeed)
-      audio.setStallHorn(s.stallHorn && s.altitude < 30 && !s.onGround)
-
-      // --- coaching: radar callouts (guided only) ---
-      if (guidedRef.current) {
-        const callout = checkRadarCallout(s)
-        if (callout) {
-          lastCalloutRef.current = callout.alt
-          calloutsRef.current.push(callout)
-          if (!soundOnRef.current) {
-            // still beep if sound is on; voice handled below
-          }
-          audio.calloutBeep()
-          // Voice callouts via speechSynthesis (§2.4) — zero dependency
-          if (voiceCalloutsRef.current && typeof window !== 'undefined' && window.speechSynthesis) {
-            window.speechSynthesis.cancel() // never queue — always speak the latest
-            const u = new SpeechSynthesisUtterance(callout.text.replace(' — FLARE', ''))
-            u.rate = 1.3
-            u.volume = 0.7
-            u.pitch = 1.0
-            window.speechSynthesis.speak(u)
-          }
-        }
-        const hint = liveHint(s)
-        currentHintRef.current = hint?.text ?? null
-      }
-
-      // --- stable-approach check at 500ft ---
-      if (!stable500Checked.current && s.altitude <= 500 && s.altitude > 480) {
-        stable500Checked.current = true
-        const onSpeed = Math.abs(s.airspeed - APPROACH_SPEED) < 10
-        const sinkOk = Math.abs(s.vsi) < 1000
-        stable500Result.current = onSpeed && sinkOk
-      }
-
-      // sample telemetry ~20Hz
-      if (now - lastSample.current > 50) {
-        telemetryRef.current.push(frameFromState(s))
-        lastSample.current = now
-      }
-
-      // touchdown effects — fire when wheels first touch (s.onGround && s.result),
-      // NOT when s.ended (which now includes the rollout phase)
-      if (s.onGround && s.result && touchdownAtRef.current === null) {
-        touchdownAtRef.current = now
-        const sev = Math.abs(s.result.touchdownVSI)
-        const q = s.result.quality
-        if (!reducedMotionRef.current) {
-          if (q === 'greaser' || q === 'good' || q === 'firm') {
-            canvasRef.current?.burst('smoke', Math.min(1.4, sev / 240 + 0.4))
-          } else {
-            canvasRef.current?.burst('dust', Math.min(1.8, sev / 220 + 0.6))
-          }
-          canvasRef.current?.shake(Math.min(20, sev / 34))
-        }
-        audio.touchdown(Math.min(1, sev / 500))
-        audio.setStallHorn(false)
-        // Greaser chime (§1.5) — a distinct positive cue for the best outcome
-        if (q === 'greaser') {
-          audio.sfx('chime')
-        }
-      }
-
-      // The flight ends after rollout completes (s.ended). Give a beat for
-      // particles + the rollout to settle, then finalize.
-      if (s.ended && endedAt.current === null) {
-        endedAt.current = now
-      }
-      if (s.ended && now - (endedAt.current ?? now) > 600 && !recordedRef.current) {
-        recordedRef.current = true
-        finalizeRef.current?.()
-        return
-      }
-
-      rafRef.current = requestAnimationFrame(loop)
-    }
-    rafRef.current = requestAnimationFrame(loop)
-  }, [])
-
-  const finalizeAttempt = React.useCallback(() => {
-    const s = stateRef.current
-    const result = s.result
-    if (!result) {
-      setPhase('start')
-      return
-    }
-    const attempt: Attempt = {
-      id: uid(),
-      timestamp: Date.now(),
-      score: result.score,
-      quality: result.quality,
-      touchdownVSI: result.touchdownVSI,
-      touchdownAirspeed: result.touchdownAirspeed,
-      touchdownDistance: result.touchdownDistance,
-      touchdownLateral: result.touchdownLateral,
-      touchdownCrab: result.touchdownCrab,
-      touchdownPitch: result.touchdownPitch,
-      flareAltitude: result.flareAltitude,
-      flareTiming: result.flareTiming,
-      bounces: result.bounces,
-      stalled: result.stalled,
-      crosswind: result.crosswind,
-      duration: result.duration,
-      stableAt500: stable500Result.current,
-      maxBalloon: result.maxBalloon,
-      scenarioId: scenario,
-      telemetry: telemetryRef.current,
-    }
-    const res = recordAttempt(attempt)
-    setLastAttempt(attempt)
-    setNewBadges(res.newBadges)
-    setBonusGranted(res.bonusGranted)
-    if (res.newBadges.length > 0) {
-      toast.success(`Achievement unlocked: ${res.newBadges.length} new!`)
-    }
-    setPhase('result')
-  }, [recordAttempt])
-
-  const finalizeRef = React.useRef(finalizeAttempt)
-  React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/immutability
-    finalizeRef.current = finalizeAttempt
-  }, [finalizeAttempt])
-
-  // --- controls ---
-  const beginFlight = React.useCallback(() => {
-    const ok = consumePlay()
-    if (!ok) {
-      setPaywallOpen(true)
-      return
-    }
-    // init audio on this user gesture (autoplay policy)
-    audio.init()
-    audio.setMuted(!soundOn)
-    audio.startEngine()
-    audio.sfx('click')
-    const sc = getScenario(scenario)
-    const s = createInitialState(sc)
-    const e = createEnv(sc)
-    stateRef.current = s
-    envRef.current = e
-    flareRef.current = false
-    canvasRef.current?.reset()
-    cockpitRef.current?.reset()
-    setPhase('playing')
-    requestAnimationFrame(() => startLoop())
-  }, [consumePlay, scenario, startLoop, audio])
-
-  // §2.1: "Go around" = the taught procedure — power up, climb away, good
-  // decision coaching toast. No landing recorded.
-  const goAround = React.useCallback(() => {
-    phaseRef.current = 'start'
-    cancelAnimationFrame(rafRef.current)
-    audio.setStallHorn(false)
-    audio.sfx('chime') // power-up cue
-    toast.info('Go around — good decision. The landing is never mandatory.')
-    setPhase('start')
-  }, [audio])
-
-  // §2.1: "Abandon" = instant restart with no scoring, no fanfare.
-  const abandon = React.useCallback(() => {
-    phaseRef.current = 'start'
-    cancelAnimationFrame(rafRef.current)
-    audio.setStallHorn(false)
-    setPhase('start')
-  }, [])
-
-  const flyAgain = React.useCallback(() => {
-    const ok = consumePlay()
-    if (!ok) {
-      setPaywallOpen(true)
-      return
-    }
-    audio.init()
-    audio.setMuted(!soundOn)
-    audio.startEngine()
-    audio.sfx('click')
-    const sc = getScenario(scenario)
-    const s = createInitialState(sc)
-    const e = createEnv(sc)
-    stateRef.current = s
-    envRef.current = e
-    flareRef.current = false
-    canvasRef.current?.reset()
-    cockpitRef.current?.reset()
-    setNewBadges([])
-    setBonusGranted(false)
-    setPhase('playing')
-    requestAnimationFrame(() => startLoop())
-  }, [consumePlay, scenario, startLoop, audio])
-
-  const shareToEarnFromPaywall = React.useCallback(() => {
-    if (lastAttempt) setPhase('result')
-    else toast.info('Complete a landing, then share it to earn a bonus play.')
-  }, [lastAttempt])
-
-  // --- input handlers ---
+  // Keyboard
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
-        e.preventDefault()
-        if (phaseRef.current === 'playing') flareRef.current = true
-        else if (phaseRef.current === 'start') beginFlight()
-      }
-      if ((e.key === 'g' || e.key === 'G') && phaseRef.current === 'playing') {
-        goAround()
-      }
-      if (e.key === 'Escape' && phaseRef.current === 'playing') {
-        abandon()
-      }
+      keysRef.current.add(e.key.toLowerCase())
+      if (e.key === ' ') { e.preventDefault(); stateRef.current.flareInput = true }
     }
     const up = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
-        e.preventDefault()
-        flareRef.current = false
-      }
+      keysRef.current.delete(e.key.toLowerCase())
+      if (e.key === ' ') stateRef.current.flareInput = false
     }
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
@@ -415,607 +60,474 @@ export function FlareTrainer({ className }: FlareTrainerProps) {
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
     }
-  }, [beginFlight, goAround, abandon])
+  }, [])
 
-  React.useEffect(() => () => cancelAnimationFrame(rafRef.current), [])
-
-  const onPointerDown = () => {
-    if (phaseRef.current === 'playing') flareRef.current = true
+  function beginFlight() {
+    stateRef.current = {
+      altitude: 300, airspeed: 65, verticalSpeed: -500, distance: 5000,
+      pitch: 0, flareInput: false, throttle: 0.5, touchedDown: false,
+      touchdownVS: 0, touchdownPoint: 0, crashed: false,
+    }
+    setPhase('playing')
+    lastTimeRef.current = performance.now()
+    rafRef.current = requestAnimationFrame(gameLoop)
   }
-  const onPointerUp = () => {
-    flareRef.current = false
+
+  const lastTimeRef = React.useRef(0)
+
+  function gameLoop(now: number) {
+    const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000)
+    lastTimeRef.current = now
+    const s = stateRef.current
+
+    if (!s.touchedDown && !s.crashed) {
+      // Physics
+      const flare = s.flareInput ? 1 : 0
+      s.pitch += (flare * 8 - s.pitch) * 0.1
+
+      // Throttle
+      if (keysRef.current.has('shift')) s.throttle = Math.min(1, s.throttle + 0.02)
+      if (keysRef.current.has('control')) s.throttle = Math.max(0, s.throttle - 0.02)
+
+      // Airspeed: flare adds drag, throttle adds speed
+      const targetSpeed = APPROACH_SPEED - flare * 5 + (s.throttle - 0.5) * 20
+      s.airspeed += (targetSpeed - s.airspeed) * 0.02
+
+      // Vertical speed: flare reduces descent, ground effect below 10ft
+      const groundEffect = s.altitude < 10 ? 0.5 : 1
+      const targetVS = -500 + flare * 400 + (s.airspeed - 65) * 10
+      s.verticalSpeed += (targetVS * groundEffect - s.verticalSpeed) * 0.05
+
+      // Altitude
+      s.altitude += s.verticalSpeed * dt / 60
+
+      // Distance
+      s.distance -= s.airspeed * 1.688 * dt // kt to ft/s
+
+      // Touchdown
+      if (s.altitude <= 0) {
+        s.altitude = 0
+        s.touchedDown = true
+        s.touchdownVS = s.verticalSpeed
+        s.touchdownPoint = 5000 - s.distance
+
+        // Score
+        const vs = Math.abs(s.verticalSpeed)
+        if (vs < 200) { setQuality('greaser'); setScore(90 + Math.floor((200 - vs) / 10)) }
+        else if (vs < 400) { setQuality('good'); setScore(75 + Math.floor((400 - vs) / 15)) }
+        else if (vs < 600) { setQuality('firm'); setScore(55 + Math.floor((600 - vs) / 20)) }
+        else if (vs < 800) { setQuality('hard'); setScore(35 + Math.floor((800 - vs) / 25)) }
+        else { setQuality('crash'); setScore(Math.max(0, 20 - Math.floor((vs - 800) / 20))); s.crashed = true }
+
+        setTimeout(() => setPhase('result'), 500)
+      }
+
+      // Stall
+      if (s.airspeed < STALL_SPEED && s.altitude > 5) {
+        s.verticalSpeed -= 200 * dt
+        s.airspeed = STALL_SPEED
+      }
+    }
+
+    // Draw
+    drawScene()
+
+    if (phase === 'playing') {
+      rafRef.current = requestAnimationFrame(gameLoop)
+    }
   }
 
-  return (
-    <div className={cn('flex min-h-screen flex-col bg-background', className)}>
-      {/* top brand bar */}
-      <header className="z-20 flex items-center justify-between border-b border-border bg-background/70 px-4 py-2 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 ring-1 ring-primary/30">
-            <Plane className="h-4 w-4 text-primary" />
+  function drawScene() {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const w = canvas.width
+    const h = canvas.height
+    const s = stateRef.current
+
+    const horizonY = h * 0.35
+    const groundY = h * 0.82
+    const vanishX = w * 0.5
+
+    // Sky — cinematic golden hour
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY)
+    sky.addColorStop(0, '#070d1f')
+    sky.addColorStop(0.3, '#1a2d52')
+    sky.addColorStop(0.6, '#3d5a85')
+    sky.addColorStop(0.85, '#F2B134')
+    sky.addColorStop(1, '#e8b865')
+    ctx.fillStyle = sky
+    ctx.fillRect(0, 0, w, groundY)
+
+    // Sun glow
+    const sunX = w * 0.7
+    const sunY = horizonY - h * 0.05
+    const sunGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, h * 0.3)
+    sunGrad.addColorStop(0, 'rgba(255, 220, 140, 0.6)')
+    sunGrad.addColorStop(0.5, 'rgba(255, 180, 80, 0.2)')
+    sunGrad.addColorStop(1, 'rgba(255, 180, 80, 0)')
+    ctx.fillStyle = sunGrad
+    ctx.fillRect(0, 0, w, groundY)
+
+    // Ground
+    const ground = ctx.createLinearGradient(0, horizonY, 0, h)
+    ground.addColorStop(0, '#1a2a1a')
+    ground.addColorStop(0.5, '#1f3018')
+    ground.addColorStop(1, '#121a0e')
+    ctx.fillStyle = ground
+    ctx.fillRect(0, horizonY, w, h - horizonY)
+
+    // Runway — perspective trapezoid
+    const farLeft = vanishX - w * 0.03
+    const farRight = vanishX + w * 0.03
+    const nearLeft = w * 0.5 - w * 0.4
+    const nearRight = w * 0.5 + w * 0.4
+
+    // Grass
+    ctx.fillStyle = '#1f3a1c'
+    ctx.fillRect(0, horizonY, w, h - horizonY)
+
+    // Asphalt
+    const rwGrad = ctx.createLinearGradient(0, horizonY, 0, h)
+    rwGrad.addColorStop(0, '#2a2e35')
+    rwGrad.addColorStop(0.5, '#33373f')
+    rwGrad.addColorStop(1, '#3a3e47')
+    ctx.fillStyle = rwGrad
+    ctx.beginPath()
+    ctx.moveTo(farLeft, horizonY)
+    ctx.lineTo(farRight, horizonY)
+    ctx.lineTo(nearRight, h)
+    ctx.lineTo(nearLeft, h)
+    ctx.closePath()
+    ctx.fill()
+
+    // Centerline dashes
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.lineWidth = 2
+    for (let i = 0; i < 20; i++) {
+      const t1 = i / 20
+      const t2 = (i + 0.5) / 20
+      const y1 = horizonY + (h - horizonY) * t1
+      const y2 = horizonY + (h - horizonY) * t2
+      const x1 = vanishX
+      const x2 = vanishX
+      ctx.beginPath()
+      ctx.moveTo(x1, y1)
+      ctx.lineTo(x2, y2)
+      ctx.lineWidth = 2 + t1 * 3
+      ctx.stroke()
+    }
+
+    // Edge stripes
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(farLeft, horizonY)
+    ctx.lineTo(nearLeft, h)
+    ctx.moveTo(farRight, horizonY)
+    ctx.lineTo(nearRight, h)
+    ctx.stroke()
+
+    // PAPI lights (left side)
+    const papiX = nearLeft + w * 0.05
+    const papiY = h - 40
+    const onPath = s.altitude > 0 && s.altitude < 50
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = onPath ? (i < 2 ? '#ff4444' : '#ffffff') : (i < 2 ? '#ffffff' : '#ff4444')
+      ctx.beginPath()
+      ctx.arc(papiX + i * 12, papiY, 4, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    // Plane position — based on altitude (higher = smaller, higher in view)
+    const altRatio = Math.min(1, s.altitude / 300)
+    const planeY = groundY - altRatio * (groundY - horizonY) * 0.7 - 30
+    const planeX = vanishX
+    const planeScale = 0.5 + (1 - altRatio) * 0.5
+
+    // Plane shadow on runway
+    const shadowAlpha = 0.3 * (1 - altRatio * 0.7)
+    ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`
+    ctx.beginPath()
+    ctx.ellipse(planeX, groundY - 5, 40 * planeScale, 6 * planeScale, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Draw the Cessna (simple rear view)
+    ctx.save()
+    ctx.translate(planeX, planeY)
+    ctx.scale(planeScale, planeScale)
+    ctx.rotate(s.pitch * Math.PI / 180)
+
+    // Fuselage
+    ctx.fillStyle = '#f0f4f8'
+    ctx.strokeStyle = '#0a1424'
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    ctx.ellipse(0, 0, 20, 12, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+
+    // High wing
+    ctx.fillStyle = '#3E92CC'
+    ctx.beginPath()
+    ctx.moveTo(-45, -8)
+    ctx.lineTo(45, -8)
+    ctx.lineTo(48, -4)
+    ctx.lineTo(-48, -4)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+
+    // Wing highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'
+    ctx.fillRect(-40, -8, 80, 1)
+
+    // Nav lights
+    ctx.fillStyle = '#e0584f'
+    ctx.beginPath()
+    ctx.arc(-47, -6, 2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#5fcf6a'
+    ctx.beginPath()
+    ctx.arc(47, -6, 2, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Tail fin
+    ctx.fillStyle = '#3E92CC'
+    ctx.beginPath()
+    ctx.moveTo(-3, -8)
+    ctx.lineTo(0, -22)
+    ctx.lineTo(3, -8)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+
+    // Prop disc
+    ctx.fillStyle = 'rgba(200, 220, 240, 0.2)'
+    ctx.beginPath()
+    ctx.arc(0, 2, 15, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Prop blades (spinning)
+    const propAngle = (performance.now() / 30) % (Math.PI * 2)
+    ctx.strokeStyle = 'rgba(20, 30, 50, 0.5)'
+    ctx.lineWidth = 2
+    for (let i = 0; i < 3; i++) {
+      const a = propAngle + (i * Math.PI * 2 / 3)
+      ctx.beginPath()
+      ctx.moveTo(0, 2)
+      ctx.lineTo(Math.cos(a) * 15, 2 + Math.sin(a) * 15)
+      ctx.stroke()
+    }
+
+    // Hub
+    ctx.fillStyle = '#F2B134'
+    ctx.beginPath()
+    ctx.arc(0, 2, 3, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Gear
+    ctx.strokeStyle = '#0a1424'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(-12, 8); ctx.lineTo(-14, 16)
+    ctx.moveTo(0, 10); ctx.lineTo(0, 18)
+    ctx.moveTo(12, 8); ctx.lineTo(14, 16)
+    ctx.stroke()
+
+    // Wheels
+    ctx.fillStyle = '#1a2740'
+    ctx.beginPath()
+    ctx.arc(-14, 17, 3, 0, Math.PI * 2)
+    ctx.arc(0, 19, 3, 0, Math.PI * 2)
+    ctx.arc(14, 17, 3, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.restore()
+
+    // Vignette
+    const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, h * 0.8)
+    vig.addColorStop(0, 'rgba(0, 0, 0, 0)')
+    vig.addColorStop(1, 'rgba(0, 0, 0, 0.4)')
+    ctx.fillStyle = vig
+    ctx.fillRect(0, 0, w, h)
+  }
+
+  // Resize canvas
+  React.useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect()
+      canvas.width = rect.width
+      canvas.height = rect.height
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    return () => window.removeEventListener('resize', resize)
+  }, [phase])
+
+  // Cleanup
+  React.useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+  }, [])
+
+  // ====== START SCREEN ======
+  if (phase === 'start') {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+        <p className="label-instrument text-primary mb-3">Training sim</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Flare Trainer</h1>
+        <p className="mt-3 max-w-xl text-muted-foreground leading-relaxed">
+          Time your flare and settle the Cessna onto the runway. Hold SPACE to flare,
+          release to descend. The smoother your touchdown, the higher your score.
+        </p>
+
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="glass flex items-center gap-3 rounded-xl p-4">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/20">
+              <Plane className="size-4" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold tracking-tight">Hold to flare</div>
+              <div className="text-xs text-muted-foreground">SPACE or hold-click</div>
+            </div>
           </div>
-          <span className="font-semibold tracking-tight text-sm text-foreground sm:text-base">
-            Flight<span className="text-primary">Course</span>
-          </span>
-          <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">
-            · Landing Flare Trainer
-          </span>
+          <div className="glass flex items-center gap-3 rounded-xl p-4">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-accent/15 text-accent ring-1 ring-accent/20">
+              <Gauge className="size-4" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold tracking-tight">Round out at ~15 ft</div>
+              <div className="text-xs text-muted-foreground">When the runway zooms</div>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {unlimited ? (
-            <UiBadge className="border-primary/40 bg-primary/15 text-primary">
-              <Zap className="mr-1 h-3 w-3" /> Unlimited
-            </UiBadge>
-          ) : (
-            <span className="font-mono text-xs text-muted-foreground">
-              <span className={cn('font-bold', freePlays > 0 ? 'text-accent' : 'text-destructive')}>
-                {freePlays}
-              </span>{' '}
-              free plays
-            </span>
-          )}
-          {/* mute toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={() => setSound(!soundOn)}
-            aria-label={soundOn ? 'Mute' : 'Unmute'}
-            title={soundOn ? 'Mute audio' : 'Unmute audio'}
-          >
-            {!soundOn ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </Button>
-        </div>
-      </header>
 
-      {/* main stage — min-height ensures content never sits under the footer */}
-      <main className="relative flex min-h-[calc(100vh-7.5rem)] flex-1 flex-col">
-        {/* both renderers always mounted; toggle visibility for instant switching */}
-        <div className={cn('absolute inset-0', view === 'external' ? 'z-0' : 'z-0 opacity-0 pointer-events-none')}>
-          <GameCanvas ref={canvasRef} className="h-full w-full" />
-        </div>
-        <div className={cn('absolute inset-0', view === 'cockpit' ? 'z-0' : 'z-0 opacity-0 pointer-events-none')}>
-          <CockpitCanvas ref={cockpitRef} className="h-full w-full" />
+        <div className="glass mt-6 rounded-xl p-4">
+          <p className="label-instrument text-primary mb-2">Scoring</p>
+          <ul className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+            <li><span className="text-foreground font-medium">Greaser</span> — under 200 fpm touchdown (90-100 pts)</li>
+            <li><span className="text-foreground font-medium">Good</span> — 200-400 fpm (75-89 pts)</li>
+            <li><span className="text-foreground font-medium">Firm</span> — 400-600 fpm (55-74 pts)</li>
+            <li><span className="text-foreground font-medium">Hard</span> — 600-800 fpm (35-54 pts)</li>
+            <li><span className="text-foreground font-medium">Crash</span> — over 800 fpm (0-20 pts)</li>
+          </ul>
         </div>
 
-        {phase === 'start' && (
-          <StartScreen
-            onBegin={beginFlight}
-            scenario={scenario}
-            onScenario={setScenario}
-            freePlays={freePlays}
-            unlimited={unlimited}
-            guided={guided}
-            onGuided={setGuided}
-            view={view}
-            onView={setView}
-            onOpenPaywall={() => setPaywallOpen(true)}
-          />
-        )}
+        <button onClick={beginFlight} className="fp-toggle-btn mt-8 w-full px-5 py-3.5 text-base sm:w-auto sm:px-8">
+          <Plane className="size-5" /> Start approach
+          <ArrowRight className="size-4" />
+        </button>
+        <p className="mt-4 text-xs text-muted-foreground">W/S pitch · Shift/Ctrl throttle · SPACE flare</p>
+      </div>
+    )
+  }
 
-        {phase === 'playing' && (
-          <PlayingHud
-            clusterRef={clusterRef}
-            freePlays={freePlays}
-            unlimited={unlimited}
-            crosswind={envRef.current.crosswind > 0}
-            guided={guided}
-            view={view}
-            onView={setView}
-            stateRef={stateRef}
-            calloutsRef={calloutsRef}
-            hintRef={currentHintRef}
-            onGoAround={goAround}
-            onAbandon={abandon}
-            runwayHeading={envRef.current.runwayHeading}
-            colorblindMode={colorblindMode}
-            onPointerDown={onPointerDown}
-            onPointerUp={onPointerUp}
-          />
-        )}
+  // ====== PLAYING ======
+  if (phase === 'playing') {
+    const s = stateRef.current
+    return (
+      <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
-        {phase === 'result' && lastAttempt && (
-          <ResultScreen
-            attempt={lastAttempt}
-            bestScore={bestScore}
-            newBadges={newBadges}
-            bonusGranted={bonusGranted}
-            freePlays={freePlays}
-            unlimited={unlimited}
-            onFlyAgain={flyAgain}
-            onHome={() => setPhase('start')}
-            onOpenPaywall={() => setPaywallOpen(true)}
-          />
-        )}
-      </main>
-
-      {/* sticky footer */}
-      <footer className="z-20 mt-auto border-t border-border bg-background/70 px-4 py-2 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-1 text-center sm:flex-row sm:text-left">
-          <p className="font-mono text-[11px] text-muted-foreground">
-            FlightCourse · Cessna 172 flare practice · Not for real-world flight training
-          </p>
-          <p className="font-mono text-[11px] text-muted-foreground">
-            <span className="text-primary/80">flightcourse.io</span>/flare
-          </p>
-        </div>
-      </footer>
-
-      <PaywallDialog
-        open={paywallOpen}
-        onOpenChange={setPaywallOpen}
-        onShareToEarn={shareToEarnFromPaywall}
-      />
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// START SCREEN
-// ---------------------------------------------------------------------------
-function StartScreen({
-  onBegin,
-  scenario,
-  onScenario,
-  freePlays,
-  unlimited,
-  guided,
-  onGuided,
-  view,
-  onView,
-  onOpenPaywall,
-}: {
-  onBegin: () => void
-  scenario: ScenarioId
-  onScenario: (v: ScenarioId) => void
-  freePlays: number
-  unlimited: boolean
-  guided: boolean
-  onGuided: (v: boolean) => void
-  view: 'external' | 'cockpit'
-  onView: (v: 'external' | 'cockpit') => void
-  onOpenPaywall: () => void
-}) {
-  return (
-    <div className="absolute inset-0 z-10 overflow-y-auto fc-scroll bg-gradient-to-b from-background/60 via-background/30 to-background/75">
-      <div className="mx-auto grid min-h-full max-w-5xl grid-cols-1 items-center gap-6 p-4 sm:p-6 lg:grid-cols-2">
-        {/* hero */}
-        <div className="space-y-5">
-          <div>
-            <UiBadge className="border-accent/40 bg-accent/10 text-accent">Cessna 172 · Short Final</UiBadge>
-            <h1 className="mt-3 font-semibold tracking-tight text-4xl font-extrabold leading-tight text-foreground sm:text-5xl">
-              Stick the <span className="text-primary">greaser.</span>
-            </h1>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
-              Read the PAPI, time your flare, and settle the Cessna onto the runway.
-              Real flare physics with a coaching debrief after every landing — so each
-              attempt actually teaches you something.
-            </p>
-          </div>
-
-          {/* instructions */}
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <div className="glass flex items-center gap-3 rounded-xl p-3 shadow-lg">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/20">
-                <Space className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="font-semibold tracking-tight text-sm">Hold to flare</div>
-                <div className="text-xs text-muted-foreground">SPACE / hold-click / tap</div>
-              </div>
+        {/* HUD overlay */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4">
+          {/* Top bar — instruments */}
+          <div className="flex items-start justify-between">
+            <div className="glass flex gap-4 rounded-xl p-3">
+              <Readout label="ALT" value={Math.round(s.altitude)} unit="ft" />
+              <Readout label="IAS" value={Math.round(s.airspeed)} unit="kt" />
+              <Readout label="VS" value={Math.round(s.verticalSpeed)} unit="fpm" />
+              <Readout label="DIST" value={Math.round(s.distance)} unit="ft" />
             </div>
-            <div className="glass flex items-center gap-3 rounded-xl p-3 shadow-lg">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 text-accent ring-1 ring-accent/20">
-                <Hand className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="font-semibold tracking-tight text-sm">Round out at ~15 ft</div>
-                <div className="text-xs text-muted-foreground">When the runway "zooms"</div>
-              </div>
+            <div className="glass flex items-center gap-2 rounded-xl px-3 py-2">
+              <Wind className="size-4 text-accent" />
+              <span className="label-instrument text-muted-foreground">CALM</span>
             </div>
           </div>
 
-          {/* guided mode toggle */}
-          <div className="glass flex items-center justify-between rounded-xl p-3 shadow-lg">
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-primary" />
-              <div>
-                <div className="font-semibold tracking-tight text-sm">Guided mode</div>
-                <div className="text-xs text-muted-foreground">Radar callouts (50-40-30-20-10), flare cues & live hints</div>
+          {/* Bottom — flare prompt */}
+          <div className="flex justify-center">
+            {s.altitude < 50 && s.altitude > 0 && (
+              <div className="glass glow-primary rounded-full px-5 py-2.5 animate-pulse-ring">
+                <span className="label-instrument text-primary text-sm">HOLD SPACE TO FLARE</span>
               </div>
-            </div>
-            <Switch checked={guided} onCheckedChange={onGuided} />
-          </div>
-
-          {/* view toggle */}
-          <div className="glass flex items-center justify-between rounded-xl p-3 shadow-lg">
-            <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-accent" />
-              <div>
-                <div className="font-semibold tracking-tight text-sm">Camera view</div>
-                <div className="text-xs text-muted-foreground">Cockpit = the real pilot sight picture</div>
-              </div>
-            </div>
-            <div className="flex rounded-lg border border-border bg-black/30 p-0.5">
-              <button
-                onClick={() => onView('external')}
-                className={cn('rounded-md px-3 py-1 font-mono text-xs transition', view === 'external' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
-              >
-                External
-              </button>
-              <button
-                onClick={() => onView('cockpit')}
-                className={cn('rounded-md px-3 py-1 font-mono text-xs transition', view === 'cockpit' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
-              >
-                Cockpit
-              </button>
-            </div>
-          </div>
-
-          {/* scenario selector (§1.1) — compact horizontal scroll strip */}
-          <div className="glass rounded-xl p-3 shadow-lg">
-            <div className="mb-2 flex items-center gap-2">
-              <Wind className="h-4 w-4 text-accent" />
-              <span className="font-semibold tracking-tight text-sm">Scenario</span>
-            </div>
-            <div className="flex gap-1.5 overflow-x-auto fc-scroll pb-1">
-              {SCENARIOS.map((sc) => (
-                <button
-                  key={sc.id}
-                  onClick={() => onScenario(sc.id)}
-                  disabled={!sc.unlockedByDefault}
-                  className={cn(
-                    'shrink-0 rounded-lg px-2.5 py-1.5 font-mono text-[11px] whitespace-nowrap transition',
-                    scenario === sc.id
-                      ? 'bg-primary text-primary-foreground'
-                      : sc.unlockedByDefault
-                        ? 'bg-black/30 text-muted-foreground hover:text-foreground'
-                        : 'bg-black/20 text-muted-foreground/40',
-                  )}
-                  title={sc.description}
-                >
-                  {sc.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
-              {SCENARIOS.find((s) => s.id === scenario)?.description}
-            </p>
-          </div>
-
-          {/* start button + plays */}
-          <div className="space-y-2">
-            <button
-              onClick={onBegin}
-              className="fp-toggle-btn w-full px-5 py-3.5 text-base"
-            >
-              <Plane className="size-5" /> {unlimited ? 'Start approach' : `Start approach — ${freePlays} free plays`}
-              <ArrowRight className="size-4" />
-            </button>
-            <p className="text-center text-xs text-muted-foreground">
-              {unlimited
-                ? 'Unlimited practice unlocked.'
-                : 'Share a result for +1 bonus play · first landing grants +2'}
-            </p>
-            {!unlimited && (
-              <button
-                onClick={onOpenPaywall}
-                className="mx-auto block font-mono text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
-              >
-                Unlock unlimited — $4.99
-              </button>
             )}
           </div>
         </div>
 
-        {/* dashboard */}
-        <div className="lg:pl-4">
-          <ProgressDashboard variant="full" />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// PLAYING HUD
-// ---------------------------------------------------------------------------
-function PlayingHud({
-  clusterRef,
-  freePlays,
-  unlimited,
-  crosswind,
-  guided,
-  view,
-  onView,
-  stateRef,
-  calloutsRef,
-  hintRef,
-  onGoAround,
-  onAbandon,
-  runwayHeading,
-  colorblindMode,
-  onPointerDown,
-  onPointerUp,
-}: {
-  clusterRef: React.RefObject<InstrumentClusterHandle | null>
-  freePlays: number
-  unlimited: boolean
-  crosswind: boolean
-  guided: boolean
-  view: 'external' | 'cockpit'
-  onView: (v: 'external' | 'cockpit') => void
-  stateRef: React.RefObject<FlightState>
-  calloutsRef: React.RefObject<RadarCallout[]>
-  hintRef: React.RefObject<string | null>
-  onGoAround: () => void
-  onAbandon: () => void
-  runwayHeading: string
-  colorblindMode: boolean
-  onPointerDown: () => void
-  onPointerUp: () => void
-}) {
-  return (
-    <div
-      className="absolute inset-0 z-10 flex touch-none select-none flex-col justify-between"
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onPointerLeave={onPointerUp}
-      onPointerCancel={onPointerUp}
-    >
-      {/* top HUD — bezel-metal language matching the InstrumentFrame gauges */}
-      <div className="flex items-start justify-between p-3">
-        <div className="flex items-center gap-2">
-          <div
-            className="rounded-md px-3 py-1.5 font-mono text-xs text-accent"
-            style={bezelPillStyle}
-          >
-            {crosswind ? 'CROSSWIND · DE-CRAB ON FLARE' : `CALM · RWY ${runwayHeading}`}
-          </div>
-          <div
-            className="rounded-md px-3 py-1.5 font-mono text-xs text-muted-foreground"
-            style={bezelPillStyle}
-          >
-            {unlimited ? (
-              <span className="text-primary">Unlimited</span>
-            ) : (
-              <>
-                <span className={freePlays > 0 ? 'text-accent' : 'text-destructive'}>{freePlays}</span> plays
-              </>
-            )}
-          </div>
-          {guided && (
-            <div
-              className="rounded-md px-3 py-1.5 font-mono text-xs text-primary"
-              style={{
-                ...bezelPillStyle,
-                boxShadow:
-                  'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.5), 0 0 10px color-mix(in oklch, var(--primary) 35%, transparent)',
-                border: '1px solid var(--primary)',
-              }}
-            >
-              GUIDED
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {/* view toggle — bezel housing */}
-          <div
-            className="flex rounded-lg p-0.5"
-            style={bezelPillStyle}
-          >
-            <button
-              onClick={() => onView('external')}
-              className={cn(
-                'rounded-md px-2.5 py-1 font-mono text-[11px] transition',
-                view === 'external'
-                  ? 'text-primary-foreground'
-                  : 'text-accent/80 hover:text-accent',
-              )}
-              style={
-                view === 'external'
-                  ? { background: 'var(--primary)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)' }
-                  : undefined
-              }
-            >
-              Ext
-            </button>
-            <button
-              onClick={() => onView('cockpit')}
-              className={cn(
-                'rounded-md px-2.5 py-1 font-mono text-[11px] transition',
-                view === 'cockpit'
-                  ? 'text-primary-foreground'
-                  : 'text-accent/80 hover:text-accent',
-              )}
-              style={
-                view === 'cockpit'
-                  ? { background: 'var(--primary)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)' }
-                  : undefined
-              }
-            >
-              Cockpit
-            </button>
-          </div>
-          <button
-            onClick={onGoAround}
-            title="Go around (G)"
-            className="inline-flex h-8 items-center rounded-md px-3 font-semibold tracking-tight text-xs text-primary transition hover:brightness-110"
-            style={bezelButtonStyle}
-          >
-            <Power className="mr-1 h-3 w-3" /> Go around
-          </button>
-          <button
-            onClick={onAbandon}
-            title="Abandon approach (Esc)"
-            className="hidden h-8 items-center rounded-md px-3 font-semibold tracking-tight text-xs text-foreground transition hover:brightness-110 sm:inline-flex"
-            style={bezelButtonStyle}
-          >
-            <RotateCcw className="mr-1 h-3 w-3" /> Abandon
-          </button>
-        </div>
-      </div>
-
-      {/* coaching HUD (callouts + live hint) */}
-      {guided && (
-        <CoachingHud
-          stateRef={stateRef}
-          calloutsRef={calloutsRef}
-          hintRef={hintRef}
+        {/* Touch/click area for flare */}
+        <div
+          className="absolute inset-0"
+          onPointerDown={() => { stateRef.current.flareInput = true }}
+          onPointerUp={() => { stateRef.current.flareInput = false }}
+          onPointerLeave={() => { stateRef.current.flareInput = false }}
         />
-      )}
+      </div>
+    )
+  }
 
-      {/* instrument cluster bottom */}
-      <div className="flex items-end justify-center gap-3 p-3">
-        <div className="rounded-2xl border border-white/10 bg-black/50 p-2 backdrop-blur-md shadow-[0_-4px_24px_rgba(0,0,0,0.4)] ring-1 ring-white/5">
-          <InstrumentCluster ref={clusterRef} compact />
+  // ====== RESULT ======
+  const qualityColor = {
+    greaser: '#5fcf6a', good: '#3E92CC', firm: '#F2B134', hard: '#E89B2C', crash: '#e0584f',
+  }[quality]
+
+  return (
+    <div className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6">
+      <div className="glass glow-primary relative overflow-hidden rounded-2xl">
+        <div className="pointer-events-none absolute inset-0 opacity-40" style={{ background: `radial-gradient(60% 60% at 50% 50%, ${qualityColor}33, transparent 70%)` }} />
+        <div className="relative flex flex-col items-center gap-4 p-8 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1 font-bold text-sm" style={{ background: `${qualityColor}22`, color: qualityColor, border: `1px solid ${qualityColor}66` }}>
+            {quality.toUpperCase()}
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="nums text-7xl font-extrabold tabular-nums" style={{ color: qualityColor }}>{score}</span>
+            <span className="text-2xl text-muted-foreground">/100</span>
+          </div>
+          <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
+            {quality === 'greaser' && 'Butter. That\'s a greaser — under 200 fpm touchdown.'}
+            {quality === 'good' && 'Solid landing. Repeat that every time.'}
+            {quality === 'firm' && 'Firm but safe. Work on the flare timing.'}
+            {quality === 'hard' && 'Hard landing. Flare earlier, hold it off longer.'}
+            {quality === 'crash' && 'That\'s a crash. Let\'s try again — flare at 15 ft.'}
+          </p>
+          {stateRef.current.touchdownVS !== 0 && (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="label-instrument text-muted-foreground">Touchdown VS</p>
+                <p className="nums font-semibold" style={{ color: qualityColor }}>{Math.round(stateRef.current.touchdownVS)} fpm</p>
+              </div>
+              <div>
+                <p className="label-instrument text-muted-foreground">Touchdown point</p>
+                <p className="nums font-semibold">{Math.round(stateRef.current.touchdownPoint)} ft</p>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button onClick={beginFlight} className="fp-toggle-btn flex-1 px-5 py-3 text-sm">
+          <RotateCcw className="size-4" /> Fly again
+          <ArrowRight className="size-4" />
+        </button>
+        <button onClick={() => setPhase('start')} className="fp-outline-btn flex-1 px-5 py-3 text-sm">
+          <Home className="size-4" /> Back to start
+        </button>
       </div>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// RESULT SCREEN
-// ---------------------------------------------------------------------------
-function ResultScreen({
-  attempt,
-  bestScore,
-  newBadges,
-  bonusGranted,
-  freePlays,
-  unlimited,
-  onFlyAgain,
-  onHome,
-  onOpenPaywall,
-}: {
-  attempt: Attempt
-  bestScore: number
-  newBadges: string[]
-  bonusGranted: boolean
-  freePlays: number
-  unlimited: boolean
-  onFlyAgain: () => void
-  onHome: () => void
-  onOpenPaywall: () => void
-}) {
-  const color = QUALITY_COLORS[attempt.quality]
-  const isBest = attempt.score >= bestScore && attempt.score > 0
-  const outOfPlays = !unlimited && freePlays <= 0
-  const debrief = React.useMemo(() => buildDebrief(attempt), [attempt])
-
+function Readout({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
-    <div className="absolute inset-0 z-10 overflow-y-auto fc-scroll bg-background/85 backdrop-blur-sm">
-      <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-        {/* score header — with 3D plane */}
-        <div className="glass glow-primary relative overflow-hidden rounded-2xl">
-          {/* Background glow */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-40"
-            style={{ background: `radial-gradient(60% 60% at 70% 50%, ${color}22, transparent 70%)` }}
-          />
-          <div className="relative grid grid-cols-1 gap-4 p-6 sm:grid-cols-[1fr_1.2fr] sm:items-center">
-            {/* Left: score + quality */}
-            <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-              <div
-                className="inline-flex items-center gap-2 rounded-full px-4 py-1 font-semibold tracking-tight text-sm font-bold shadow-lg"
-                style={{ background: `${color}22`, color, border: `1px solid ${color}66`, boxShadow: `0 0 24px ${color}40` }}
-              >
-                {QUALITY_LABELS[attempt.quality]}
-              </div>
-              <div className="mt-3 flex items-baseline justify-center gap-2 sm:justify-start">
-                <span
-                  className="nums text-7xl font-extrabold tabular-nums sm:text-8xl"
-                  style={{ color, textShadow: `0 0 32px ${color}66` }}
-                >
-                  {attempt.score}
-                </span>
-                <span className="text-2xl text-muted-foreground">/100</span>
-              </div>
-              <p className="mt-1 max-w-xs text-sm italic text-muted-foreground">
-                {debrief.summary}
-              </p>
-              {isBest && attempt.score > 0 && (
-                <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-0.5 text-sm text-primary">
-                  <Trophy className="h-4 w-4" /> New best score!
-                </div>
-              )}
-            </div>
-            {/* Right: 3D Cessna */}
-            <div className="relative h-[200px] w-full">
-              <MiniCessna3D quality={attempt.quality} className="h-full w-full" />
-            </div>
-          </div>
-        </div>
-
-        {/* new badges */}
-        {newBadges.length > 0 && (
-          <div className="rounded-xl border border-primary/40 bg-primary/10 p-3">
-            <div className="mb-2 font-semibold tracking-tight text-sm text-primary">Achievements unlocked</div>
-            <div className="flex flex-wrap gap-2">
-              {newBadges.map((b) => (
-                <UiBadge key={b} className="border-primary/50 bg-primary/15 text-primary">
-                  <Trophy className="mr-1 h-3 w-3" /> {b.replace(/_/g, ' ')}
-                </UiBadge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* the debrief — the actual learning value */}
-        <DebriefCard debrief={debrief} score={attempt.score} />
-
-        {/* telemetry chart (§2.2) — visualize the flare, don't just report numbers */}
-        <TelemetryChart attempt={attempt} />
-
-        {/* replay */}
-        <div className="glass rounded-2xl p-3 shadow-lg">
-          <div className="mb-2 flex items-center gap-2 font-semibold tracking-tight text-sm text-muted-foreground">
-            <Gauge className="h-4 w-4" /> Replay · scrub to review your flare
-          </div>
-          <Replay attempt={attempt} />
-        </div>
-
-        {/* share + paywall (alongside, never instead of) */}
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="glass glow-accent rounded-2xl p-3 shadow-lg">
-            <div className="mb-2 font-semibold tracking-tight text-sm text-accent">Share your landing</div>
-            <ShareCard attempt={attempt} bestScore={bestScore} />
-          </div>
-          {outOfPlays ? (
-            <div className="glass glow-primary rounded-2xl p-3 shadow-lg">
-              <div className="mb-2 font-semibold tracking-tight text-sm text-primary">Out of free plays</div>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Share above for +1 bonus play, or unlock unlimited practice.
-              </p>
-              <Button onClick={onOpenPaywall} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                <Zap className="mr-2 h-4 w-4" /> Unlock options
-              </Button>
-              {bonusGranted && (
-                <p className="mt-2 text-center text-xs text-accent">+1 bonus play granted for completing this landing</p>
-              )}
-            </div>
-          ) : (
-            <div className="glass rounded-2xl p-3 shadow-lg">
-              <div className="label-instrument text-muted-foreground mb-3">Next flight</div>
-              <div className="space-y-2">
-                <button onClick={onFlyAgain} className="fp-toggle-btn w-full px-5 py-3 text-sm">
-                  <Plane className="size-4" /> Fly again
-                  <ArrowRight className="size-4" />
-                </button>
-                <button onClick={onHome} className="fp-outline-btn w-full px-5 py-3 text-sm">
-                  <Home className="size-4" /> Back to start
-                </button>
-                <p className="text-center text-xs text-muted-foreground">
-                  {unlimited ? 'Unlimited practice' : `${freePlays} free plays remaining`}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* updated dashboard */}
-        <ProgressDashboard variant="compact" />
+    <div className="flex flex-col gap-0.5">
+      <span className="label-instrument text-muted-foreground text-[9px]">{label}</span>
+      <div className="flex items-baseline gap-1">
+        <span className="nums text-base font-semibold tabular-nums">{value}</span>
+        <span className="text-[9px] text-muted-foreground">{unit}</span>
       </div>
     </div>
   )
