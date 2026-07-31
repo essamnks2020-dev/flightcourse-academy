@@ -3,7 +3,6 @@
 
 import * as React from 'react'
 import { CessnaSvg, type CessnaHandle } from './cessna-svg'
-import { GameCessna3D, type GameCessnaHandle } from './game-cessna-3d'
 import type { FlightState, GameEnv } from '@/lib/aviation'
 import { cn } from '@/lib/utils'
 
@@ -51,7 +50,6 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
     const canvasRef = React.useRef<HTMLCanvasElement>(null)
     const aircraftRef = React.useRef<HTMLDivElement>(null)
     const cessnaRef = React.useRef<CessnaHandle>(null)
-    const cessna3DRef = React.useRef<GameCessnaHandle>(null)
     const sizeRef = React.useRef({ w: 0, h: 0, dpr: 1 })
     const particles = React.useRef<Particle[]>([])
     const shake = React.useRef(0)
@@ -248,16 +246,26 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
       ctx.save()
       ctx.translate(sx, sy)
 
-      // === SKY — coherent golden-hour dusk, lit warm at the horizon ===
+      // === SKY — cinematic golden-hour dusk with atmospheric depth ===
       const sky = ctx.createLinearGradient(0, 0, 0, groundY)
-      sky.addColorStop(0, '#0a1428')
-      sky.addColorStop(0.28, '#142446')
-      sky.addColorStop(0.52, '#2a4566')
-      sky.addColorStop(0.72, '#6a6a5a')
-      sky.addColorStop(0.88, GOLD)
-      sky.addColorStop(1, '#f0c478')
+      sky.addColorStop(0, '#070d1f')      // deep space navy at zenith
+      sky.addColorStop(0.15, '#0d1830')   // night sky upper
+      sky.addColorStop(0.35, '#1a2d52')   // twilight blue
+      sky.addColorStop(0.55, '#3d5a85')   // atmospheric haze
+      sky.addColorStop(0.72, '#7a6e5a')   // warm transition
+      sky.addColorStop(0.85, GOLD)        // golden glow
+      sky.addColorStop(0.95, '#f5cd7a')   // bright horizon
+      sky.addColorStop(1, '#e8b865')      // horizon edge
       ctx.fillStyle = sky
       ctx.fillRect(-40, -40, w + 80, groundY + 40)
+
+      // Atmospheric haze layer — adds depth between sky and ground
+      const atmoHaze = ctx.createLinearGradient(0, horizonY - 20, 0, groundY)
+      atmoHaze.addColorStop(0, 'rgba(245, 205, 122, 0)')
+      atmoHaze.addColorStop(0.5, 'rgba(245, 205, 122, 0.08)')
+      atmoHaze.addColorStop(1, 'rgba(245, 205, 122, 0.15)')
+      ctx.fillStyle = atmoHaze
+      ctx.fillRect(0, horizonY - 20, w, groundY - horizonY + 20)
 
       // === Bug 2 fix: a single daylight value gates sun vs moon + stars ===
       // daylight 1 = full sun (day), 0 = full night (moon + stars). Only one
@@ -407,31 +415,31 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
         ctx.restore()
       }
 
-      // === CLOUDS (volumetric, multi-puff, lit edges, varied puffs) ===
+      // === CLOUDS (volumetric, multi-puff, cinematic golden-hour lighting) ===
       ctx.save()
       for (const c of clouds) {
         let cx = ((c.x + state.distance * c.speed * 0.01) % 1.2) - 0.1
         if (cx < -0.1) cx += 1.2
         const px = cx * w
         const py = c.y * h
-        const cw = 130 * c.s
-        const ch = 24 * c.s
+        const cw = 140 * c.s
+        const ch = 28 * c.s
         const puffN = c.puffs.length
-        const cloudA = 0.6 + 0.3 * (daylight) // clouds read brighter by day
-        // sun-lit warm edge (back) — per-puff varied
-        ctx.globalAlpha = 0.45 * cloudA
-        ctx.fillStyle = 'rgba(255,200,140,0.6)'
+        const cloudA = 0.65 + 0.25 * (daylight)
+        // sun-lit warm edge (back) — golden rim light
+        ctx.globalAlpha = 0.5 * cloudA
+        ctx.fillStyle = 'rgba(255,190,120,0.7)'
         for (let p = 0; p < puffN; p++) {
           const pf = c.puffs[p]
           const dx = (p - puffN / 2) * cw * 0.35 + pf.dx * cw * 0.3
           const dy = pf.dy * ch
           ctx.beginPath()
-          ctx.ellipse(px + dx + 4, py + ch * 0.4 + dy, cw * 0.42 * pf.sx, ch * 0.7 * pf.sy, pf.rot, 0, Math.PI * 2)
+          ctx.ellipse(px + dx + 5, py + ch * 0.4 + dy, cw * 0.42 * pf.sx, ch * 0.7 * pf.sy, pf.rot, 0, Math.PI * 2)
           ctx.fill()
         }
-        // body — per-puff varied size/eccentricity/rotation
-        ctx.globalAlpha = 0.75 * cloudA
-        ctx.fillStyle = 'rgba(200,216,236,0.85)'
+        // body — cooler, more opaque
+        ctx.globalAlpha = 0.8 * cloudA
+        ctx.fillStyle = 'rgba(210,222,240,0.9)'
         for (let p = 0; p < puffN; p++) {
           const pf = c.puffs[p]
           const dx = (p - puffN / 2) * cw * 0.32 + pf.dx * cw * 0.3
@@ -440,15 +448,26 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
           ctx.ellipse(px + dx, py + dy, cw * 0.4 * pf.sx, ch * pf.sy, pf.rot, 0, Math.PI * 2)
           ctx.fill()
         }
-        // top highlight (cool, from above) — per-puff varied
-        ctx.globalAlpha = 0.4 * cloudA
-        ctx.fillStyle = 'rgba(240,248,255,0.7)'
+        // top highlight (cool, from above) — brighter, more visible
+        ctx.globalAlpha = 0.45 * cloudA
+        ctx.fillStyle = 'rgba(248,252,255,0.8)'
         for (let p = 0; p < puffN; p++) {
           const pf = c.puffs[p]
           const dx = (p - puffN / 2) * cw * 0.32 + pf.dx * cw * 0.3
           const dy = pf.dy * ch
           ctx.beginPath()
           ctx.ellipse(px + dx, py - ch * 0.3 + dy, cw * 0.3 * pf.sx, ch * 0.5 * pf.sy, pf.rot, 0, Math.PI * 2)
+          ctx.fill()
+        }
+        // bottom shadow — adds volume
+        ctx.globalAlpha = 0.3 * cloudA
+        ctx.fillStyle = 'rgba(40,60,90,0.5)'
+        for (let p = 0; p < puffN; p++) {
+          const pf = c.puffs[p]
+          const dx = (p - puffN / 2) * cw * 0.32 + pf.dx * cw * 0.3
+          const dy = pf.dy * ch
+          ctx.beginPath()
+          ctx.ellipse(px + dx, py + ch * 0.4 + dy, cw * 0.35 * pf.sx, ch * 0.4 * pf.sy, pf.rot, 0, Math.PI * 2)
           ctx.fill()
         }
       }
@@ -607,36 +626,42 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
       ctx.closePath()
       ctx.fill()
 
-      // === GROUND ===
+      // === GROUND — warm earth tones with atmospheric perspective ===
       const ground = ctx.createLinearGradient(0, horizonY + 22, 0, h)
-      ground.addColorStop(0, '#0c1830')
-      ground.addColorStop(0.3, '#0e1c34')
-      ground.addColorStop(0.7, '#0a1424')
-      ground.addColorStop(1, '#070f1d')
+      ground.addColorStop(0, '#1a2a1a')      // distant dark green-brown
+      ground.addColorStop(0.25, '#1f3018')   // mid-distance earth
+      ground.addColorStop(0.6, '#1a2812')    // closer ground
+      ground.addColorStop(1, '#121a0e')      // nearest dark
       ctx.fillStyle = ground
       ctx.fillRect(-40, horizonY + 22, w + 80, h - horizonY)
-      // ground texture bands
+      // ground texture — subtle perspective lines (field rows)
       ctx.save()
-      ctx.globalAlpha = 0.06
-      for (let yy = horizonY + 30; yy < h; yy += 8) {
-        ctx.fillStyle = (yy / 8) % 2 === 0 ? '#3E92CC' : '#F2B134'
-        ctx.fillRect(0, yy, w, 1)
+      ctx.globalAlpha = 0.04
+      for (let yy = horizonY + 30; yy < h; yy += 12) {
+        const t = (yy - horizonY) / (h - horizonY)
+        ctx.fillStyle = t > 0.5 ? '#3a5a2a' : '#2a4a22'
+        ctx.fillRect(0, yy, w, 1 + t)
       }
       ctx.restore()
 
-      // === RUNWAY ===
+      // === RUNWAY — realistic gray asphalt with perspective ===
       const farLeft = vanishX - w * 0.025
       const farRight = vanishX + w * 0.025
       const nearLeft = w * 0.5 - w * 0.46
       const nearRight = w * 0.5 + w * 0.46
-      // grass shoulders
-      ctx.fillStyle = '#0e2415'
+      // grass shoulders — richer green
+      const grassGrad = ctx.createLinearGradient(0, horizonY + 18, 0, h)
+      grassGrad.addColorStop(0, '#1a2818')
+      grassGrad.addColorStop(0.5, '#1f3a1c')
+      grassGrad.addColorStop(1, '#152810')
+      ctx.fillStyle = grassGrad
       ctx.fillRect(-40, horizonY + 18, w + 80, h - horizonY)
-      // asphalt
+      // asphalt — realistic gray with depth
       const runwayGrad = ctx.createLinearGradient(0, horizonY + 18, 0, h)
-      runwayGrad.addColorStop(0, '#1a2433')
-      runwayGrad.addColorStop(0.4, '#222c3c')
-      runwayGrad.addColorStop(1, '#2a3548')
+      runwayGrad.addColorStop(0, '#2a2e35')      // far — hazy dark gray
+      runwayGrad.addColorStop(0.3, '#33373f')    // mid — asphalt gray
+      runwayGrad.addColorStop(0.7, '#3a3e47')    // near — lighter asphalt
+      runwayGrad.addColorStop(1, '#404449')      // closest — weathered surface
       ctx.fillStyle = runwayGrad
       ctx.beginPath()
       ctx.moveTo(farLeft, horizonY + 18)
@@ -645,6 +670,17 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
       ctx.lineTo(nearLeft, h + 20)
       ctx.closePath()
       ctx.fill()
+      // asphalt surface texture — subtle noise dots
+      ctx.save()
+      ctx.globalAlpha = 0.08
+      ctx.fillStyle = '#1a1e24'
+      for (let i = 0; i < 80; i++) {
+        const t = Math.random()
+        const ry = horizonY + 20 + t * (h - horizonY)
+        const rx = w * 0.5 + (Math.random() - 0.5) * w * 0.9 * t
+        ctx.fillRect(rx, ry, 1 + Math.random() * 2, 1)
+      }
+      ctx.restore()
       // grass edge stripes
       ctx.fillStyle = 'rgba(40,90,55,0.35)'
       ctx.beginPath()
@@ -974,12 +1010,6 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
       const targetBank = state.crab > 0 ? -3 : state.crab < 0 ? 3 : 0
       cessnaRef.current?.setBank(targetBank)
 
-      // Drive the 3D model's pitch/bank/yaw
-      cessna3DRef.current?.setPitch(-state.pitch)
-      cessna3DRef.current?.setBank(targetBank)
-      cessna3DRef.current?.setYaw(state.crab * 0.4)
-      cessna3DRef.current?.setThrottle(state.throttle ?? 0.5)
-
       const ac = aircraftRef.current
       if (ac) {
         const aw = w * 0.3 * scale
@@ -1034,7 +1064,7 @@ export const GameCanvas = React.forwardRef<GameCanvasHandle, { className?: strin
           className="pointer-events-none absolute left-0 top-0"
           style={{ transformOrigin: '50% 55%' }}
         >
-          <GameCessna3D ref={cessna3DRef} className="w-full h-[180px]" />
+          <CessnaSvg ref={cessnaRef} stalled={stalled} onGround={onGround} gearCompress={gearCompress} className="w-full" />
         </div>
         <div className="pointer-events-none absolute inset-0 fc-vignette" />
       </div>
