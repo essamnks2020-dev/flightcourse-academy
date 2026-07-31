@@ -77,11 +77,35 @@ function LoadingScreen() {
   );
 }
 
-function GameFallback() {
+function ViewFallback({ label }: { label: string }) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-      <LogoMark className="size-10 animate-pulse" />
-      <p className="label-instrument text-muted-foreground">Loading game…</p>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="animate-ai-spin-up"
+      >
+        <LogoMark className="size-12" />
+      </motion.div>
+      <div className="flex flex-col items-center gap-2">
+        <p className="label-instrument text-primary">{label}</p>
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              className="size-1.5 rounded-full bg-primary"
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{
+                duration: 1.2,
+                repeat: Infinity,
+                delay: i * 0.2,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -140,41 +164,41 @@ export default function Page() {
           >
             {view === "home" && <HomeView />}
             {view === "path" && (
-              <React.Suspense fallback={<GameFallback />}><LearningPathView /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading syllabus" />}><LearningPathView /></React.Suspense>
             )}
             {view === "module" && moduleId && (
-              <React.Suspense fallback={<GameFallback />}><ModuleView moduleId={moduleId} /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading module" />}><ModuleView moduleId={moduleId} /></React.Suspense>
             )}
             {view === "glossary" && (
-              <React.Suspense fallback={<GameFallback />}><GlossaryView /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading glossary" />}><GlossaryView /></React.Suspense>
             )}
             {view === "cockpit" && (
-              <React.Suspense fallback={<GameFallback />}><CockpitExplorerView /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading cockpit" />}><CockpitExplorerView /></React.Suspense>
             )}
             {view === "setup" && (
-              <React.Suspense fallback={<GameFallback />}><SetupGuideView /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading setup guide" />}><SetupGuideView /></React.Suspense>
             )}
             {view === "checklists" && (
-              <React.Suspense fallback={<GameFallback />}><ChecklistsView /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading checklists" />}><ChecklistsView /></React.Suspense>
             )}
             {view === "progress" && (
-              <React.Suspense fallback={<GameFallback />}><ProgressView /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading dashboard" />}><ProgressView /></React.Suspense>
             )}
             {view === "faq" && (
-              <React.Suspense fallback={<GameFallback />}><FaqView /></React.Suspense>
+              <React.Suspense fallback={<ViewFallback label="Loading FAQ" />}><FaqView /></React.Suspense>
             )}
             {view === "flare" && (
-              <React.Suspense fallback={<GameFallback />}>
+              <React.Suspense fallback={<ViewFallback label="Prepping the runway" />}>
                 <FlareTrainer />
               </React.Suspense>
             )}
             {view === "radio" && (
-              <React.Suspense fallback={<GameFallback />}>
+              <React.Suspense fallback={<ViewFallback label="Tuning the radio" />}>
                 <RadioBuilder />
               </React.Suspense>
             )}
             {view === "pattern" && (
-              <React.Suspense fallback={<GameFallback />}>
+              <React.Suspense fallback={<ViewFallback label="Entering the pattern" />}>
                 <PatternPerfectGame />
               </React.Suspense>
             )}

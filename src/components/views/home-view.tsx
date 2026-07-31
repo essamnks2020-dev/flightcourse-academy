@@ -27,6 +27,8 @@ import { allModules, TOTAL_MODULES } from "@/lib/data/modules";
 import { faqItems } from "@/lib/data/faq";
 import { glossary } from "@/lib/data/glossary";
 import { checklists } from "@/lib/data/checklists";
+import { PaidPlanSection } from "@/components/paid-plan-section";
+import { FlightDeckCard } from "@/components/flight-deck-card";
 
 const totalMinutes = allModules.reduce((sum, m) => sum + m.estimatedMinutes, 0);
 const totalQuizQuestions = allModules.reduce((sum, m) => sum + m.quiz.length, 0);
@@ -176,36 +178,9 @@ export function HomeView() {
             </dl>
           </div>
 
-          {/* Right column — flight plan card */}
+          {/* Right column — living flight deck */}
           <div className="min-w-0 w-full lg:flex-[2] lg:max-w-sm">
-            <div className="glass glow-primary relative flex flex-col gap-5 rounded-2xl p-6">
-              <div className="flex items-center justify-between">
-                <p className="label-instrument text-primary">Flight plan</p>
-                <span className="label-instrument text-muted-foreground">C172 / KSEA</span>
-              </div>
-
-              <div className="relative mx-auto flex size-40 items-center justify-center">
-                <div className="border-border absolute inset-0 rounded-full border-2" />
-                <div className="border-primary/50 absolute inset-3 rounded-full border border-dashed" />
-                <div className="animate-sweep absolute inset-3 flex items-start justify-center">
-                  <span className="bg-primary h-1/2 w-px" />
-                </div>
-                <div className="flex flex-col items-center">
-                  <Gauge className="text-primary size-6" aria-hidden="true" />
-                  <span className="nums mt-1 text-xl font-medium">090</span>
-                  <span className="label-instrument text-muted-foreground">heading</span>
-                </div>
-              </div>
-
-              <ul className="flex flex-col gap-3">
-                {HERO_POINTS.map((point) => (
-                  <li key={point.text} className="flex items-center gap-3 text-sm">
-                    <point.icon className="text-accent size-4 shrink-0" aria-hidden="true" />
-                    <span className="text-muted-foreground leading-relaxed">{point.text}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <FlightDeckCard />
           </div>
         </div>
       </section>

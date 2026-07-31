@@ -506,3 +506,29 @@ Stage Summary:
 - Architectural fix: landings now feed XP into the main progression system. A good landing moves the same needle as a quiz — toward license tiers (Student Pilot → Private Pilot Track → Instrument Track → Rated).
 - Paywall reframed from "pay to keep playing this game" to "unlock the full flight-school track" — a much stronger value proposition.
 - Claude's recommended "make coaching data meaningful over time" is partially addressed via the XP bridge; the weak-area → module link is a future enhancement.
+
+---
+Task ID: V18-HERO-OVERHAUL
+Agent: Main (Z.ai Code)
+Task: Complete hero card overhaul + contextual loading screens
+
+Work Log:
+- VLM audit identified the hero "flight plan" card as broken: compass showed 090 but needle pointed wrong, flat/static, low information density, disconnected from the value proposition
+- Completely rebuilt as FlightDeckCard — a "living glass cockpit":
+  * Aircraft data plate (N172FC tail number badge)
+  * Mini attitude indicator (SVG PFD with sky/ground split, pitch ladder, bank pointer, aircraft symbol)
+  * Animated heading tape (scrolls horizontally, center indicator, gyro spin-up animation on mount)
+  * Live telemetry strip (ALT/IAS/FUEL with tabular mono numbers, subtle drift every 3s to feel alive)
+  * Visual flight path (4 phases: Engine start → Taxi & takeoff → Radio calls → IFR approach, with progress fill, active glow, pulse indicator)
+  * HUD grid background overlay
+- Fixed loading screens: replaced generic "Loading game..." with 11 contextual labels (Loading syllabus, Prepping the runway, Tuning the radio, Entering the pattern, etc.) + animated 3-dot loading indicator + spin-up logo
+- Fixed two parse errors (leading zero 090, regex corruption in page.tsx)
+
+VERIFICATION:
+- Lint: 0 errors, 3 pre-existing warnings
+- Server: HTTP 200, stable
+- FlightDeckCard renders with live telemetry + animated heading + flight path
+
+Stage Summary:
+- Hero card transformed from a static broken compass into a living glass cockpit with real instruments, live data, and a visual flight path.
+- Loading screens now contextual with branded animation.
