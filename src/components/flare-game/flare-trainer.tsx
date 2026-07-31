@@ -10,10 +10,11 @@ import { PaywallDialog } from './paywall-dialog'
 import { ProgressDashboard } from '@/components/dashboard/progress-dashboard'
 import { CoachingHud, DebriefCard } from './coaching-ui'
 import { TelemetryChart } from './telemetry-chart'
+import { MiniCessna3D } from './mini-cessna-3d'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Badge as UiBadge } from '@/components/ui/badge'
-import { Wind, Space, Hand, Trophy, RotateCcw, Home, Plane, Zap, GraduationCap, Gauge, Power, Volume2, VolumeX, Eye } from 'lucide-react'
+import { Wind, Space, Hand, Trophy, RotateCcw, Home, Plane, Zap, GraduationCap, Gauge, Power, Volume2, VolumeX, Eye, ArrowRight } from 'lucide-react'
 import { getAudio } from '@/lib/audio'
 import {
   createInitialState,
@@ -684,13 +685,13 @@ function StartScreen({
 
           {/* start button + plays */}
           <div className="space-y-2">
-            <Button
+            <button
               onClick={onBegin}
-              size="lg"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse-ring"
+              className="fp-toggle-btn w-full px-5 py-3.5 text-base"
             >
-              <Plane className="mr-2 h-5 w-5" /> {unlimited ? 'Start approach' : `Start approach — ${freePlays} free plays`}
-            </Button>
+              <Plane className="size-5" /> {unlimited ? 'Start approach' : `Start approach — ${freePlays} free plays`}
+              <ArrowRight className="size-4" />
+            </button>
             <p className="text-center text-xs text-muted-foreground">
               {unlimited
                 ? 'Unlimited practice unlocked.'
@@ -906,36 +907,44 @@ function ResultScreen({
   return (
     <div className="absolute inset-0 z-10 overflow-y-auto fc-scroll bg-background/85 backdrop-blur-sm">
       <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-        {/* score header */}
-        <div className="relative text-center">
+        {/* score header — with 3D plane */}
+        <div className="glass glow-primary relative overflow-hidden rounded-2xl">
+          {/* Background glow */}
           <div
-            className="pointer-events-none absolute inset-0 -z-0 blur-3xl"
-            style={{ background: `radial-gradient(60% 50% at 50% 35%, ${color}33, transparent 70%)` }}
+            className="pointer-events-none absolute inset-0 opacity-40"
+            style={{ background: `radial-gradient(60% 60% at 70% 50%, ${color}22, transparent 70%)` }}
           />
-          <div className="relative">
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1 font-semibold tracking-tight text-sm font-bold shadow-lg"
-              style={{ background: `${color}22`, color, border: `1px solid ${color}66`, boxShadow: `0 0 24px ${color}40` }}
-            >
-              {QUALITY_LABELS[attempt.quality]}
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <span
-                className="font-semibold tracking-tight text-7xl font-extrabold tabular-nums sm:text-8xl"
-                style={{ color, textShadow: `0 0 32px ${color}66` }}
+          <div className="relative grid grid-cols-1 gap-4 p-6 sm:grid-cols-[1fr_1.2fr] sm:items-center">
+            {/* Left: score + quality */}
+            <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1 font-semibold tracking-tight text-sm font-bold shadow-lg"
+                style={{ background: `${color}22`, color, border: `1px solid ${color}66`, boxShadow: `0 0 24px ${color}40` }}
               >
-                {attempt.score}
-              </span>
-              <span className="mb-2 font-semibold tracking-tight text-2xl text-muted-foreground">/100</span>
-            </div>
-            <p className="mx-auto mt-1 max-w-md text-sm italic text-muted-foreground">
-              {debrief.summary}
-            </p>
-            {isBest && attempt.score > 0 && (
-              <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-0.5 text-sm text-primary">
-                <Trophy className="h-4 w-4" /> New best score!
+                {QUALITY_LABELS[attempt.quality]}
               </div>
-            )}
+              <div className="mt-3 flex items-baseline justify-center gap-2 sm:justify-start">
+                <span
+                  className="nums text-7xl font-extrabold tabular-nums sm:text-8xl"
+                  style={{ color, textShadow: `0 0 32px ${color}66` }}
+                >
+                  {attempt.score}
+                </span>
+                <span className="text-2xl text-muted-foreground">/100</span>
+              </div>
+              <p className="mt-1 max-w-xs text-sm italic text-muted-foreground">
+                {debrief.summary}
+              </p>
+              {isBest && attempt.score > 0 && (
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-0.5 text-sm text-primary">
+                  <Trophy className="h-4 w-4" /> New best score!
+                </div>
+              )}
+            </div>
+            {/* Right: 3D Cessna */}
+            <div className="relative h-[200px] w-full">
+              <MiniCessna3D quality={attempt.quality} className="h-full w-full" />
+            </div>
           </div>
         </div>
 
@@ -988,14 +997,15 @@ function ResultScreen({
             </div>
           ) : (
             <div className="glass rounded-2xl p-3 shadow-lg">
-              <div className="mb-2 font-semibold tracking-tight text-sm text-muted-foreground">Next flight</div>
+              <div className="label-instrument text-muted-foreground mb-3">Next flight</div>
               <div className="space-y-2">
-                <Button onClick={onFlyAgain} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                  <Plane className="mr-2 h-4 w-4" /> Fly again
-                </Button>
-                <Button onClick={onHome} variant="outline" className="w-full border-border">
-                  <Home className="mr-2 h-4 w-4" /> Back to start
-                </Button>
+                <button onClick={onFlyAgain} className="fp-toggle-btn w-full px-5 py-3 text-sm">
+                  <Plane className="size-4" /> Fly again
+                  <ArrowRight className="size-4" />
+                </button>
+                <button onClick={onHome} className="fp-outline-btn w-full px-5 py-3 text-sm">
+                  <Home className="size-4" /> Back to start
+                </button>
                 <p className="text-center text-xs text-muted-foreground">
                   {unlimited ? 'Unlimited practice' : `${freePlays} free plays remaining`}
                 </p>

@@ -532,3 +532,40 @@ VERIFICATION:
 Stage Summary:
 - Hero card transformed from a static broken compass into a living glass cockpit with real instruments, live data, and a visual flight path.
 - Loading screens now contextual with branded animation.
+
+---
+Task ID: V19-BUTTONS-LOGO-FLARE-POLISH
+Agent: Main (Z.ai Code)
+Task: Premium button system, logo/wordmark upgrade, flare result screen 3D overhaul
+
+Work Log:
+1. BUTTON SYSTEM REBUILT (globals.css):
+   - fp-toggle-btn: squircle radius (0.75rem not pill), gradient background (amber gradient 135°), border (20% white), layered shadows (base + colored glow), hover lift (-2px translateY), arrow icon slides right on hover, glass highlight overlay (::before pseudo), light theme variant with terracotta gradient
+   - fp-outline-btn: glassy with depth (4% bg + 18% border + inset highlight + backdrop blur), hover lift + amber border tint + arrow slide, light theme variant
+   - Both buttons: transition on transform/shadow/border with ease-out-expo, active press resets translateY
+
+2. LOGO + WORDMARK UPGRADE (brand/logo.tsx):
+   - Restored `animated` prop on both LogoMark and Logo
+   - Wordmark: larger size (1.05rem), tighter tracking (-0.02em), bigger gap between "FlightCourse" and "Academy" label, wider letter-spacing on "Academy" (0.18em) for premium feel
+   - Logo supports animated SVG draw-on-load via className="logo-draw"
+
+3. FLARE TRAINER RESULT SCREEN OVERHAULED:
+   - Created mini-cessna-3d.tsx — a small 3D Cessna 172 GLB model that tilts based on landing quality (greaser = wings level, hard = banked, crash = nose down). Uses Float animation, ContactShadows, sunset Environment.
+   - ResultScreen rebuilt: glass glow-primary card with 2-column layout — left side has quality badge + big score + summary, right side has the 3D Cessna floating with quality-based tilt
+   - "Next flight" buttons upgraded from old Button components to premium fp-toggle-btn / fp-outline-btn
+   - StartScreen button upgraded to fp-toggle-btn with arrow icon
+
+4. CONTEXTUAL LOADING (from previous task, verified working):
+   - 11 contextual labels (Loading syllabus, Prepping the runway, Tuning the radio, etc.)
+   - Animated 3-dot loading indicator + spin-up logo
+
+VERIFICATION:
+- Lint: 0 errors, 3 pre-existing warnings
+- Server: HTTP 200, stable (30s compile)
+- All button upgrades compile cleanly
+- 3D model loads from /models/cessna172-opt.glb
+
+Stage Summary:
+- All buttons now premium: squircle, gradient, depth, hover lift, arrow animation.
+- Logo wordmark is cleaner and more premium (tighter tracking, better hierarchy).
+- Flare Trainer result screen shows a 3D Cessna that tilts based on landing quality — no more flat 2D exit screen.

@@ -362,32 +362,79 @@
   }
 
   /* Legacy button styles → clean Glass Cockpit buttons */
+  /* Primary button — premium squircle with gradient + depth + hover lift */
   .fp-toggle-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: var(--radius-md);
-    background: var(--primary);
-    color: var(--primary-foreground);
+    border-radius: 0.75rem; /* squircle, not pill */
+    background: linear-gradient(135deg, oklch(0.82 0.155 74) 0%, oklch(0.72 0.14 65) 100%);
+    color: oklch(0.16 0.03 60);
     font-weight: 600;
-    transition: filter .15s ease, transform .15s ease;
+    letter-spacing: 0.01em;
+    border: 1px solid oklch(0.99 0.01 250 / 20%);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 10%), 0 8px 24px -8px oklch(0.79 0.152 74 / 40%);
+    transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .2s ease, filter .15s ease;
+    position: relative;
+    overflow: hidden;
   }
-  .fp-toggle-btn:hover { filter: brightness(1.08); }
-  .fp-toggle-btn:active { transform: translateY(1px); }
+  .fp-toggle-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, oklch(0.99 0.01 250 / 15%) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .fp-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px oklch(0 0 0 / 10%), 0 12px 32px -8px oklch(0.79 0.152 74 / 55%);
+    filter: brightness(1.05);
+  }
+  .fp-toggle-btn:active { transform: translateY(0); }
+  .fp-toggle-btn svg { transition: transform .2s ease; }
+  .fp-toggle-btn:hover svg { transform: translateX(2px); }
+  .light .fp-toggle-btn {
+    background: linear-gradient(135deg, oklch(0.6 0.16 45) 0%, oklch(0.5 0.15 40) 100%);
+    color: oklch(0.98 0.005 75);
+    border: 1px solid oklch(0 0 0 / 10%);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 8%), 0 8px 24px -8px oklch(0.55 0.15 45 / 35%);
+  }
+
+  /* Secondary button — glassy outline with depth */
   .fp-outline-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: transparent;
+    border-radius: 0.75rem;
+    border: 1px solid oklch(0.99 0.01 250 / 18%);
+    background: oklch(0.99 0.01 250 / 4%);
     color: var(--foreground);
-    font-weight: 500;
-    transition: border-color .15s ease, background .15s ease;
+    font-weight: 550;
+    letter-spacing: 0.01em;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 8%), inset 0 1px 0 oklch(0.99 0.01 250 / 8%);
+    transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1), border-color .15s ease, background .15s ease, box-shadow .15s ease;
   }
-  .fp-outline-btn:hover { border-color: oklch(0.79 0.152 74 / 40%); background: var(--muted); }
+  .fp-outline-btn:hover {
+    transform: translateY(-2px);
+    border-color: oklch(0.79 0.152 74 / 45%);
+    background: oklch(0.99 0.01 250 / 8%);
+    box-shadow: 0 4px 12px -4px oklch(0 0 0 / 15%), inset 0 1px 0 oklch(0.99 0.01 250 / 12%);
+  }
+  .fp-outline-btn:active { transform: translateY(0); }
+  .fp-outline-btn svg { transition: transform .2s ease; }
+  .fp-outline-btn:hover svg { transform: translateX(2px); }
+  .light .fp-outline-btn {
+    border-color: oklch(0.35 0.02 50 / 20%);
+    background: oklch(0.35 0.02 50 / 4%);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 6%), inset 0 1px 0 oklch(0.99 0.01 250 / 50%);
+  }
+  .light .fp-outline-btn:hover {
+    border-color: oklch(0.55 0.15 45 / 45%);
+    background: oklch(0.35 0.02 50 / 8%);
+  }
 
   .text-gold-dark { color: oklch(0.55 0.12 60); }
 }

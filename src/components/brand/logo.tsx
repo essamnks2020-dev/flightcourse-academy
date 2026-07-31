@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * Clean SVG, no animation, one metaphor. Detailed enough to read as a real
  * instrument at small sizes.
  */
-export function LogoMark({ className }: { className?: string }) {
+export function LogoMark({ className, animated = false }: { className?: string; animated?: boolean }) {
   return (
     <svg
       viewBox="0 0 40 40"
@@ -113,19 +113,21 @@ export function LogoMark({ className }: { className?: string }) {
 export function Logo({
   className,
   showText = true,
+  animated = false,
 }: {
   className?: string;
   showText?: boolean;
+  animated?: boolean;
 }) {
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark />
+      <LogoMark animated={animated} className={animated ? "logo-draw" : undefined} />
       {showText ? (
-        <span className="flex flex-col leading-none">
-          <span className="text-[0.95rem] font-semibold tracking-tight">
+        <span className="flex flex-col leading-none gap-0.5">
+          <span className="text-[1.05rem] font-semibold tracking-[-0.02em]">
             FlightCourse
           </span>
-          <span className="label-instrument text-muted-foreground text-[0.5625rem]">
+          <span className="label-instrument text-muted-foreground text-[0.5rem] tracking-[0.18em]">
             Academy
           </span>
         </span>
