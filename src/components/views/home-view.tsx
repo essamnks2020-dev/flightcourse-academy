@@ -181,6 +181,13 @@ export function HomeView() {
           {/* Right column — living flight deck */}
           <div className="min-w-0 w-full lg:flex-[2] lg:max-w-sm">
             <FlightDeckCard />
+            <a
+              href="/flight-deck-card-source.zip"
+              download
+              className="text-muted-foreground hover:text-accent mt-3 block text-center text-xs font-medium transition-colors"
+            >
+              Download this component
+            </a>
           </div>
         </div>
       </section>
@@ -306,16 +313,26 @@ export function HomeView() {
 
           <div className="mt-12 grid gap-4 md:grid-cols-3">
             {GAMES.map((game) => (
-              <button
-                key={game.title}
-                onClick={() => navigate(game.view)}
-                className="glass hover:border-primary/40 focus-visible:ring-ring flex h-full flex-col gap-3 rounded-xl p-6 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
-              >
-                <game.icon className="text-primary size-5" aria-hidden="true" />
-                <h3 className="font-semibold tracking-tight">{game.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{game.body}</p>
-                <span className="text-accent mt-auto text-sm font-medium">Play</span>
-              </button>
+              <div key={game.title} className="glass flex h-full flex-col gap-3 rounded-xl p-6">
+                <button
+                  onClick={() => navigate(game.view)}
+                  className="flex h-full flex-col gap-3 text-left transition-colors hover:text-primary"
+                >
+                  <game.icon className="text-primary size-5" aria-hidden="true" />
+                  <h3 className="font-semibold tracking-tight">{game.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{game.body}</p>
+                  <span className="text-accent mt-auto text-sm font-medium">Play</span>
+                </button>
+                {game.view === "flare" && (
+                  <a
+                    href="/flare-trainer-source.zip"
+                    download
+                    className="text-muted-foreground hover:text-accent text-xs font-medium transition-colors border-t border-border pt-2 mt-1"
+                  >
+                    Download source code
+                  </a>
+                )}
+              </div>
             ))}
           </div>
         </div>

@@ -697,3 +697,55 @@ Stage Summary:
 - The flare game now loads. The root cause was 3,934 lines of heavy code across 11 files causing OOM crashes.
 - Replaced with one clean 534-line file that compiles in 4.7s.
 - Visual quality massively upgraded: cinematic sky, realistic runway, rear-view plane, Glass Cockpit HUD.
+
+---
+Task ID: V23-TUTORIAL-DOWNLOADS-FIX
+Agent: Main (Z.ai Code)
+Task: Add download buttons, comprehensive tutorial, real-time coaching, fix game loop
+
+Work Log:
+1. DOWNLOAD BUTTONS ADDED:
+   - Flare Trainer source: /flare-trainer-source.zip (14KB) — downloadable from the games section on the home page (under the Flare Trainer card)
+   - Flight Deck Card source: /flight-deck-card-source.zip (12KB) — downloadable from below the hero card on the home page
+   - Both zips include the component + globals.css
+
+2. COMPREHENSIVE "HOW TO PLAY" TUTORIAL added to the Flare Trainer start screen:
+   - "What this teaches" section: explains the real-world flare maneuver (10-15 ft, pull back, under 200 fpm = greaser)
+   - "How to play" — 5 numbered steps:
+     1. You start on final approach (300 ft, 65 kt, 500 fpm)
+     2. Let it descend (don't flare yet)
+     3. Flare at 15 ft (HOLD SPACE)
+     4. Hold the flare (keep holding, let it settle)
+     5. Touch down (under 200 fpm = greaser)
+   - Controls section: SPACE (flare), Shift (throttle up), Ctrl (throttle down), Click+Hold (touch/mouse)
+   - "Reading the instruments" section: explains ALT, IAS, VS, DIST readouts
+   - Scoring section: 5 color-coded tiers (Greaser/Good/Firm/Hard/Crash) with fpm ranges and point values
+   - PAPI lights tip
+
+3. REAL-TIME COACHING added during gameplay:
+   - "Let it descend — you're on final approach" (above 50 ft)
+   - "Get ready to flare..." (20-50 ft, cyan)
+   - "FLARE NOW — hold SPACE!" (5-20 ft, not flaring, amber, pulsing)
+   - "Hold it off... let it settle..." (flaring, amber)
+   - "You're too fast — you'll float" (above 75 kt, red)
+   - "Too slow — add power!" (below 45 kt, red)
+   - Altitude bar at the bottom (color-coded: amber <20ft, cyan <50ft, muted >50ft)
+   - "FLARING" indicator badge when holding space
+
+4. GAME LOOP BUG FIXED:
+   - The game loop was checking `phase === 'playing'` but phase is a state variable captured in closure — when setPhase('result') was called, the old gameLoop still saw phase='playing' and kept running
+   - Added playingRef (useRef<boolean>) to track playing state without re-renders
+   - Game loop now checks playingRef.current instead of phase
+   - Properly stops on touchdown + cleanup
+
+VERIFICATION:
+- Server: HTTP 200, stable (0.9s compile — was already warm)
+- Lint: 0 errors, 3 pre-existing warnings
+- Download zips: both exist and are downloadable
+- Tutorial: comprehensive step-by-step with controls, instrument explanations, scoring
+
+Stage Summary:
+- Download buttons for flare trainer + flight deck card are live on the home page
+- The flare game now has a full tutorial that teaches how to play (5 steps, controls, instruments, scoring)
+- Real-time coaching during gameplay tells you exactly what to do and when
+- Game loop properly stops on touchdown

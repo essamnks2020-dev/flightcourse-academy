@@ -43,6 +43,7 @@ export function FlareTrainer() {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
   const rafRef = React.useRef<number | null>(null)
   const keysRef = React.useRef<Set<string>>(new Set())
+  const playingRef = React.useRef(false)
 
   // Keyboard
   React.useEffect(() => {
@@ -69,6 +70,7 @@ export function FlareTrainer() {
       touchdownVS: 0, touchdownPoint: 0, crashed: false,
     }
     setPhase('playing')
+    playingRef.current = true
     lastTimeRef.current = performance.now()
     rafRef.current = requestAnimationFrame(gameLoop)
   }
@@ -119,7 +121,7 @@ export function FlareTrainer() {
         else if (vs < 800) { setQuality('hard'); setScore(35 + Math.floor((800 - vs) / 25)) }
         else { setQuality('crash'); setScore(Math.max(0, 20 - Math.floor((vs - 800) / 20))); s.crashed = true }
 
-        setTimeout(() => setPhase('result'), 500)
+        setTimeout(() => { playingRef.current = false; setPhase('result'); }, 500)
       }
 
       // Stall
@@ -132,7 +134,7 @@ export function FlareTrainer() {
     // Draw
     drawScene()
 
-    if (phase === 'playing') {
+    if (playingRef.current) {
       rafRef.current = requestAnimationFrame(gameLoop)
     }
   }
@@ -370,6 +372,7 @@ export function FlareTrainer() {
 
   // Cleanup
   React.useEffect(() => () => {
+    playingRef.current = false
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
   }, [])
 
@@ -380,47 +383,77 @@ export function FlareTrainer() {
         <p className="label-instrument text-primary mb-3">Training sim</p>
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Flare Trainer</h1>
         <p className="mt-3 max-w-xl text-muted-foreground leading-relaxed">
-          Time your flare and settle the Cessna onto the runway. Hold SPACE to flare,
-          release to descend. The smoother your touchdown, the higher your score.
+          Learn the hardest part of flying — the landing flare. You&apos;re on short final
+          in a Cessna 172. Your job: time the flare so the plane settles gently onto the
+          runway. Too early and you float. Too late and you slam in.
         </p>
 
-        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="glass flex items-center gap-3 rounded-xl p-4">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/20">
-              <Plane className="size-4" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold tracking-tight">Hold to flare</div>
-              <div className="text-xs text-muted-foreground">SPACE or hold-click</div>
-            </div>
-          </div>
-          <div className="glass flex items-center gap-3 rounded-xl p-4">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-accent/15 text-accent ring-1 ring-accent/20">
-              <Gauge className="size-4" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold tracking-tight">Round out at ~15 ft</div>
-              <div className="text-xs text-muted-foreground">When the runway zooms</div>
-            </div>
+        {/* What you'll learn */}
+        <div className="glass glow-primary mt-8 rounded-xl p-5">
+          <p className="label-instrument text-primary mb-3">What this teaches</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            In a real Cessna 172, you start the flare at about 10-15 feet above the runway.
+            You smoothly pull back on the yoke to level the nose and arrest your descent.
+            The goal is to touch down on the main wheels at a gentle rate — under 200 feet
+            per minute is a &quot;greaser.&quot; This trainer builds the muscle memory of
+            timing that flare. Hold SPACE to simulate pulling back on the yoke.
+          </p>
+        </div>
+
+        {/* How to play — step by step */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold tracking-tight mb-4">How to play</h2>
+          <div className="flex flex-col gap-3">
+            <Step number={1} title="You start on final approach" desc="Altitude 300 ft, airspeed 65 kt, descending at 500 fpm. You're about 1 mile from the runway." />
+            <Step number={2} title="Let it descend" desc="Don't flare yet. Let the plane descend toward the runway. Watch the altitude readout drop." />
+            <Step number={3} title="Flare at 15 ft" desc="When altitude reads ~15 ft, HOLD SPACE. This raises the nose and arrests your descent. The runway will appear to 'zoom' — that's your cue." />
+            <Step number={4} title="Hold the flare" desc="Keep holding SPACE. The plane will level off and slowly settle. If you're too fast, you'll float — release briefly to let it sink." />
+            <Step number={5} title="Touch down" desc="The goal is a touchdown under 200 fpm (feet per minute). That's a greaser. Over 800 fpm is a crash." />
           </div>
         </div>
 
-        <div className="glass mt-6 rounded-xl p-4">
-          <p className="label-instrument text-primary mb-2">Scoring</p>
-          <ul className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-            <li><span className="text-foreground font-medium">Greaser</span> — under 200 fpm touchdown (90-100 pts)</li>
-            <li><span className="text-foreground font-medium">Good</span> — 200-400 fpm (75-89 pts)</li>
-            <li><span className="text-foreground font-medium">Firm</span> — 400-600 fpm (55-74 pts)</li>
-            <li><span className="text-foreground font-medium">Hard</span> — 600-800 fpm (35-54 pts)</li>
-            <li><span className="text-foreground font-medium">Crash</span> — over 800 fpm (0-20 pts)</li>
+        {/* Controls */}
+        <div className="glass mt-8 rounded-xl p-5">
+          <p className="label-instrument text-primary mb-3">Controls</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Control keys="SPACE" action="Hold to flare (pull back on yoke)" />
+            <Control keys="Shift" action="Add throttle (climb)" />
+            <Control keys="Ctrl" action="Reduce throttle (descend)" />
+            <Control keys="Click + Hold" action="Same as SPACE (touch/mouse)" />
+          </div>
+        </div>
+
+        {/* What you're looking at */}
+        <div className="glass mt-6 rounded-xl p-5">
+          <p className="label-instrument text-accent mb-3">Reading the instruments</p>
+          <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
+            <li><span className="text-foreground font-medium nums">ALT</span> — your height above the ground in feet. Flare at 15.</li>
+            <li><span className="text-foreground font-medium nums">IAS</span> — indicated airspeed in knots. 65 is ideal on approach.</li>
+            <li><span className="text-foreground font-medium nums">VS</span> — vertical speed in feet per minute. Negative = descending. Aim for under -200 at touchdown.</li>
+            <li><span className="text-foreground font-medium nums">DIST</span> — distance to the runway threshold in feet.</li>
           </ul>
+        </div>
+
+        {/* Scoring */}
+        <div className="glass mt-6 rounded-xl p-5">
+          <p className="label-instrument text-primary mb-3">Scoring</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <ScoreTier color="#5fcf6a" label="Greaser" range="under 200 fpm" points="90-100" />
+            <ScoreTier color="#3E92CC" label="Good" range="200-400 fpm" points="75-89" />
+            <ScoreTier color="#F2B134" label="Firm" range="400-600 fpm" points="55-74" />
+            <ScoreTier color="#E89B2C" label="Hard" range="600-800 fpm" points="35-54" />
+            <ScoreTier color="#e0584f" label="Crash" range="over 800 fpm" points="0-20" />
+          </div>
         </div>
 
         <button onClick={beginFlight} className="fp-toggle-btn mt-8 w-full px-5 py-3.5 text-base sm:w-auto sm:px-8">
           <Plane className="size-5" /> Start approach
           <ArrowRight className="size-4" />
         </button>
-        <p className="mt-4 text-xs text-muted-foreground">W/S pitch · Shift/Ctrl throttle · SPACE flare</p>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Tip: the PAPI lights (4 lights on the left) show if you&apos;re on the correct
+          glideslope. 2 red + 2 white = perfect.
+        </p>
       </div>
     )
   }
@@ -428,6 +461,29 @@ export function FlareTrainer() {
   // ====== PLAYING ======
   if (phase === 'playing') {
     const s = stateRef.current
+    // Real-time coaching message based on flight state
+    let coaching = ""
+    let coachingColor = "text-muted-foreground"
+    if (s.altitude > 50) {
+      coaching = "Let it descend — you're on final approach"
+      coachingColor = "text-muted-foreground"
+    } else if (s.altitude <= 50 && s.altitude > 20) {
+      coaching = "Get ready to flare..."
+      coachingColor = "text-accent"
+    } else if (s.altitude <= 20 && s.altitude > 5 && !s.flareInput) {
+      coaching = "FLARE NOW — hold SPACE!"
+      coachingColor = "text-primary"
+    } else if (s.altitude <= 20 && s.altitude > 0 && s.flareInput) {
+      coaching = "Hold it off... let it settle..."
+      coachingColor = "text-primary"
+    } else if (s.airspeed > 75 && s.altitude > 5) {
+      coaching = "You're too fast — you'll float"
+      coachingColor = "text-destructive"
+    } else if (s.airspeed < 45 && s.altitude > 5) {
+      coaching = "Too slow — add power!"
+      coachingColor = "text-destructive"
+    }
+
     return (
       <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
@@ -448,11 +504,34 @@ export function FlareTrainer() {
             </div>
           </div>
 
-          {/* Bottom — flare prompt */}
-          <div className="flex justify-center">
-            {s.altitude < 50 && s.altitude > 0 && (
-              <div className="glass glow-primary rounded-full px-5 py-2.5 animate-pulse-ring">
-                <span className="label-instrument text-primary text-sm">HOLD SPACE TO FLARE</span>
+          {/* Center — real-time coaching */}
+          {coaching && (
+            <div className="flex justify-center">
+              <div className={`glass rounded-full px-5 py-2.5 ${coaching === "FLARE NOW — hold SPACE!" ? "glow-primary animate-pulse-ring" : ""}`}>
+                <span className={`label-instrument text-sm ${coachingColor}`}>{coaching}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Bottom — altitude bar + flare indicator */}
+          <div className="flex flex-col items-center gap-2">
+            {/* Altitude bar */}
+            <div className="glass flex w-full max-w-xs items-center gap-2 rounded-full px-4 py-2">
+              <span className="label-instrument text-muted-foreground text-[9px]">ALT</span>
+              <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(100, (s.altitude / 300) * 100)}%`,
+                    background: s.altitude < 20 ? "var(--primary)" : s.altitude < 50 ? "var(--accent)" : "var(--muted-foreground)",
+                  }}
+                />
+              </div>
+              <span className="nums text-xs font-semibold tabular-nums">{Math.round(s.altitude)} ft</span>
+            </div>
+            {s.flareInput && (
+              <div className="glass glow-primary rounded-full px-4 py-1.5">
+                <span className="label-instrument text-primary text-xs">FLARING</span>
               </div>
             )}
           </div>
@@ -529,6 +608,41 @@ function Readout({ label, value, unit }: { label: string; value: number; unit: s
         <span className="nums text-base font-semibold tabular-nums">{value}</span>
         <span className="text-[9px] text-muted-foreground">{unit}</span>
       </div>
+    </div>
+  )
+}
+
+function Step({ number, title, desc }: { number: number; title: string; desc: string }) {
+  return (
+    <div className="glass flex items-start gap-3 rounded-xl p-4">
+      <span className="nums flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary text-sm font-bold ring-1 ring-primary/20">
+        {number}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold tracking-tight">{title}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{desc}</p>
+      </div>
+    </div>
+  )
+}
+
+function Control({ keys, action }: { keys: string; action: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <kbd className="nums rounded-md border border-border bg-muted px-2 py-1 text-xs font-semibold">{keys}</kbd>
+      <span className="text-xs text-muted-foreground">{action}</span>
+    </div>
+  )
+}
+
+function ScoreTier({ color, label, range, points }: { color: string; label: string; range: string; points: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border p-2.5" style={{ borderLeft: `3px solid ${color}` }}>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold" style={{ color }}>{label}</p>
+        <p className="text-xs text-muted-foreground">{range}</p>
+      </div>
+      <span className="nums text-xs text-muted-foreground">{points} pts</span>
     </div>
   )
 }
