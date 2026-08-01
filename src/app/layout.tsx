@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 const body = Instrument_Sans({
   subsets: ["latin"],
@@ -70,7 +71,9 @@ export default function RootLayout({
         className={`${body.variable} ${instrument.variable} font-sans antialiased bg-background text-foreground`}
       >
         <ThemeProvider>
-          <ErrorBoundary>{children}</ErrorBoundary>
+          <AuthProvider>
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </AuthProvider>
         </ThemeProvider>
         <Toaster />
       </body>

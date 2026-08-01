@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MouseTracker } from "@/components/mouse-tracker";
 import { ThemeFX } from "@/components/theme-fx";
+import { PilotHelper } from "@/components/pilot-helper";
 import { HomeView } from "@/components/views/home-view";
 import { LogoMark } from "@/components/brand/logo";
 
@@ -210,6 +211,7 @@ export default function Page() {
         </AnimatePresence>
       </main>
       <Footer />
+      <PilotHelper />
     </div>
   );
 }

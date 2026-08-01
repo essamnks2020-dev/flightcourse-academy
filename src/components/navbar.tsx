@@ -7,6 +7,7 @@ import { useProgress } from "@/lib/progress-store";
 import type { ViewName } from "@/lib/nav-store";
 import { cn } from "@/lib/utils";
 import { Logo, LogoMark } from "@/components/brand/logo";
+import { AuthButton } from "@/components/auth/auth-button";
 import {
   Sun,
   Moon,
@@ -148,6 +149,9 @@ export function Navbar() {
               <span className="label-instrument text-muted-foreground">modules</span>
             </span>
           </button>
+
+          {/* Auth button */}
+          <AuthButton />
 
           {/* Theme toggle — circular wipe reveal (from portfolio) */}
           {mounted && (

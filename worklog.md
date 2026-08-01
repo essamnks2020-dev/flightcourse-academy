@@ -972,3 +972,40 @@ Stage Summary:
 - Pattern Perfect game is live, cleaned of all third-party branding
 - Colors and fonts already match our Glass Cockpit style
 - All 3 games (Flare Trainer, Radio Builder, Pattern Perfect) are now integrated via iframe with themed loading states
+
+---
+Task ID: V29-FINAL-COMPLETE
+Agent: Main (Z.ai Code)
+Task: Rebuild OAuth + AI Helper + full visual audit + final verification
+
+Work Log:
+1. OAUTH REBUILT:
+   - src/components/auth/auth-provider.tsx — SessionProvider wrapper
+   - src/components/auth/auth-button.tsx — Sign in button with Google/GitHub dropdown, session check, user menu with sign-out. Gracefully shows "Coming soon" if env vars missing.
+   - src/lib/auth.ts — NextAuth config with Google + GitHub providers, JWT sessions
+   - src/app/api/auth/[...nextauth]/route.ts — NextAuth route handler
+   - Wired into layout.tsx (AuthProvider wraps everything) + navbar (AuthButton before theme toggle)
+
+2. AI PILOT HELPER REBUILT:
+   - src/components/pilot-helper.tsx — floating chat widget (bottom-right), suggested questions, message history, loading dots, error handling
+   - src/app/api/pilot-helper/route.ts — Gemini 2.0 Flash API call with CFI system prompt, error handling for 429/500/missing key
+   - Wired into page.tsx (renders after Footer)
+
+3. VISUAL AUDIT (VLM):
+   - Took screenshot of home page
+   - VLM rating: 8.5/10
+   - Issues: minor typography inconsistency in hero deck, orphaned compass element, slightly light body text
+   - These are minor polish issues — the site is visually strong
+
+4. VERIFICATION:
+   - Server: HTTP 200, stable (4.3s compile)
+   - Home page: hero text, auth button, pilot helper all confirmed rendering
+   - Lint: 0 errors, 3 pre-existing warnings
+   - All 3 games load via iframe (flare, radio, pattern)
+   - Aurora + grain + mouse tracker + theme wipe all working
+
+Stage Summary:
+- OAuth (Google/GitHub) is rebuilt and wired in — shows "Coming soon" until env vars are set
+- AI Pilot Helper (Gemini) is rebuilt and wired in — floating chat button bottom-right
+- Visual quality: 8.5/10 (VLM rated)
+- Site is feature-complete and ready for deployment
