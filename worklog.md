@@ -1256,3 +1256,53 @@ Stage Summary:
 - Copilot has a clean name, typing animation, voice options with preview, and progress tracking
 - Theme transition is 1000x smoother — ALL visual properties morph over 0.5s
 - Both themes (dark + warm light) transition perfectly
+
+---
+Task ID: V35-VOICE-INPUT-OUTPUT
+Agent: Main (Z.ai Code)
+Task: Add voice input (microphone) to Copilot + ensure voice works perfectly
+
+VOICE INPUT (SpeechRecognition):
+- Added mic button (Mic/MicOff icon) next to the send button
+- Uses Web Speech API (SpeechRecognition / webkitSpeechRecognition)
+- Features:
+  * interimResults: true — shows interim transcript as user speaks
+  * continuous: false — stops after user finishes speaking
+  * Auto-submits when the user stops speaking
+  * Visual feedback: red pulsing button when listening, "Listening…" text in input
+  * Interim transcript shown in a red-tinted bar above the input
+  * Input disabled while listening (shows interim text instead)
+  * Placeholder changes to "Ask Copilot… or tap the mic"
+- Error handling:
+  * "not-allowed" → "I couldn't access your microphone. Please allow microphone access."
+  * "no-speech" → silent (user didn't say anything, no error shown)
+  * "network" → "Voice recognition needs an internet connection."
+  * Browser not supported → mic button hidden entirely (graceful degradation)
+- Works in Chrome, Edge (full support), Safari (partial), Firefox (not supported — button hidden)
+
+VOICE OUTPUT (speechSynthesis):
+- Already has voice selector dropdown with all English voices sorted by preference
+- Voice preview when selecting (speaks "Cessna one seven two bravo, ready for departure")
+- Mute/unmute toggle
+- Settings: rate 1.02, pitch 0.92, volume 0.85
+- Typing animation with blinking cursor
+
+IN THE GAMES:
+- Flare Trainer: already has speechSynthesis for radar callouts (50/40/30/20/10/FLARE) — your code, not modified
+- Radio Builder: already has speechSynthesis for playing back correct radio calls — your code, not modified
+- Pattern Perfect: has its own audio system — not modified
+- All games run in iframes with their own audio context — no conflicts
+
+VERIFICATION:
+- Server: HTTP 200, stable (27s compile)
+- Lint: 0 errors, 2 warnings (pre-existing)
+- Mic button: shows in Chrome/Edge, hidden in Firefox
+- Voice output: works with voice selector + mute toggle
+- Typing animation: works on AI responses
+
+Stage Summary:
+- Copilot now has VOICE INPUT (mic button with SpeechRecognition) + VOICE OUTPUT (speechSynthesis with voice selector)
+- Interim transcript shows as you speak
+- Auto-submits when you stop speaking
+- Graceful error handling for mic denied, no speech, network error, unsupported browser
+- Games already have their own voice systems (not modified)

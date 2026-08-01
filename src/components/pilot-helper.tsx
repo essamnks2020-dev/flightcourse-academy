@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Headphones, X, Send, Volume2, VolumeX, ChevronDown, Sparkles, TrendingUp } from "lucide-react";
+import { Headphones, X, Send, Volume2, VolumeX, ChevronDown, Sparkles, TrendingUp, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/lib/progress-store";
 
@@ -44,8 +44,83 @@ export function PilotHelper() {
   const [selectedVoiceURI, setSelectedVoiceURI] = React.useState<string>("");
   const [showVoiceMenu, setShowVoiceMenu] = React.useState(false);
   const [typingText, setTypingText] = React.useState("");
+  const [listening, setListening] = React.useState(false);
+  const [micSupported, setMicSupported] = React.useState(false);
+  const [interimText, setInterimText] = React.useState("");
+  const recognitionRef = React.useRef<any>(null);
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const progress = useProgress();
+
+  // Check if speech recognition is supported
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      setMicSupported(!!SR);
+    }
+  }, []);
+
+  // Voice input — start/stop listening
+  function toggleMic() {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    let finalText = "";
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalText += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      setInterimText(interim);
+      if (finalText) {
+        setInput(finalText);
+        setInterimText("");
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      setListening(false);
+      setInterimText("");
+      if (event.error === "not-allowed") {
+        setMessages(m => [...m, { role: "assistant", text: "I couldn't access your microphone. Please allow microphone access in your browser settings.", id: ++msgId }]);
+      } else if (event.error === "no-speech") {
+        // Silent — user didn't say anything
+      } else if (event.error === "network") {
+        setMessages(m => [...m, { role: "assistant", text: "Voice recognition needs an internet connection. Please try typing instead.", id: ++msgId }]);
+      }
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      setInterimText("");
+      // Auto-submit if we got text
+      if (finalText.trim()) {
+        setTimeout(() => ask(finalText.trim()), 100);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+    setInterimText("");
+  }
 
   // Load available voices
   React.useEffect(() => {
@@ -346,22 +421,51 @@ export function PilotHelper() {
               e.preventDefault();
               ask(input);
             }}
-            className="border-t border-border p-3 flex gap-2"
+            className="border-t border-border p-3"
           >
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Ask Copilot…"
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none transition-all placeholder:text-muted-foreground focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || loading}
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:brightness-110 active:scale-95 disabled:opacity-40"
-            >
-              <Send className="size-3.5" />
-            </button>
+            {/* Interim transcript while listening */}
+            {listening && (
+              <div className="mb-2 flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2">
+                <span className="size-2 rounded-full bg-destructive animate-pulse" />
+                <span className="text-xs text-muted-foreground">
+                  {interimText || "Listening…"}
+                </span>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={listening ? (interimText || input) : input}
+                onChange={e => setInput(e.target.value)}
+                placeholder={listening ? "Listening…" : "Ask Copilot… or tap the mic"}
+                disabled={listening}
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none transition-all placeholder:text-muted-foreground focus:border-primary/40 focus:ring-1 focus:ring-primary/20 disabled:opacity-60"
+              />
+              {/* Microphone button */}
+              {micSupported && (
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-95",
+                    listening
+                      ? "border-destructive/50 bg-destructive/15 text-destructive animate-pulse"
+                      : "border-border text-muted-foreground hover:text-primary hover:border-primary/30"
+                  )}
+                  aria-label={listening ? "Stop listening" : "Start voice input"}
+                  title={listening ? "Stop listening" : "Speak your question"}
+                >
+                  {listening ? <MicOff className="size-3.5" /> : <Mic className="size-3.5" />}
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={!input.trim() || loading || listening}
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:brightness-110 active:scale-95 disabled:opacity-40"
+              >
+                <Send className="size-3.5" />
+              </button>
+            </div>
           </form>
         </div>
       )}
