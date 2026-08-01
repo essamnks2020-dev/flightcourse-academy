@@ -178,16 +178,16 @@ export function HomeView() {
             </dl>
           </div>
 
-          {/* Right column — living flight deck */}
-          <div className="min-w-0 w-full lg:flex-[2] lg:max-w-sm">
-            <FlightDeckCard />
-            <a
-              href="/flight-deck-card-source.zip"
-              download
-              className="text-muted-foreground hover:text-accent mt-3 block text-center text-xs font-medium transition-colors"
-            >
-              Download this component
-            </a>
+          {/* Right column — living flight deck (AI-made hero deck) */}
+          <div className="min-w-0 w-full lg:flex-[2] lg:max-w-md">
+            <div className="relative overflow-hidden rounded-2xl" style={{ height: "520px" }}>
+              <iframe
+                src="/hero-deck-preview.html"
+                className="absolute inset-0 h-full w-full border-0"
+                title="FlightCourse Academy — Living Flight Deck"
+                style={{ pointerEvents: "none" }}
+              />
+            </div>
           </div>
         </div>
       </section>
