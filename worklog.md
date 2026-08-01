@@ -1073,3 +1073,45 @@ Stage Summary:
 - AI helper is "Copilot" with voice output, progress tracking, multi-LLM rotation
 - Logo adapts to light/dark theme
 - Sign-in button is cleaner
+
+---
+Task ID: V31-HERO-DECK-REACT-PORT
+Agent: Main (Z.ai Code)
+Task: Port the AI-made hero deck HTML into a React component that's theme-aware
+
+Work Log:
+STUDIED the hero-deck-preview.html (499 lines) in full depth:
+- SVG PFD with attitude indicator (horizon, pitch ladder, bank scale, aircraft symbol)
+- Flanking speed + altitude tapes with tick marks
+- Heading tape with compass (N/E/S/W + degree labels, gyro spin-up animation)
+- Live telemetry (ALT/IAS/FUEL — drifts every 3s)
+- Flight path timeline (4 phases, cycles every 12s, progress fill)
+- Zulu clock (updates every frame)
+- Gyro spin-up: heading sweeps from 348° to 090° over 2.4s with ease-out-expo
+- Attitude drift: roll + pitch using sine waves for natural movement
+- All animation via requestAnimationFrame
+
+PORTED to React (flight-deck-card.tsx, ~250 lines):
+- All SVG geometry built imperatively in useEffect (createElementNS) — same approach as the original
+- All animation in a single requestAnimationFrame loop with refs (no React re-renders per frame)
+- All colors use CSS variables (var(--primary), var(--accent), var(--border)) — adapts to theme automatically
+- The aircraft symbol, roll pointer, heading tape, telemetry numbers all use var(--primary) so they change color when the theme changes
+- The glass card uses .glass + .glow-primary classes — theme-aware
+- The flight path steps use .fc-step.on / .fc-step.done CSS classes
+- Status strip with pulsing green dot + Zulu clock
+- Removed the old iframe approach — the card is now a native React component integrated directly into the page
+
+KEY DIFFERENCE FROM IFRAME:
+- Before: the hero deck was in an iframe with fixed dark-only colors — couldn't adapt to light theme
+- Now: it's a React component using CSS variables — when you toggle to light theme, the entire card adapts: glass card goes warm, text goes dark, primary goes terracotta, borders warm up. It's seamlessly part of the site.
+
+VERIFICATION:
+- Server: HTTP 200, stable (28s compile)
+- Lint: 0 errors, 4 pre-existing warnings
+- The FlightDeckCard renders in the hero with live PFD, telemetry, and flight path
+
+Stage Summary:
+- The hero deck is now a native React component, not an iframe
+- It's fully theme-aware — adapts to light/dark automatically via CSS variables
+- All animations preserved: gyro spin-up, attitude drift, heading tape, telemetry drift, flight path, Zulu clock
+- Seamlessly integrated into the site — no iframe boundary, no fixed colors
