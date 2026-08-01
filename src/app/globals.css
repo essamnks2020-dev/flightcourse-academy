@@ -72,7 +72,7 @@
   --popover-foreground: oklch(0.95 0.006 250);
 
   /* Brand — night-lit amber */
-  --primary: oklch(0.78 0.14 70);
+  --primary: oklch(0.80 0.14 71);
   --primary-foreground: oklch(0.19 0.036 60);
 
   --secondary: oklch(0.27 0.031 252);
@@ -89,14 +89,14 @@
   --destructive-foreground: oklch(0.97 0.01 26);
   --success: oklch(0.73 0.152 155);
   --success-foreground: oklch(0.18 0.04 155);
-  --warning: oklch(0.78 0.14 70);
+  --warning: oklch(0.80 0.14 71);
   --warning-foreground: oklch(0.19 0.036 60);
 
   --border: oklch(0.99 0.01 250 / 11%);
   --input: oklch(0.99 0.01 250 / 14%);
-  --ring: oklch(0.78 0.14 70 / 65%);
+  --ring: oklch(0.80 0.14 71 / 65%);
 
-  --chart-1: oklch(0.78 0.14 70);
+  --chart-1: oklch(0.80 0.14 71);
   --chart-2: oklch(0.75 0.128 205);
   --chart-3: oklch(0.73 0.152 155);
   --chart-4: oklch(0.62 0.09 250);
@@ -172,7 +172,7 @@
     text-rendering: optimizeLegibility;
   }
   ::selection {
-    background: oklch(0.78 0.14 70 / 28%);
+    background: oklch(0.80 0.14 71 / 28%);
   }
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -223,7 +223,7 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   /* Radial horizon glow — cockpit display at night. */
   .bg-horizon {
     background:
-      radial-gradient(120% 70% at 50% 0%, oklch(0.78 0.14 70 / 12%) 0%, transparent 62%),
+      radial-gradient(120% 70% at 50% 0%, oklch(0.80 0.14 71 / 12%) 0%, transparent 62%),
       radial-gradient(90% 60% at 85% 15%, oklch(0.75 0.128 205 / 10%) 0%, transparent 60%);
   }
   .light .bg-horizon {
@@ -247,8 +247,8 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   /* Glow utilities — used on focused / featured cards. */
   .glow-primary {
     box-shadow:
-      0 0 0 1px oklch(0.78 0.14 70 / 22%),
-      0 8px 40px -12px oklch(0.78 0.14 70 / 40%);
+      0 0 0 1px oklch(0.80 0.14 71 / 22%),
+      0 8px 40px -12px oklch(0.80 0.14 71 / 40%);
   }
   .glow-accent {
     box-shadow:
@@ -267,7 +267,7 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   }
 
   .text-shadow-glow {
-    text-shadow: 0 0 24px oklch(0.78 0.14 70 / 35%);
+    text-shadow: 0 0 24px oklch(0.80 0.14 71 / 35%);
   }
 
   /* Tabular numbers for readouts that must line up. */
@@ -389,7 +389,7 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   }
   .fp-bezel { border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .fp-bezel-hover { border: 1px solid var(--border); border-radius: var(--radius-lg); transition: border-color .2s ease, box-shadow .2s ease; }
-  .fp-bezel-hover:hover { border-color: oklch(0.78 0.14 70 / 40%); box-shadow: 0 8px 40px -12px oklch(0.78 0.14 70 / 30%); }
+  .fp-bezel-hover:hover { border-color: oklch(0.80 0.14 71 / 40%); box-shadow: 0 8px 40px -12px oklch(0.80 0.14 71 / 30%); }
   .fp-gradient-border { border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .fp-corner-brackets { position: relative; }
 
@@ -407,14 +407,14 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
     justify-content: center;
     gap: 0.5rem;
     border-radius: 0.75rem;
-    background: linear-gradient(135deg, oklch(0.78 0.14 70 / 88%) 0%, oklch(0.70 0.12 64 / 82%) 100%);
+    background: linear-gradient(135deg, oklch(0.80 0.14 71 / 88%) 0%, oklch(0.72 0.12 65 / 82%) 100%);
     backdrop-filter: blur(12px) saturate(140%);
     -webkit-backdrop-filter: blur(12px) saturate(140%);
     color: oklch(0.16 0.03 60);
     font-weight: 600;
     letter-spacing: 0.01em;
     border: 1px solid oklch(0.99 0.01 250 / 25%);
-    box-shadow: 0 1px 2px oklch(0 0 0 / 10%), 0 8px 24px -8px oklch(0.78 0.14 70 / 40%), inset 0 1px 0 oklch(0.99 0.01 250 / 20%);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 10%), 0 8px 24px -8px oklch(0.80 0.14 71 / 40%), inset 0 1px 0 oklch(0.99 0.01 250 / 20%);
     transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .2s ease, filter .15s ease;
     position: relative;
     overflow: hidden;
@@ -428,7 +428,7 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   }
   .fp-toggle-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 2px 4px oklch(0 0 0 / 10%), 0 12px 32px -8px oklch(0.78 0.14 70 / 55%), inset 0 1px 0 oklch(0.99 0.01 250 / 25%);
+    box-shadow: 0 2px 4px oklch(0 0 0 / 10%), 0 12px 32px -8px oklch(0.80 0.14 71 / 55%), inset 0 1px 0 oklch(0.99 0.01 250 / 25%);
     filter: brightness(1.05);
   }
   .fp-toggle-btn:active { transform: translateY(0); }
@@ -459,7 +459,7 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   }
   .fp-outline-btn:hover {
     transform: translateY(-2px);
-    border-color: oklch(0.78 0.14 70 / 45%);
+    border-color: oklch(0.80 0.14 71 / 45%);
     background: oklch(0.99 0.01 250 / 8%);
     box-shadow: 0 4px 12px -4px oklch(0 0 0 / 15%), inset 0 1px 0 oklch(0.99 0.01 250 / 12%);
   }
@@ -604,3 +604,77 @@ html { scrollbar-gutter: stable; }
 .light .aurora i:nth-child(1) {
   background: radial-gradient(circle, color-mix(in oklch, var(--primary) 20%, transparent), transparent 65%);
 }
+
+/* ===========================================================================
+   Copilot animations
+   =========================================================================== */
+
+/* Idle pulse — the floating button gently breathes when idle */
+@keyframes copilot-idle {
+  0%, 100% { box-shadow: 0 8px 30px -4px oklch(0.80 0.14 71 / 50%), 0 0 0 0 oklch(0.80 0.14 71 / 30%); }
+  50% { box-shadow: 0 8px 30px -4px oklch(0.80 0.14 71 / 60%), 0 0 0 8px oklch(0.80 0.14 71 / 0%); }
+}
+.copilot-idle { animation: copilot-idle 3s ease-in-out infinite; }
+
+/* Ripple ring — expands outward from the button on click */
+@keyframes copilot-ripple {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.copilot-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  pointer-events: none;
+  animation: copilot-ripple 0.6s ease-out forwards;
+}
+
+/* Panel slide-in — from bottom-right with overshoot */
+@keyframes copilot-panel-in {
+  0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.copilot-panel-in { animation: copilot-panel-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Message slide-in — each message slides up + fades in */
+@keyframes msg-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.msg-in { animation: msg-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Typing dots — bounce */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+.typing-dot { animation: typing-bounce 1s infinite; }
+
+/* Header glow — the Copilot header has a subtle pulsing border */
+@keyframes header-glow {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.80 0.14 71 / 0%); }
+  50% { box-shadow: 0 0 12px 0 oklch(0.80 0.14 71 / 15%); }
+}
+.header-glow { animation: header-glow 4s ease-in-out infinite; }
+
+/* Suggested question hover ripple */
+@keyframes suggest-glow {
+  0% { box-shadow: 0 0 0 0 oklch(0.80 0.14 71 / 0%); }
+  100% { box-shadow: 0 0 0 4px oklch(0.80 0.14 71 / 0%); }
+}
+
+/* Mic listening pulse — rapid red ring */
+@keyframes mic-pulse {
+  0% { box-shadow: 0 0 0 0 oklch(0.65 0.22 25 / 40%); }
+  100% { box-shadow: 0 0 0 12px oklch(0.65 0.22 25 / 0%); }
+}
+.mic-pulse { animation: mic-pulse 1.2s ease-out infinite; }
+
+/* Voice waveform — animated bars when speaking */
+@keyframes wave-bar {
+  0%, 100% { height: 4px; }
+  50% { height: 14px; }
+}
+.wave-bar { animation: wave-bar 0.4s ease-in-out infinite; }

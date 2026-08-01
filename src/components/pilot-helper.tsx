@@ -239,20 +239,22 @@ export function PilotHelper() {
         aria-label={open ? "Close Copilot" : "Open Copilot"}
         className={cn(
           "fixed bottom-5 right-5 z-50 flex size-12 items-center justify-center rounded-full",
-          "bg-primary text-primary-foreground",
-          "shadow-[0_8px_30px_-4px_oklch(0.78_0.14_70_/_50%)] hover:shadow-[0_12px_40px_-4px_oklch(0.78_0.14_70_/_65%)]",
+          "bg-primary text-primary-foreground relative overflow-visible",
           "ring-1 ring-primary/30",
-          "transition-all duration-300 hover:scale-105 active:scale-95",
+          "transition-all duration-300 hover:scale-110 active:scale-90",
+          !open && "copilot-idle",
           open && "rotate-90"
         )}
       >
-        {open ? <X className="size-5" /> : <Headphones className="size-5" />}
+        {open ? <X className="size-5 relative z-10" /> : <Headphones className="size-5 relative z-10" />}
+        {/* Ripple on click */}
+        {open && <span className="copilot-ripple" />}
       </button>
 
       {/* Chat panel */}
       {open && (
         <div
-          className="animate-fade-up fixed bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[400px] flex-col rounded-2xl shadow-2xl"
+          className="copilot-panel-in fixed bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[400px] flex-col rounded-2xl shadow-2xl"
           style={{
             background: "oklch(0.18 0.022 254 / 97%)",
             backdropFilter: "blur(20px) saturate(140%)",
@@ -261,9 +263,9 @@ export function PilotHelper() {
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border p-4">
+          <div className="header-glow flex items-center justify-between border-b border-border p-4 rounded-t-2xl">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/20">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/20 transition-all">
                 <Headphones className="size-4 text-primary" />
               </div>
               <div className="flex flex-col">
@@ -373,7 +375,8 @@ export function PilotHelper() {
                     <button
                       key={s}
                       onClick={() => ask(s)}
-                      className="glass rounded-lg px-3 py-2 text-left text-xs text-muted-foreground transition-all hover:text-foreground hover:border-primary/30 hover:translate-x-1"
+                      className="rounded-lg px-3 py-2 text-left text-xs text-muted-foreground transition-all hover:text-foreground hover:border-primary/40 hover:translate-x-1 hover:bg-primary/5"
+                      style={{ background: "oklch(0.99 0.01 250 / 4%)", border: "1px solid oklch(0.99 0.01 250 / 8%)" }}
                     >
                       {s}
                     </button>
@@ -386,7 +389,7 @@ export function PilotHelper() {
                   <div
                     key={m.id}
                     className={cn(
-                      "flex gap-2 max-w-[90%]",
+                      "msg-in flex gap-2 max-w-[90%]",
                       m.role === "user" ? "self-end flex-row-reverse" : "self-start"
                     )}
                   >
@@ -406,9 +409,9 @@ export function PilotHelper() {
                       {/* Typing animation for the last AI message */}
                       {m.role === "assistant" && m.text === "" && loading ? (
                         <div className="flex items-center gap-1.5 py-1">
-                          <span className="size-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: "0s" }} />
-                          <span className="size-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: "0.2s" }} />
-                          <span className="size-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: "0.4s" }} />
+                          <span className="typing-dot size-2 rounded-full bg-primary/60" style={{ animationDelay: "0s" }} />
+                          <span className="typing-dot size-2 rounded-full bg-primary/60" style={{ animationDelay: "0.15s" }} />
+                          <span className="typing-dot size-2 rounded-full bg-primary/60" style={{ animationDelay: "0.3s" }} />
                         </div>
                       ) : m.role === "assistant" && m.id === messages[messages.length - 1]?.id && typingText ? (
                         <span>{typingText}<span className="inline-block w-0.5 h-3 bg-primary ml-0.5 animate-pulse" /></span>
@@ -456,7 +459,7 @@ export function PilotHelper() {
                   className={cn(
                     "flex size-8 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-95",
                     listening
-                      ? "border-destructive/50 bg-destructive/15 text-destructive animate-pulse"
+                      ? "border-destructive/50 bg-destructive/15 text-destructive mic-pulse"
                       : "border-border text-muted-foreground hover:text-primary hover:border-primary/30"
                   )}
                   aria-label={listening ? "Stop listening" : "Start voice input"}

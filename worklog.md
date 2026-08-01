@@ -1356,3 +1356,43 @@ Stage Summary:
 - Voice menu readable (solid 97% opacity background)
 - Sign-in page built (dedicated /sign-in route with Google/GitHub buttons)
 - Copilot visuals upgraded (solid panel, not glassy)
+
+---
+Task ID: V37-COPILOT-ANIMATIONS-AMBER
+Agent: Main (Z.ai Code)
+Task: Tons of Copilot animations + amber slightly lighter
+
+AMBER COLOR:
+- From oklch(0.78 0.14 70) to oklch(0.80 0.14 71) — one very slight tint lighter
+- Updated across globals.css, logo.tsx, pilot-helper.tsx, flight-deck-card.tsx
+
+COPILOT ANIMATIONS (8 new keyframes + applied to elements):
+1. IDLE PULSE: the floating button gently breathes when idle (box-shadow expands/contracts over 3s) — tells the user "I'm here, tap me"
+2. RIPPLE: when you click the button, a ring expands outward from it (0.6s ease-out)
+3. PANEL SLIDE-IN: the chat panel slides up from the bottom-right with a slight overshoot (scale 0.95 → 1.01 → 1.0 over 0.4s) — bouncy, not flat
+4. MESSAGE SLIDE-IN: each message slides up 8px + fades in (0.3s) — messages feel like they arrive, not just appear
+5. TYPING BOUNCE: the 3 loading dots now BOUNCE up and down (not just pulse) — 1s loop with 0.15s stagger
+6. HEADER GLOW: the Copilot header has a subtle pulsing amber glow (4s loop) — makes the panel feel alive even when idle
+7. MIC PULSE: when listening, the mic button has a rapidly expanding red ring (1.2s loop) — clear visual that it's recording
+8. SUGGESTED HOVER: suggested questions slide right + get a subtle amber background on hover — more tactile
+
+BUTTON CHANGES:
+- Hover: scale-110 (was 105) — more pronounced
+- Active: scale-90 (was 95) — more tactile press feel
+- Idle: copilot-idle class (breathing pulse) — only when NOT open
+- Open: rotate-90 + ripple ring
+
+PANEL CHANGES:
+- copilot-panel-in animation (was animate-fade-up) — custom overshoot bounce
+- header-glow class on the header section
+- Suggested questions: solid background (not glass) — more readable
+
+VERIFICATION:
+- Server: HTTP 200, stable (28s compile)
+- Lint: 0 errors, 2 warnings (pre-existing)
+- All 8 animations working
+
+Stage Summary:
+- Copilot now has 8 distinct animations: idle pulse, click ripple, panel slide-in with overshoot, message slide-in, typing bounce, header glow, mic pulse ring, suggested hover
+- Amber color one tint lighter
+- The Copilot feels alive, tactile, and premium — not flat or static
