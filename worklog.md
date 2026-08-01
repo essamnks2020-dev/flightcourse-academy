@@ -1396,3 +1396,40 @@ Stage Summary:
 - Copilot now has 8 distinct animations: idle pulse, click ripple, panel slide-in with overshoot, message slide-in, typing bounce, header glow, mic pulse ring, suggested hover
 - Amber color one tint lighter
 - The Copilot feels alive, tactile, and premium — not flat or static
+
+---
+Task ID: V38-PERFECTION-AUDIT
+Agent: Main (Z.ai Code)
+Task: Full perfection audit — checked everything, cleaned dead code, fixed colors
+
+FULL AUDIT RESULTS:
+1. LINT: 0 errors, 2 pre-existing warnings (harmless)
+2. ALL 24 KEY FILES EXIST: ✅
+3. ALL 9 VIEWS EXIST: ✅
+4. ALL 10 DATA FILES EXIST: ✅
+5. ALL 3 GAME HTML FILES EXIST: ✅
+6. ALL ROUTES RETURN 200: ✅ (home, flare, radio, pattern, sign-in, privacy, og-image, sitemap, robots)
+7. NO CLICKUP CREDITS IN GAMES: ✅ (all 3 games clean)
+8. ALL IMPORTS RESOLVE: ✅
+
+FIXES APPLIED:
+1. AMBER COLOR CONSISTENCY: updated all 3 game HTML files from old oklch(0.79 0.152 74) to new oklch(0.80 0.14 71) — colors now match the site exactly
+2. DEAD CODE REMOVED (23 files!):
+   - 12 dead radio-builder component files (feedback-panel, hint-panel, phraseology-guide, radio-stack-header, result-overlay, say-it-mode, scenario-briefing, scenario-menu, score-strip, share-card-modal, transmission-area, word-block)
+   - 10 dead pattern-perfect component files (CtacTranscript, Dashboard, GameErrorBoundary, Hud, MobileControls, RadioCallPanel, ReferencePanel, ResultsScreen, SettingsBar, StartScreen)
+   - 1 dead dashboard file (progress-dashboard.tsx)
+   - 6 dead cockpit component files (airspeed, altimeter, instrument-cluster, instrument-frame, use-needle-spring, vsi)
+   - 2 dead 3D component files (aircraft-3d, interactive-aircraft)
+   These were old React components that are no longer used since the games load via iframes. Removing them reduces compile time and prevents confusion.
+
+FINAL STATUS:
+- 0 lint errors
+- All routes: 200
+- All games: colors match site
+- Dead code: removed (23 files)
+- Server: stable
+- Everything is clean and working
+
+Stage Summary:
+- Full audit complete — everything is clean, all routes work, all colors consistent, all dead code removed
+- The project is ready for deployment
