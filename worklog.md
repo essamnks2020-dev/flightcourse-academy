@@ -789,3 +789,34 @@ Stage Summary:
 - Theme transitions are now smooth (View Transitions API + CSS color transitions)
 - Mouse tracker and error boundary restored
 - No errors found in proactive audit
+
+---
+Task ID: V25-USER-CODE-INTEGRATION
+Agent: Main (Z.ai Code)
+Task: Integrate user's own mouse tracker + flare trainer game
+
+Work Log:
+1. MOUSE TRACKER — replaced my simple spring dot with the user's 3-element system from their portfolio:
+   - dot: 7px amber circle, follows cursor instantly, scales down on press
+   - ring: 38px amber border circle, follows with spring physics (k=11), stretches in the direction of movement based on velocity (up to 28% stretch), scales up 1.7x on hover over interactive elements
+   - glow: 120px radial gradient, follows slowly (k=4.5), creates ambient trailing glow
+   - All three fade out when the mouse leaves the window
+   - Hidden on touch devices + reduced-motion
+   - Uses exponential decay spring physics (1 - exp(-k*dt)) for frame-rate-independent smoothing
+
+2. FLARE TRAINER — integrated the user's own "Short Final Academy" game:
+   - The user coded a complete 1804-line self-contained HTML file with: Canvas2D 2.5D perspective rendering, full C172 physics (airspeed, VS, altitude, distance, flaps, throttle, wind, gusts, wind shear, ground effect, stall), Web Audio API (squeal, thud, crash, flap, wind, thunder, voice coaching via speechSynthesis), Glass Cockpit HUD (readouts, throttle bar, flap indicator, localizer + glideslope indicators, coaching messages, flare cue, stall warning), multiple lessons/scenarios, XP/rank progression, start/briefing/result screens, touch controls for mobile
+   - Copied to public/flare-trainer-game.html (93KB, served as static file)
+   - Updated flare-trainer.tsx to load it in an iframe with a Glass Cockpit loading state ("Prepping the runway" + animated dots + spinning logo)
+   - This preserves the user's exact game code without any porting risk — no React conversion of 1800 lines of vanilla JS
+
+VERIFICATION:
+- Server: HTTP 200, stable
+- Home page: loads (46s compile — includes all the view code)
+- Flare game HTML: HTTP 200, loads as static file (instant, no compilation)
+- Both the user's mouse tracker and flare game are now live
+
+Stage Summary:
+- The user's own mouse tracker (3-element dot/ring/glow with velocity stretching) is live
+- The user's own flare trainer game (Short Final Academy) is live via iframe
+- Both preserve the user's exact work

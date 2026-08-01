@@ -1,0 +1,1663 @@
+     1→<!DOCTYPE html>
+     2→<html lang="en" data-theme="dark">
+     3→<head>
+     4→<meta charset="UTF-8">
+     5→<meta name="viewport" content="width=device-width, initial-scale=1.0">
+     6→<title>Essam Al Harthy — Builder, Student, Athlete</title>
+     7→<meta name="description" content="Portfolio of Essam Nasser Khalfan Al Harthy — Grade 12 student at Arusha Meru International School, applying to UWC Dilijan and African Leadership Academy.">
+     8→<meta name="theme-color" content="#0F1115">
+     9→<meta property="og:title" content="Essam Al Harthy — Builder, Student, Athlete">
+    10→<meta property="og:description" content="16-year-old builder from Arusha, Tanzania — an AI automation assistant with five sub-agents, a fully procedural browser hero shooter, four years of science fair leadership.">
+    11→<meta property="og:type" content="website">
+    12→<link rel="preconnect" href="https://fonts.googleapis.com">
+    13→<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    14→<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    15→<style>
+    16→  /* ================= THEMES ================= */
+    17→  :root{
+    18→    --bg:#0F1115;
+    19→    --bg-2:#14171d;
+    20→    --card:#1B1E26;
+    21→    --card-2:#20242e;
+    22→    --line:rgba(233,231,224,.08);
+    23→    --line-strong:rgba(233,231,224,.16);
+    24→    --text:#E9E7E0;
+    25→    --muted:#8B8F99;
+    26→    --accent:#D4A72C;  --accent-rgb:212,167,44;
+    27→    --accent-2:#3FA7A0; --accent-2-rgb:63,167,160;
+    28→    --accent-soft:rgba(212,167,44,.14);
+    29→    --accent-2-soft:rgba(63,167,160,.12);
+    30→    --nav-bg:rgba(15,17,21,.72);
+    31→    --btn-text:#0F1115;
+    32→    --grain-op:.35;
+    33→    --aurora-op:.55;
+    34→    --shadow:0 24px 70px rgba(0,0,0,.4);
+    35→    --serif:'Fraunces',Georgia,serif;
+    36→    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    37→    --sans:'Inter',system-ui,sans-serif;
+    38→    --max:1120px;
+    39→    --ease:cubic-bezier(.22,1,.36,1);
+    40→  }
+    41→  [data-theme="light"]{
+    42→    --bg:#F6F3EB;
+    43→    --bg-2:#EEEAE0;
+    44→    --card:#FFFDF7;
+    45→    --card-2:#F2EEE3;
+    46→    --line:rgba(28,25,18,.10);
+    47→    --line-strong:rgba(28,25,18,.22);
+    48→    --text:#1C1A15;
+    49→    --muted:#6F6A5C;
+    50→    --accent:#C15F3C;  --accent-rgb:193,95,60;
+    51→    --accent-2:#48756B; --accent-2-rgb:72,117,107;
+    52→    --accent-soft:rgba(193,95,60,.12);
+    53→    --accent-2-soft:rgba(72,117,107,.12);
+    54→    --nav-bg:rgba(246,243,235,.78);
+    55→    --btn-text:#FFFDF7;
+    56→    --grain-op:.22;
+    57→    --aurora-op:.4;
+    58→    --shadow:0 24px 60px rgba(80,64,40,.14);
+    59→  }
+    60→
+    61→  *{margin:0;padding:0;box-sizing:border-box}
+    62→  html{scroll-behavior:smooth;scroll-padding-top:84px}
+    63→  body{
+    64→    background:var(--bg);
+    65→    color:var(--text);
+    66→    font-family:var(--sans);
+    67→    font-size:16px;
+    68→    line-height:1.65;
+    69→    -webkit-font-smoothing:antialiased;
+    70→    -webkit-tap-highlight-color:transparent;
+    71→    overflow-x:hidden;
+    72→  }
+    73→  main{display:block}
+    74→  h1,h2,h3{text-wrap:balance}
+    75→  @media (prefers-reduced-motion:reduce){
+    76→    html{scroll-behavior:auto}
+    77→    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+    78→    .reveal{opacity:1!important;transform:none!important}
+    79→    .loader{display:none!important}
+    80→  }
+    81→  ::selection{background:var(--accent);color:var(--btn-text)}
+    82→  a{color:inherit}
+    83→  :focus{outline:none}
+    84→  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+    85→
+    86→  ::-webkit-scrollbar{width:10px}
+    87→  ::-webkit-scrollbar-track{background:var(--bg)}
+    88→  ::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px}
+    89→  ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+    90→
+    91→  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+    92→
+    93→  .skip-link{
+    94→    position:fixed;top:-70px;left:16px;z-index:10010;
+    95→    background:var(--accent);color:var(--btn-text);
+    96→    font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    97→    padding:10px 16px;border-radius:4px;text-decoration:none;transition:top .3s var(--ease);
+    98→  }
+    99→  .skip-link:focus{top:12px}
+   100→
+   101→  .theme-wipe{
+   102→    position:fixed;inset:-4px;z-index:9990;pointer-events:none;
+   103→    transition:clip-path .85s cubic-bezier(.7,0,.25,1);
+   104→    will-change:clip-path;
+   105→  }
+   106→
+   107→  /* ---------- loader (capped at 900ms in JS — never waits on fonts) ---------- */
+   108→  .loader{
+   109→    position:fixed;inset:0;z-index:10005;background:var(--bg);
+   110→    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+   111→    transition:opacity .5s ease,visibility .5s;
+   112→  }
+   113→  body.loaded .loader{opacity:0;visibility:hidden}
+   114→  .loader p{font-family:var(--mono);font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted)}
+   115→
+   116→  /* ---------- atmosphere ---------- */
+   117→  .aurora{position:fixed;inset:-6%;z-index:0;pointer-events:none;overflow:hidden;opacity:var(--aurora-op);will-change:transform}
+   118→  .aurora i{position:absolute;border-radius:50%;filter:blur(90px);will-change:transform}
+   119→  .aurora i:nth-child(1){
+   120→    width:55vw;height:55vw;top:-22vw;right:-14vw;
+   121→    background:radial-gradient(circle,rgba(var(--accent-rgb),.16),transparent 65%);
+   122→    animation:drift1 26s ease-in-out infinite alternate;
+   123→  }
+   124→  .aurora i:nth-child(2){
+   125→    width:48vw;height:48vw;bottom:-18vw;left:-14vw;
+   126→    background:radial-gradient(circle,rgba(var(--accent-2-rgb),.15),transparent 65%);
+   127→    animation:drift2 32s ease-in-out infinite alternate;
+   128→  }
+   129→  @keyframes drift1{to{transform:translate(-9vw,12vh) scale(1.18)}}
+   130→  @keyframes drift2{to{transform:translate(10vw,-10vh) scale(1.12) rotate(20deg)}}
+   131→  .grain{
+   132→    position:fixed;inset:0;pointer-events:none;z-index:1;opacity:var(--grain-op);mix-blend-mode:overlay;
+   133→    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+   134→  }
+   135→
+   136→  .wrap{max-width:var(--max);margin:0 auto;padding:0 clamp(20px,4vw,48px);position:relative;z-index:2}
+   137→
+   138→  /* ---------- mouse tracker ---------- */
+   139→  .cursor-dot,.cursor-ring,.cursor-glow{position:fixed;top:0;left:0;pointer-events:none;border-radius:50%;will-change:transform}
+   140→  .cursor-dot{width:7px;height:7px;background:var(--accent);z-index:10002}
+   141→  .cursor-ring{width:38px;height:38px;border:1.5px solid var(--accent);opacity:.55;z-index:10001}
+   142→  .cursor-glow{
+   143→    width:540px;height:540px;z-index:1;
+   144→    background:radial-gradient(circle,rgba(var(--accent-rgb),.08),transparent 60%);
+   145→  }
+   146→  @media (pointer:coarse){.cursor-dot,.cursor-ring,.cursor-glow{display:none}}
+   147→
+   148→  /* ---------- nav ---------- */
+   149→  nav{
+   150→    position:fixed;top:0;left:0;right:0;z-index:50;
+   151→    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+   152→    background:var(--nav-bg);
+   153→    border-bottom:1px solid transparent;
+   154→    transition:border-color .4s var(--ease);
+   155→  }
+   156→  nav.scrolled{border-bottom-color:var(--line)}
+   157→  .nav-inner{
+   158→    max-width:var(--max);margin:0 auto;padding:0 clamp(20px,4vw,48px);
+   159→    height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+   160→  }
+   161→  .nav-brand{font-family:var(--mono);font-size:13px;letter-spacing:.08em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px;white-space:nowrap}
+   162→  .nav-brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent-2);animation:pulse 2.4s infinite}
+   163→  .nav-links{display:flex;gap:clamp(4px,1vw,10px);list-style:none}
+   164→  .nav-links a{
+   165→    font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+   166→    color:var(--muted);text-decoration:none;position:relative;padding:5px 12px;border-radius:100px;
+   167→    transition:color .3s,background .3s;white-space:nowrap;
+   168→  }
+   169→  .nav-links a::after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:1px;width:0;background:var(--accent);transition:width .35s var(--ease)}
+   170→  .nav-links a:hover{color:var(--text)}
+   171→  .nav-links a:hover::after{width:calc(100% - 24px)}
+   172→  .nav-links a.active{color:var(--accent);background:var(--accent-soft)}
+   173→  .nav-links a.active::after{width:0}
+   174→  @media (max-width:860px){.nav-links{display:none}}
+   175→  .nav-progress{
+   176→    position:absolute;left:0;bottom:-1px;height:2px;width:100%;
+   177→    background:linear-gradient(90deg,var(--accent-2),var(--accent));
+   178→    transform:scaleX(0);transform-origin:left;will-change:transform;
+   179→  }
+   180→  .nav-actions{display:flex;align-items:center;gap:10px}
+   181→  .theme-btn,.menu-btn{
+   182→    width:38px;height:38px;border-radius:50%;border:1px solid var(--line-strong);
+   183→    background:transparent;color:var(--text);cursor:pointer;
+   184→    display:flex;align-items:center;justify-content:center;
+   185→    transition:border-color .3s,color .3s;
+   186→  }
+   187→  .theme-btn:hover,.menu-btn:hover{border-color:var(--accent);color:var(--accent)}
+   188→  .theme-btn .ic{width:17px;height:17px;transition:transform .6s var(--ease),opacity .3s}
+   189→  .theme-btn:active .ic{transform:rotate(120deg) scale(.85)}
+   190→  [data-theme="dark"] .ic-moon{display:none}
+   191→  [data-theme="light"] .ic-sun{display:none}
+   192→  .menu-btn{display:none;flex-direction:column;gap:4px}
+   193→  .menu-btn span{display:block;width:16px;height:1.5px;background:currentColor;transition:transform .35s var(--ease),opacity .3s}
+   194→  .menu-btn.open span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+   195→  .menu-btn.open span:nth-child(2){opacity:0}
+   196→  .menu-btn.open span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+   197→  @media (max-width:860px){.menu-btn{display:flex}}
+   198→  .mobile-menu{
+   199→    position:fixed;top:64px;left:0;right:0;z-index:49;
+   200→    background:var(--nav-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+   201→    border-bottom:1px solid var(--line);
+   202→    transform:translateY(-10px);opacity:0;pointer-events:none;
+   203→    transition:transform .35s var(--ease),opacity .3s;
+   204→  }
+   205→  .mobile-menu.open{transform:none;opacity:1;pointer-events:auto}
+   206→  .mobile-menu a{
+   207→    display:block;padding:15px 24px;font-family:var(--mono);font-size:12px;
+   208→    letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+   209→    text-decoration:none;border-top:1px solid var(--line);
+   210→    opacity:0;transform:translateY(-6px);
+   211→    transition:color .3s,padding-left .3s var(--ease),opacity .3s,transform .35s var(--ease);
+   212→  }
+   213→  .mobile-menu.open a{opacity:1;transform:none;transition-delay:0s,0s,calc(var(--i)*45ms),calc(var(--i)*45ms)}
+   214→  .mobile-menu a:hover{color:var(--text);padding-left:32px}
+   215→  .mobile-menu a.active{color:var(--accent)}
+   216→
+   217→  /* ---------- side dots ---------- */
+   218→  .side-dots{position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:14px}
+   219→  .side-dots a{display:flex;align-items:center;gap:10px;text-decoration:none}
+   220→  .side-dots i{width:6px;height:6px;border-radius:50%;background:var(--line-strong);transition:background .3s,transform .3s var(--ease),box-shadow .3s;flex:0 0 auto}
+   221→  .side-dots span{
+   222→    font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+   223→    opacity:0;transform:translateX(6px);transition:opacity .3s,transform .3s var(--ease);
+   224→  }
+   225→  .side-dots a:hover span,.side-dots a.active span{opacity:1;transform:none}
+   226→  .side-dots a.active i{background:var(--accent);transform:scale(1.45);box-shadow:0 0 10px rgba(var(--accent-rgb),.6)}
+   227→  @media (max-width:1180px){.side-dots{display:none}}
+   228→
+   229→  /* ---------- back to top ---------- */
+   230→  .to-top{
+   231→    position:fixed;right:22px;bottom:22px;z-index:45;width:42px;height:42px;border-radius:50%;
+   232→    border:1px solid var(--line-strong);background:var(--card);color:var(--text);cursor:pointer;
+   233→    display:flex;align-items:center;justify-content:center;
+   234→    opacity:0;transform:translateY(12px);pointer-events:none;
+   235→    transition:opacity .35s,transform .35s var(--ease),border-color .3s,color .3s;
+   236→  }
+   237→  .to-top.show{opacity:1;transform:none;pointer-events:auto}
+   238→  .to-top:hover{border-color:var(--accent);color:var(--accent)}
+   239→  .to-top svg{width:16px;height:16px}
+   240→
+   241→  /* ---------- agent dots motif ---------- */
+   242→  .agent-dots{display:inline-flex;gap:6px;align-items:center}
+   243→  .agent-dots i{width:6px;height:6px;border-radius:50%;background:var(--accent-2);animation:pulse 2.4s infinite}
+   244→  .agent-dots i:nth-child(2){animation-delay:.3s}
+   245→  .agent-dots i:nth-child(3){animation-delay:.6s}
+   246→  .agent-dots i:nth-child(4){animation-delay:.9s}
+   247→  .agent-dots i:nth-child(5){animation-delay:1.2s}
+   248→  .agent-dots.gold i{background:var(--accent)}
+   249→  @keyframes pulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+   250→
+   251→  /* ---------- hero ---------- */
+   252→  header{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:120px 0 80px;position:relative}
+   253→  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(32px,5vw,72px);align-items:center}
+   254→  @media (max-width:900px){.hero-grid{grid-template-columns:1fr}}
+   255→  .h-anim{opacity:0;transform:translateY(26px);animation:heroUp 1s var(--ease) forwards;animation-play-state:paused}
+   256→  body.loaded .h-anim{animation-play-state:running}
+   257→  @keyframes heroUp{to{opacity:1;transform:none}}
+   258→  .eyebrow{
+   259→    font-family:-no-var;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+   260→    color:var(--accent);display:flex;align-items:center;gap:12px;margin-bottom:26px;
+   261→  }
+   262→  .eyebrow::before{content:"";width:32px;height:1px;background:var(--accent);opacity:.6}
+   263→  h1{font-family:var(--serif);font-weight:400;font-size:clamp(42px,6.4vw,76px);line-height:1.04;letter-spacing:-.015em}
+   264→  h1 em{
+   265→    font-style:italic;font-weight:300;
+   266→    background:linear-gradient(100deg,var(--accent) 20%,var(--accent-2) 50%,var(--accent) 80%);
+   267→    background-size:220% 100%;
+   268→    -webkit-background-clip:text;background-clip:text;color:transparent;
+   269→    animation:shimmer 7s linear infinite;
+   270→  }
+   271→  @keyframes shimmer{to{background-position:220% 0}}
+   272→  .hero-sub{margin-top:26px;max-width:52ch;color:var(--muted);font-size:clamp(15px,1.4vw,17px)}
+   273→  .hero-sub strong{color:var(--text);font-weight:500}
+   274→  .hero-now{
+   275→    margin-top:22px;display:inline-flex;align-items:center;gap:10px;
+   276→    font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);
+   277→    border:1px solid var(--line);border-radius:100px;padding:8px 15px;background:var(--card);
+   278→  }
+   279→  .hero-now .dot{width:6px;height:6px;border-radius:50%;background:var(--accent-2);animation:pulse 2.4s infinite;flex:0 0 auto}
+   280→  .hero-now b{color:var(--accent-2);font-weight:500;letter-spacing:.14em}
+   281→  .hero-cta{margin-top:34px;display:flex;gap:14px;flex-wrap:wrap}
+   282→  .btn{
+   283→    font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+   284→    text-decoration:none;padding:14px 26px;border-radius:2px;display:inline-flex;align-items:center;gap:10px;
+   285→    position:relative;overflow:hidden;will-change:transform;
+   286→    transition:background .3s,color .3s,border-color .3s,box-shadow .3s;
+   287→  }
+   288→  .btn-gold{background:var(--accent);color:var(--btn-text);font-weight:500}
+   289→  .btn-gold:hover{box-shadow:0 10px 30px rgba(var(--accent-rgb),.35)}
+   290→  .btn-gold::after{
+   291→    content:"";position:absolute;top:0;left:-90%;width:45%;height:100%;
+   292→    background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);
+   293→    transform:skewX(-20deg);transition:left .6s var(--ease);
+   294→  }
+   295→  .btn-gold:hover::after{left:140%}
+   296→  .btn-ghost{border:1px solid var(--line-strong);color:var(--text)}
+   297→  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+   298→
+   299→  /* ---------- constellation ---------- */
+   300→  .constellation{position:relative;aspect-ratio:1/1;max-width:460px;width:100%;margin:0 auto}
+   301→  .constellation::before{
+   302→    content:"";position:absolute;inset:5%;border:1px solid var(--line);border-radius:50%;pointer-events:none;
+   303→  }
+   304→  .constellation::after{
+   305→    content:"";position:absolute;inset:-10%;pointer-events:none;
+   306→    background:radial-gradient(circle,rgba(var(--accent-2-rgb),.07),transparent 62%);
+   307→  }
+   308→  .constellation canvas{width:100%;height:100%;display:block;position:relative;z-index:1;touch-action:manipulation}
+   309→  .constellation-label{
+   310→    position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+   311→    display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap;
+   312→    transition:opacity .22s ease;pointer-events:none;
+   313→  }
+   314→  .constellation-label.switching{opacity:0}
+   315→  .cr-name{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+   316→  .cr-role{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--muted)}
+   317→  @media (max-width:900px){.constellation{max-width:340px}}
+   318→
+   319→  .scroll-hint{
+   320→    position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+   321→    display:flex;flex-direction:column;align-items:center;gap:10px;
+   322→    font-family:var(--mono);font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);
+   323→    opacity:0;transition:opacity .8s ease 1s;pointer-events:none;
+   324→  }
+   325→  body.loaded .scroll-hint{opacity:1}
+   326→  header.scrolled-past .scroll-hint{opacity:0!important;transition-delay:0s}
+   327→  .scroll-hint i{
+   328→    width:1px;height:42px;display:block;transform-origin:top;
+   329→    background:linear-gradient(var(--accent),transparent);
+   330→    animation:hintDrop 2s var(--ease) infinite;
+   331→  }
+   332→  @keyframes hintDrop{0%{transform:scaleY(0)}45%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+   333→
+   334→  .hero-meta{margin-top:64px;padding-top:28px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+   335→  @media (max-width:760px){.hero-meta{grid-template-columns:repeat(2,1fr)}}
+   336→  .stat .num{font-family:var(--serif);font-size:clamp(26px,3vw,36px);color:var(--text);line-height:1.1}
+   337→  .stat .num span{color:var(--accent)}
+   338→  .stat .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+   339→
+   340→  /* ---------- marquee ---------- */
+   341→  .marquee{
+   342→    overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:15px 0;position:relative;z-index:2;
+   343→    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+   344→    mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+   345→  }
+   346→  .marquee-track{display:flex;width:max-content;will-change:transform}
+   347→  .marquee span{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+   348→  .marquee b{color:var(--accent);font-weight:400;padding:0 18px}
+   349→
+   350→  /* ---------- sections ---------- */
+   351→  section{padding:clamp(72px,10vw,128px) 0;position:relative}
+   352→  .sec-head{margin-bottom:clamp(40px,5vw,64px);max-width:760px;position:relative}
+   353→  .sec-num{
+   354→    position:absolute;top:-.55em;right:0;font-family:var(--serif);font-weight:300;
+   355→    font-size:clamp(88px,13vw,170px);line-height:1;color:transparent;
+   356→    -webkit-text-stroke:1px var(--line-strong);opacity:.55;pointer-events:none;user-select:none;
+   357→    will-change:transform;
+   358→  }
+   359→  .sec-index{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--accent-2);text-transform:uppercase;display:flex;align-items:center;gap:12px;margin-bottom:18px}
+   360→  .sec-index::after{content:"";flex:0 0 32px;height:1px;background:var(--accent-2);opacity:.5}
+   361→  h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4vw,46px);line-height:1.12;letter-spacing:-.01em}
+   362→  h2 em{font-style:italic;color:var(--accent);font-weight:300}
+   363→  .sec-lede{margin-top:16px;color:var(--muted);max-width:60ch}
+   364→
+   365→  /* ---------- reveal ---------- */
+   366→  .reveal{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+   367→  .reveal.in{opacity:1;transform:none}
+   368→  .reveal[data-delay="1"]{transition-delay:.1s}
+   369→  .reveal[data-delay="2"]{transition-delay:.2s}
+   370→  .reveal[data-delay="3"]{transition-delay:.3s}
+   371→
+   372→  /* ---------- spotlight hover ---------- */
+   373→  .spot{position:relative}
+   374→  .spot::after{
+   375→    content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;
+   376→    transition:opacity .45s;pointer-events:none;
+   377→    background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(var(--accent-rgb),.09),transparent 65%);
+   378→  }
+   379→  .spot:hover::after{opacity:1}
+   380→
+   381→  /* ---------- project cards ---------- */
+   382→  .project{
+   383→    background:var(--card);border:1px solid var(--line);border-radius:10px;
+   384→    padding:clamp(28px,4vw,48px);margin-bottom:28px;position:relative;overflow:hidden;
+   385→    box-shadow:var(--shadow);
+   386→    transition:border-color .4s var(--ease);
+   387→  }
+   388→  .project:hover{border-color:var(--line-strong)}
+   389→  .project::before{
+   390→    content:"";position:absolute;top:0;left:0;right:0;height:2px;z-index:1;
+   391→    background:linear-gradient(90deg,var(--accent),transparent 55%);
+   392→    opacity:0;transition:opacity .4s;
+   393→  }
+   394→  .project:hover::before{opacity:1}
+   395→  .project-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+   396→  .project-tag{
+   397→    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+   398→    color:var(--accent-2);border:1px solid rgba(var(--accent-2-rgb),.35);background:var(--accent-2-soft);
+   399→    padding:6px 12px;border-radius:100px;white-space:nowrap;
+   400→  }
+   401→  .project h3{font-family:var(--serif);font-weight:500;font-size:clamp(24px,2.6vw,32px);letter-spacing:-.01em}
+   402→  .project-role{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:6px}
+   403→  .project p{color:var(--muted);margin-top:16px;max-width:68ch}
+   404→  .project p strong{color:var(--text);font-weight:500}
+   405→  .feat-list{list-style:none;margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px 24px}
+   406→  .feat-list li{font-size:14px;color:var(--text);padding-left:22px;position:relative}
+   407→  .feat-list li::before{content:"";position:absolute;left:0;top:9px;width:10px;height:1.5px;background:var(--accent)}
+   408→  .feat-list li.dev{color:var(--muted);font-style:italic}
+   409→  .feat-list li.dev::before{background:var(--muted)}
+   410→
+   411→  .plinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+   412→  .plink{
+   413→    display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);
+   414→    border-radius:100px;padding:7px 14px;font-size:12.5px;background:var(--bg-2);
+   415→    transition:border-color .3s;
+   416→  }
+   417→  .plink:hover{border-color:var(--line-strong)}
+   418→  .plink .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2);white-space:nowrap}
+   419→  .plink .v{color:var(--text)}
+   420→  .plink.dim .v{color:var(--muted);font-style:italic}
+   421→  .plink.wide{flex:1 1 100%;border-radius:8px;align-items:flex-start;padding:10px 16px}
+   422→  .plink.wide .k{padding-top:2px}
+   423→
+   424→  .honest{
+   425→    margin-top:26px;padding:18px 22px;border-radius:6px;
+   426→    background:var(--bg-2);border:1px solid var(--line);border-left:2px solid var(--accent-2);
+   427→    display:flex;gap:16px;align-items:flex-start;
+   428→  }
+   429→  .honest .h-label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2);white-space:nowrap;padding-top:3px}
+   430→  .honest p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.6}
+   431→  .honest p strong{color:var(--text);font-weight:500}
+   432→  .metrics{display:flex;gap:clamp(20px,3vw,44px);margin-top:26px;flex-wrap:wrap}
+   433→  .metric .m-num{font-family:var(--serif);font-size:26px;color:var(--accent)}
+   434→  .metric .m-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+   435→
+   436→  /* ---------- hero roster (Vanguard Clash) ---------- */
+   437→  .roster{margin-top:26px;border:1px solid var(--line);border-radius:8px;background:var(--bg-2);overflow:hidden}
+   438→  .roster summary{
+   439→    cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:14px;
+   440→    padding:16px 20px;font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
+   441→    transition:background .3s;
+   442→  }
+   443→  .roster summary:hover{background:var(--accent-soft)}
+   444→  .roster summary::-webkit-details-marker{display:none}
+   445→  .roster summary .hint{color:var(--muted);letter-spacing:.06em;text-transform:none;font-size:11px}
+   446→  .roster summary .plus{position:relative;width:14px;height:14px;flex:0 0 auto}
+   447→  .roster summary .plus::before,.roster summary .plus::after{
+   448→    content:"";position:absolute;left:0;top:6px;width:14px;height:2px;background:var(--accent);transition:transform .35s var(--ease);
+   449→  }
+   450→  .roster summary .plus::after{transform:rotate(90deg)}
+   451→  .roster[open] summary .plus::after{transform:rotate(0)}
+   452→  .roster-body{overflow:hidden;transition:height .55s var(--ease)}
+   453→  .roster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)}
+   454→  @media (max-width:820px){.roster-grid{grid-template-columns:1fr}}
+   455→  .role-col{background:var(--bg-2);padding:22px}
+   456→  .role-name{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2);margin-bottom:16px}
+   457→  .role-name span{display:block;color:var(--muted);letter-spacing:.04em;text-transform:none;font-size:10.5px;margin-top:3px}
+   458→  .hero-k{margin-bottom:18px;padding-left:14px;border-left:2px solid var(--accent);transition:border-color .3s,padding-left .3s var(--ease)}
+   459→  .hero-k:hover{border-left-color:var(--accent-2);padding-left:18px}
+   460→  .hero-k:last-child{margin-bottom:0}
+   461→  .hero-k h5{font-family:var(--serif);font-size:16px;font-weight:600;letter-spacing:.05em}
+   462→  .hero-k p{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.55}
+   463→  .hero-k p b{color:var(--text);font-weight:500}
+   464→
+   465→  /* ---------- other games ---------- */
+   466→  .games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+   467→  .game-card{
+   468→    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;
+   469→    transition:border-color .35s;
+   470→  }
+   471→  .game-card:hover{border-color:rgba(var(--accent-rgb),.4)}
+   472→  .game-card h4{font-family:var(--serif);font-weight:500;font-size:18px;margin-bottom:8px}
+   473→  .game-card p{font-size:13.5px;color:var(--muted);line-height:1.6}
+   474→  .game-card .g-tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2);display:block;margin-bottom:12px}
+   475→  .g-meta{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:7px}
+   476→  .g-meta p{font-size:11.5px;font-family:var(--mono);color:var(--muted);letter-spacing:.02em;margin:0}
+   477→  .g-meta p b{color:var(--accent-2);font-weight:500;text-transform:uppercase;font-size:9px;letter-spacing:.14em;display:block;margin-bottom:1px}
+   478→  .games-note{margin-top:20px;font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;display:flex;align-items:center;gap:12px}
+   479→
+   480→  /* ---------- what i bring ---------- */
+   481→  .bring-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+   482→  @media (max-width:900px){.bring-grid{grid-template-columns:1fr}}
+   483→  .bring-card{
+   484→    background:var(--card);border:1px solid var(--line);border-radius:10px;
+   485→    padding:clamp(26px,3vw,36px);display:flex;flex-direction:column;
+   486→    transition:border-color .35s;
+   487→  }
+   488→  .bring-card:hover{border-color:rgba(var(--accent-rgb),.45)}
+   489→  .bring-num{font-family:var(--serif);font-style:italic;font-weight:300;font-size:44px;color:var(--accent);line-height:1;margin-bottom:20px}
+   490→  .bring-card h3{font-family:var(--serif);font-weight:500;font-size:clamp(20px,2vw,24px);line-height:1.25;letter-spacing:-.01em;margin-bottom:12px}
+   491→  .bring-card p{font-size:14px;color:var(--muted);line-height:1.7}
+   492→  .bring-card p strong{color:var(--text);font-weight:500}
+   493→
+   494→  /* ---------- timeline ---------- */
+   495→  .timeline{position:relative;padding-left:32px}
+   496→  .timeline::before{
+   497→    content:"";position:absolute;left:7px;top:6px;bottom:6px;width:1px;
+   498→    background:linear-gradient(var(--accent),var(--accent-2));
+   499→    transform:scaleY(0);transform-origin:top;transition:transform 1.6s var(--ease) .2s;
+   500→  }
+   501→  .timeline.in::before{transform:scaleY(1)}
+   502→  .t-item{position:relative;padding-bottom:36px}
+   503→  .t-item:last-child{padding-bottom:0}
+   504→  .t-item::before{
+   505→    content:"";position:absolute;left:-32px;top:7px;width:15px;height:15px;border-radius:50%;
+   506→    background:var(--bg);border:2px solid var(--accent);transition:background .3s,box-shadow .3s;
+   507→  }
+   508→  .t-item:hover::before{background:var(--accent);box-shadow:0 0 16px rgba(var(--accent-rgb),.5)}
+   509→  .t-year{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--accent)}
+   510→  .t-item h4{font-family:var(--serif);font-weight:500;font-size:20px;margin:6px 0 4px;transition:color .3s}
+   511→  .t-item:hover h4{color:var(--accent)}
+   512→  .t-item p{font-size:14px;color:var(--muted)}
+   513→
+   514→  /* ---------- card grids ---------- */
+   515→  .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+   516→  .card{
+   517→    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:26px;
+   518→    transition:border-color .35s;
+   519→  }
+   520→  .card:hover{border-color:var(--line-strong)}
+   521→  .card .c-icon{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:10px;margin-bottom:14px}
+   522→  .card h4{font-family:var(--serif);font-weight:500;font-size:19px;margin-bottom:8px}
+   523→  .card p{font-size:14px;color:var(--muted)}
+   524→  .card .c-meta{font-family:var(--mono);font-size:11px;color:var(--accent-2);margin-top:12px;letter-spacing:.06em}
+   525→
+   526→  /* ---------- athletics ---------- */
+   527→  .ath-hero{
+   528→    background:linear-gradient(135deg,var(--card) 0%,var(--card-2) 100%);
+   529→    border:1px solid var(--line);border-radius:10px;padding:clamp(28px,4vw,44px);
+   530→    display:grid;grid-template-columns:auto 1fr;gap:clamp(24px,4vw,48px);align-items:center;margin-bottom:16px;
+   531→    box-shadow:var(--shadow);
+   532→  }
+   533→  @media (max-width:700px){.ath-hero{grid-template-columns:1fr}}
+   534→  .medal-count{font-family:var(--serif);font-size:clamp(64px,8vw,96px);line-height:1;color:var(--accent);text-align:center}
+   535→  .medal-count small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+   536→  .ath-hero h3{font-family:var(--serif);font-weight:500;font-size:clamp(22px,2.4vw,28px);margin-bottom:10px}
+   537→  .ath-hero p{color:var(--muted);font-size:15px;max-width:56ch}
+   538→  .ath-hero p strong{color:var(--text);font-weight:500}
+   539→  .award-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+   540→  .chip{
+   541→    font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--text);
+   542→    border:1px solid var(--line-strong);border-radius:100px;padding:7px 14px;
+   543→    display:inline-flex;align-items:center;gap:8px;transition:border-color .3s,color .3s,transform .3s var(--ease);
+   544→  }
+   545→  .chip:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+   546→  .chip i{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+   547→
+   548→  /* ---------- academics ---------- */
+   549→  .acad-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,56px)}
+   550→  @media (max-width:800px){.acad-grid{grid-template-columns:1fr}}
+   551→  .subject-list{list-style:none}
+   552→  .subject-list li{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);font-size:15px;transition:padding-left .3s var(--ease)}
+   553→  .subject-list li:hover{padding-left:12px}
+   554→  .subject-list .s-grade{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;transition:color .3s}
+   555→  .subject-list li:hover .s-grade{color:var(--accent)}
+   556→  .lang-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+   557→  .lang-list li{display:flex;align-items:center;gap:14px}
+   558→  .lang-name{flex:0 0 90px;font-size:15px}
+   559→  .lang-bar{flex:1;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+   560→  .lang-bar i{display:block;height:100%;background:var(--accent-2);border-radius:2px;transform-origin:left;transform:scaleX(0);transition:transform 1.2s var(--ease) .2s;position:relative;overflow:hidden}
+   561→  .lang-bar i::after{
+   562→    content:"";position:absolute;inset:0;
+   563→    background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);
+   564→    transform:translateX(-100%);
+   565→  }
+   566→  .in .lang-bar i{transform:scaleX(var(--w))}
+   567→  .in .lang-bar i::after{animation:barShine 1.2s ease 1s 1 forwards}
+   568→  @keyframes barShine{to{transform:translateX(100%)}}
+   569→  .lang-lvl{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em;flex:0 0 80px;text-align:right}
+   570→
+   571→  /* ---------- footer ---------- */
+   572→  footer{border-top:1px solid var(--line);padding:64px 0 48px;text-align:center;position:relative;z-index:2}
+   573→  footer .f-name{font-family:var(--serif);font-size:clamp(24px,3vw,32px);margin-bottom:12px}
+   574→  footer .f-name em{font-style:italic;color:var(--accent)}
+   575→  footer p{color:var(--muted);font-size:14px;max-width:52ch;margin:0 auto}
+   576→  footer .f-targets{margin-top:22px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+   577→  footer .f-build{margin-top:30px;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em;opacity:.8}
+   578→  footer .f-mono{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}
+   579→
+   580→  .divider{height:1px;background:var(--line);max-width:var(--max);margin:0 auto;position:relative;z-index:2}
+   581→</style>
+   582→</head>
+   583→<body>
+   584→<a class="skip-link" href="#main">Skip to content</a>
+   585→
+   586→<div class="loader" id="loader" aria-hidden="true">
+   587→  <span class="agent-dots gold"><i></i><i></i><i></i><i></i><i></i></span>
+   588→  <p>Essam Al Harthy</p>
+   589→</div>
+   590→
+   591→<div class="aurora" id="aurora" aria-hidden="true"><i></i><i></i></div>
+   592→<div class="grain" aria-hidden="true"></div>
+   593→<div class="cursor-glow" aria-hidden="true"></div>
+   594→<div class="cursor-ring" aria-hidden="true"></div>
+   595→<div class="cursor-dot" aria-hidden="true"></div>
+   596→
+   597→<nav id="nav" aria-label="Main navigation">
+   598→  <div class="nav-inner">
+   599→    <a class="nav-brand" href="#top"><span class="dot" aria-hidden="true"></span>ESSAM&nbsp;AL&nbsp;HARTHY</a>
+   600→    <ul class="nav-links">
+   601→      <li><a href="#projects">Projects</a></li>
+   602→      <li><a href="#bring">What I Bring</a></li>
+   603→      <li><a href="#science">Science Fair</a></li>
+   604→      <li><a href="#leadership">Leadership</a></li>
+   605→      <li><a href="#athletics">Athletics</a></li>
+   606→      <li><a href="#service">Service</a></li>
+   607→    </ul>
+   608→    <div class="nav-actions">
+   609→      <button class="theme-btn" id="themeBtn" aria-label="Switch color theme">
+   610→        <svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg>
+   611→        <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a7 7 0 0 0 9.7 9.7Z"/></svg>
+   612→      </button>
+   613→      <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+   614→    </div>
+   615→  </div>
+   616→  <div class="nav-progress" id="progress" aria-hidden="true"></div>
+   617→</nav>
+   618→
+   619→<div class="mobile-menu" id="mobileMenu">
+   620→  <a href="#projects" style="--i:0">Projects</a>
+   621→  <a href="#bring" style="--i:1">What I Bring</a>
+   622→  <a href="#science" style="--i:2">Science Fair</a>
+   623→  <a href="#leadership" style="--i:3">Leadership</a>
+   624→  <a href="#athletics" style="--i:4">Athletics</a>
+   625→  <a href="#service" style="--i:5">Service</a>
+   626→</div>
+   627→
+   628→<nav class="side-dots" aria-label="Section quick navigation">
+   629→  <a href="#projects"><span>Projects</span><i></i></a>
+   630→  <a href="#bring"><span>What I Bring</span><i></i></a>
+   631→  <a href="#science"><span>Science Fair</span><i></i></a>
+   632→  <a href="#leadership"><span>Leadership</span><i></i></a>
+   633→  <a href="#athletics"><span>Athletics</span><i></i></a>
+   634→  <a href="#service"><span>Service</span><i></i></a>
+   635→  <a href="#academics"><span>Academics</span><i></i></a>
+   636→</nav>
+   637→
+   638→<button class="to-top" id="toTop" aria-label="Back to top">
+   639→  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+   640→</button>
+   641→
+   642→<main id="main">
+   643→<header id="top">
+   644→  <div class="wrap">
+   645→    <div class="hero-grid">
+   646→      <div>
+   647→        <p class="eyebrow h-anim">Arusha, Tanzania · Grade 12 · Class of 2027</p>
+   648→        <h1 class="h-anim" style="animation-delay:.08s">Essam Nasser<br>Khalfan <em>Al Harthy</em></h1>
+   649→        <p class="hero-sub h-anim" style="animation-delay:.16s">
+   650→          I'm a 16-year-old student at <strong>Arusha Meru International School</strong> who builds things —
+   651→          an AI automation assistant with five sub-agents, a browser hero shooter with procedurally generated
+   652→          everything — and leads things: science fair teams, study groups, football matches.
+   653→          I'm applying to <strong>UWC Dilijan</strong> and the <strong>African Leadership Academy</strong>.
+   654→        </p>
+   655→        <p class="hero-now h-anim" style="animation-delay:.22s">
+   656→          <span class="dot" aria-hidden="true"></span>
+   657→          <span><b>NOW</b> — teaching each Odin sub-agent to route through its own AI model</span>
+   658→        </p>
+   659→        <div class="hero-cta h-anim" style="animation-delay:.3s">
+   660→          <a class="btn btn-gold" href="#projects">See what I've built</a>
+   661→          <a class="btn btn-ghost" href="#bring">What I bring</a>
+   662→        </div>
+   663→      </div>
+   664→      <div class="constellation h-anim" style="animation-delay:.2s">
+   665→        <canvas id="agents" role="img" aria-label="Animated orbit diagram of Odin's five sub-agents — Forge, Herald, Reel, Ida and Lloyd — around a human-approval core."></canvas>
+   666→        <div class="constellation-label" id="agentReadout">
+   667→          <span class="cr-name" id="agentName">ODIN · FIVE SUB-AGENTS</span>
+   668→          <span class="cr-role" id="agentRole">hover a node to inspect · one human in the loop</span>
+   669→        </div>
+   670→        <ul class="sr-only">
+   671→          <li>Forge: generates print-on-demand designs, gated by a readiness check</li>
+   672→          <li>Herald: drafts and publishes written content</li>
+   673→          <li>Reel: scripts and assembles faceless video</li>
+   674→          <li>Ida: in development, role to be defined</li>
+   675→          <li>Lloyd: in development, role to be defined</li>
+   676→        </ul>
+   677→      </div>
+   678→    </div>
+   679→
+   680→    <div class="hero-meta h-anim" style="animation-delay:.4s">
+   681→      <div class="stat"><div class="num"><span class="count" data-count="5">0</span></div><div class="lbl">AI sub-agents built</div></div>
+   682→      <div class="stat"><div class="num"><span class="count" data-count="11700">0</span><span>+</span></div><div class="lbl">lines of code shipped</div></div>
+   683→      <div class="stat"><div class="num">13<span>th</span></div><div class="lbl">of 250 · science fair</div></div>
+   684→      <div class="stat"><div class="num"><span class="count" data-count="4">0</span></div><div class="lbl">years of science fair</div></div>
+   685→    </div>
+   686→  </div>
+   687→  <div class="scroll-hint" aria-hidden="true"><span>Scroll</span><i></i></div>
+   688→</header>
+   689→
+   690→<div class="marquee" aria-hidden="true">
+   691→  <div class="marquee-track">
+   692→    <span>AI Automation <b>✦</b> Multi-Agent Systems <b>✦</b> Procedural Generation <b>✦</b> Browser Games <b>✦</b> Science Fair Leadership <b>✦</b> Football <b>✦</b> Human in the Loop <b>✦</b></span>
+   693→    <span>AI Automation <b>✦</b> Multi-Agent Systems <b>✦</b> Procedural Generation <b>✦</b> Browser Games <b>✦</b> Science Fair Leadership <b>✦</b> Football <b>✦</b> Human in the Loop <b>✦</b></span>
+   694→  </div>
+   695→</div>
+   696→
+   697→<!-- ================= PROJECTS ================= -->
+   698→<section id="projects">
+   699→  <div class="wrap">
+   700→    <div class="sec-head reveal">
+   701→      <span class="sec-num" aria-hidden="true">01</span>
+   702→      <p class="sec-index">Projects</p>
+   703→      <h2>Things I've <em>built</em></h2>
+   704→      <p class="sec-lede">Real systems, not tutorials. Everything below runs, and I can explain every line of it — including the parts AI helped me write.</p>
+   705→    </div>
+   706→
+   707→    <!-- ODIN -->
+   708→    <article class="project spot reveal">
+   709→      <div class="project-top">
+   710→        <div>
+   711→          <h3>Odin</h3>
+   712→          <p class="project-role">Designer &amp; builder · third iteration · 2024 → now</p>
+   713→        </div>
+   714→        <span class="project-tag">AI Automation · Multi-Agent</span>
+   715→      </div>
+   716→      <p>
+   717→        Odin is my AI automation assistant — a small company of <strong>five specialised sub-agents</strong> that I direct.
+   718→        Each agent has one job and does it well. Everything they produce passes through a
+   719→        <strong>human approval gate: me</strong>. Nothing ships that I haven't read, checked and signed off.
+   720→      </p>
+   721→      <ul class="feat-list">
+   722→        <li><strong>Forge</strong> — generates print-on-demand designs, gated by a readiness check</li>
+   723→        <li><strong>Herald</strong> — drafts and publishes written content</li>
+   724→        <li><strong>Reel</strong> — scripts and assembles faceless video</li>
+   725→        <li class="dev">Ida — in development, role TBD</li>
+   726→        <li class="dev">Lloyd — in development, role TBD</li>
+   727→        <li>Human approval gate on every output</li>
+   728→      </ul>
+   729→      <div class="plinks">
+   730→        <span class="plink"><span class="k">Architecture</span><span class="v">Five sub-agents, one orchestrator</span></span>
+   731→        <span class="plink"><span class="k">Loop</span><span class="v">Human-in-the-loop by design</span></span>
+   732→        <span class="plink dim"><span class="k">In progress</span><span class="v">Per-agent model routing</span></span>
+   733→      </div>
+   734→      <div class="honest">
+   735→        <span class="h-label">Honest note</span>
+   736→        <p>
+   737→          Odin started life as a pile of <strong>ChatGPT prompts that broke every time I changed anything</strong>.
+   738→          I rebuilt it properly with Claude, agent by agent, and I test every workflow by hand before it earns a
+   739→          place in the system. The parts that work, work well — and I can defend every design decision in it.
+   740→        </p>
+   741→      </div>
+   742→      <div class="metrics">
+   743→        <div class="metric"><div class="m-num">5</div><div class="m-lbl">sub-agents</div></div>
+   744→        <div class="metric"><div class="m-num">3rd</div><div class="m-lbl">iteration</div></div>
+   745→        <div class="metric"><div class="m-num">1</div><div class="m-lbl">human in the loop</div></div>
+   746→      </div>
+   747→    </article>
+   748→
+   749→    <!-- VANGUARD CLASH -->
+   750→    <article class="project spot reveal">
+   751→      <div class="project-top">
+   752→        <div>
+   753→          <h3>Vanguard Clash</h3>
+   754→          <p class="project-role">Solo developer · design, code, art pipeline</p>
+   755→        </div>
+   756→        <span class="project-tag">Browser Game · Procedural</span>
+   757→      </div>
+   758→      <p>
+   759→        A hero shooter that runs <strong>entirely in the browser</strong> — no installs, no engine.
+   760→        Every map, weapon and visual effect is <strong>procedurally generated</strong>, so no two matches
+   761→        ever play the same twice.
+   762→      </p>
+   763→      <ul class="feat-list">
+   764→        <li>Fully procedural maps, weapons and effects</li>
+   765→        <li>Hero roster with distinct kits and roles</li>
+   766→        <li>Runs in-browser on vanilla JavaScript + Canvas</li>
+   767→        <li>Bot matches with scaling difficulty</li>
+   768→      </ul>
+   769→
+   770→      <details class="roster">
+   771→        <summary>
+   772→          <span>Hero roster <span class="hint">— three roles, six heroes</span></span>
+   773→          <span class="plus" aria-hidden="true"></span>
+   774→        </summary>
+   775→        <div class="roster-body">
+   776→          <div class="roster-grid">
+   777→            <div class="role-col">
+   778→              <p class="role-name">Assault <span>frontline damage</span></p>
+   779→              <div class="hero-k">
+   780→                <h5>JUGGERNAUT</h5>
+   781→                <p>Close-range bruiser. <b>Slag Rounds</b> shred at point-blank, fall off hard at distance.</p>
+   782→              </div>
+   783→              <div class="hero-k">
+   784→                <h5>BLITZ</h5>
+   785→                <p>High-mobility skirmisher. <b>Dash Strike</b> resets on elimination.</p>
+   786→              </div>
+   787→            </div>
+   788→            <div class="role-col">
+   789→              <p class="role-name">Recon <span>information &amp; flanks</span></p>
+   790→              <div class="hero-k">
+   791→                <h5>WISP</h5>
+   792→                <p>Scout with a <b>Pulse Drone</b> that reveals enemies through generated cover.</p>
+   793→              </div>
+   794→              <div class="hero-k">
+   795→                <h5>LONGSHOT</h5>
+   796→                <p>Precision marksman. <b>Overcharge</b> turns the next shot into a railgun.</p>
+   797→              </div>
+   798→            </div>
+   799→            <div class="role-col">
+   800→              <p class="role-name">Support <span>keep the team alive</span></p>
+   801→              <div class="hero-k">
+   802→                <h5>AEGIS</h5>
+   803→                <p>Deploys a <b>Barrier Dome</b> that scales with how much damage it absorbs.</p>
+   804→              </div>
+   805→              <div class="hero-k">
+   806→                <h5>REMEDY</h5>
+   807→                <p>Healer whose <b>Field Kit</b> leaves regenerating zones on the map.</p>
+   808→              </div>
+   809→            </div>
+   810→          </div>
+   811→        </div>
+   812→      </details>
+   813→
+   814→      <div class="plinks">
+   815→        <span class="plink"><span class="k">Engine</span><span class="v">Vanilla JS + Canvas</span></span>
+   816→        <span class="plink"><span class="k">Art</span><span class="v">100% procedural</span></span>
+   817→        <span class="plink"><span class="k">Status</span><span class="v">Playable build</span></span>
+   818→      </div>
+   819→    </article>
+   820→
+   821→    <!-- OTHER GAMES -->
+   822→    <div class="games-grid">
+   823→      <div class="game-card spot reveal">
+   824→        <span class="g-tag">Endless Racer</span>
+   825→        <h4>Driftline</h4>
+   826→        <p>An endless downhill racer on a procedurally generated track that gets meaner the longer you survive.</p>
+   827→        <div class="g-meta">
+   828→          <p><b>Engine</b>Canvas + vanilla JS</p>
+   829→          <p><b>Status</b>Prototype</p>
+   830→        </div>
+   831→      </div>
+   832→      <div class="game-card spot reveal" data-delay="1">
+   833→        <span class="g-tag">Tactics</span>
+   834→        <h4>Hexhold</h4>
+   835→        <p>Turn-based tactics on generated hex maps — terrain is the real opponent.</p>
+   836→        <div class="g-meta">
+   837→          <p><b>Engine</b>Canvas + vanilla JS</p>
+   838→          <p><b>Status</b>Prototype</p>
+   839→        </div>
+   840→      </div>
+   841→      <div class="game-card spot reveal" data-delay="2">
+   842→        <span class="g-tag">Microgames</span>
+   843→        <h4>One-Button Jam</h4>
+   844→        <p>A collection of one-button microgames built to learn game feel — juice, timing, feedback.</p>
+   845→        <div class="g-meta">
+   846→          <p><b>Engine</b>Canvas + vanilla JS</p>
+   847→          <p><b>Status</b>Ongoing</p>
+   848→        </div>
+   849→      </div>
+   850→    </div>
+   851→    <p class="games-note reveal"><span class="agent-dots"><i></i><i></i><i></i></span> More prototypes on request — most of them live on my school laptop.</p>
+   852→  </div>
+   853→</section>
+   854→
+   855→<div class="divider"></div>
+   856→
+   857→<!-- ================= WHAT I BRING ================= -->
+   858→<section id="bring">
+   859→  <div class="wrap">
+   860→    <div class="sec-head reveal">
+   861→      <span class="sec-num" aria-hidden="true">02</span>
+   862→      <p class="sec-index">What I Bring</p>
+   863→      <h2>What I'd bring to <em>UWC or ALA</em></h2>
+   864→    </div>
+   865→    <div class="bring-grid">
+   866→      <div class="bring-card spot reveal">
+   867→        <div class="bring-num">01</div>
+   868→        <h3>I build real things</h3>
+   869→        <p>Not tutorial projects — <strong>working systems</strong> I can demo live and explain line by line, including the parts that broke and how I fixed them.</p>
+   870→      </div>
+   871→      <div class="bring-card spot reveal" data-delay="1">
+   872→        <div class="bring-num">02</div>
+   873→        <h3>I lead by organising</h3>
+   874→        <p>Science fair teams, study groups, football matches — I'm the person who <strong>turns "we should" into a plan</strong> with a date and a roster.</p>
+   875→      </div>
+   876→      <div class="bring-card spot reveal" data-delay="2">
+   877→        <div class="bring-num">03</div>
+   878→        <h3>I'm honest about AI</h3>
+   879→        <p>I use AI tools daily and I'll tell you exactly <strong>what they did and what I did</strong>. Direction, testing and taste are mine — and I can prove it.</p>
+   880→      </div>
+   881→    </div>
+   882→  </div>
+   883→</section>
+   884→
+   885→<div class="divider"></div>
+   886→
+   887→<!-- ================= SCIENCE FAIR ================= -->
+   888→<section id="science">
+   889→  <div class="wrap">
+   890→    <div class="sec-head reveal">
+   891→      <span class="sec-num" aria-hidden="true">03</span>
+   892→      <p class="sec-index">Science Fair</p>
+   893→      <h2>Four years of <em>science fair</em></h2>
+   894→      <p class="sec-lede">From nervous first entry to helping run the whole thing.</p>
+   895→    </div>
+   896→    <div class="timeline">
+   897→      <div class="t-item reveal">
+   898→        <span class="t-year">2022</span>
+   899→        <h4>First entry</h4>
+   900→        <p>Walked in with a poster board and shaking hands. Walked out hooked.</p>
+   901→      </div>
+   902→      <div class="t-item reveal">
+   903→        <span class="t-year">2023</span>
+   904→        <h4>Team member</h4>
+   905→        <p>Returned with a stronger project — and started helping younger students with theirs.</p>
+   906→      </div>
+   907→      <div class="t-item reveal">
+   908→        <span class="t-year">2024</span>
+   909→        <h4>Team lead</h4>
+   910→        <p>Led a team of four from hypothesis to presentation. Learned that leadership is mostly scheduling and encouragement.</p>
+   911→      </div>
+   912→      <div class="t-item reveal">
+   913→        <span class="t-year">2025</span>
+   914→        <h4>Student coordinator</h4>
+   915→        <p>Helped run the fair itself — mentoring teams, building the schedule, and placing 13th out of 250 with my own project on the side.</p>
+   916→      </div>
+   917→    </div>
+   918→  </div>
+   919→</section>
+   920→
+   921→<div class="divider"></div>
+   922→
+   923→<!-- ================= LEADERSHIP ================= -->
+   924→<section id="leadership">
+   925→  <div class="wrap">
+   926→    <div class="sec-head reveal">
+   927→      <span class="sec-num" aria-hidden="true">04</span>
+   928→      <p class="sec-index">Leadership</p>
+   929→      <h2>Where I <em>lead</em></h2>
+   930→    </div>
+   931→    <div class="grid-2">
+   932→      <div class="card spot reveal">
+   933→        <p class="c-icon">Study Groups</p>
+   934→        <h4>Founder &amp; organiser</h4>
+   935→        <p>Weekly study sessions before exam seasons — I set the agenda, book the room and keep everyone honest.</p>
+   936→        <p class="c-meta">Ongoing · Grade 11 → now</p>
+   937→      </div>
+   938→      <div class="card spot reveal" data-delay="1">
+   939→        <p class="c-icon">Football</p>
+   940→        <h4>Match organiser</h4>
+   941→        <p>Fixtures, training sessions and the occasional argument about the offside rule — I run the logistics so the games happen.</p>
+   942→        <p class="c-meta">Ongoing</p>
+   943→      </div>
+   944→      <div class="card spot reveal" data-delay="2">
+   945→        <p class="c-icon">Science Fair</p>
+   946→        <h4>Mentor</h4>
+   947→        <p>Coaching younger students through their first projects — hypothesis, method, and how to survive the judges' questions.</p>
+   948→        <p class="c-meta">2024 → now</p>
+   949→      </div>
+   950→      <div class="card spot reveal" data-delay="3">
+   951→        <p class="c-icon">Tech</p>
+   952→        <h4>Unofficial IT department</h4>
+   953→        <p>The person teachers and classmates come to when the projector, the spreadsheet or the Wi-Fi gives up.</p>
+   954→        <p class="c-meta">Ongoing</p>
+   955→      </div>
+   956→    </div>
+   957→  </div>
+   958→</section>
+   959→
+   960→<div class="divider"></div>
+   961→
+   962→<!-- ================= ATHLETICS ================= -->
+   963→<section id="athletics">
+   964→  <div class="wrap">
+   965→    <div class="sec-head reveal">
+   966→      <span class="sec-num" aria-hidden="true">05</span>
+   967→      <p class="sec-index">Athletics</p>
+   968→      <h2>Sport keeps me <em>honest</em></h2>
+   969→    </div>
+   970→    <div class="ath-hero spot reveal">
+   971→      <div class="medal-count">12<small>medals &amp; counting</small></div>
+   972→      <div>
+   973→        <h3>Football first, everything else second</h3>
+   974→        <p>
+   975→          Football is where I learned that <strong>talent loses to structure</strong> — the team with a plan beats
+   976→          the team with a star. I also run: a half marathon taught me more about pacing myself
+   977→          than any classroom ever has.
+   978→        </p>
+   979→        <div class="award-chips">
+   980→          <span class="chip"><i></i>Football — first team</span>
+   981→          <span class="chip"><i></i>Half marathon finisher</span>
+   982→          <span class="chip"><i></i>Athletics — sprint relay</span>
+   983→          <span class="chip"><i></i>Inter-house champion</span>
+   984→        </div>
+   985→      </div>
+   986→    </div>
+   987→    <div class="grid-2">
+   988→      <div class="card spot reveal">
+   989→        <p class="c-icon">Discipline</p>
+   990→        <h4>Training when nobody watches</h4>
+   991→        <p>The runs at 6am and the drills after school are what match day looks easy.</p>
+   992→      </div>
+   993→      <div class="card spot reveal" data-delay="1">
+   994→        <p class="c-icon">Team First</p>
+   995→        <h4>Pass before you shoot</h4>
+   996→        <p>The assist counts the same as the goal. Same rule applies to group projects and sub-agents.</p>
+   997→      </div>
+   998→    </div>
+   999→  </div>
+  1000→</section>
+  1001→
+  1002→<div class="divider"></div>
+  1003→
+  1004→<!-- ================= SERVICE ================= -->
+  1005→<section id="service">
+  1006→  <div class="wrap">
+  1007→    <div class="sec-head reveal">
+  1008→      <span class="sec-num" aria-hidden="true">06</span>
+  1009→      <p class="sec-index">Service</p>
+  1010→      <h2>Giving <em>back</em></h2>
+  1011→    </div>
+  1012→    <div class="grid-2">
+  1013→      <div class="card spot reveal">
+  1014→        <p class="c-icon">Peer Tutoring</p>
+  1015→        <h4>Maths &amp; CS help</h4>
+  1016→        <p>Regular sessions for classmates who are stuck — explaining something is the best way to actually learn it.</p>
+  1017→      </div>
+  1018→      <div class="card spot reveal" data-delay="1">
+  1019→        <p class="c-icon">Community</p>
+  1020→        <h4>Local clean-ups &amp; drives</h4>
+  1021→        <p>Beach and neighbourhood clean-ups and school charity drives — showing up consistently matters more than showing up once.</p>
+  1022→      </div>
+  1023→      <div class="card spot reveal" data-delay="2">
+  1024→        <p class="c-icon">School</p>
+  1025→        <h4>Event tech support</h4>
+  1026→        <p>Sound, slides and livestreams for school events — invisible when it works, which is the point.</p>
+  1027→      </div>
+  1028→    </div>
+  1029→  </div>
+  1030→</section>
+  1031→
+  1032→<div class="divider"></div>
+  1033→
+  1034→<!-- ================= ACADEMICS ================= -->
+  1035→<section id="academics">
+  1036→  <div class="wrap">
+  1037→    <div class="sec-head reveal">
+  1038→      <span class="sec-num" aria-hidden="true">07</span>
+  1039→      <p class="sec-index">Academics</p>
+  1040→      <h2>In the <em>classroom</em></h2>
+  1041→    </div>
+  1042→    <div class="acad-grid">
+  1043→      <div class="reveal">
+  1044→        <ul class="subject-list">
+  1045→          <li>Mathematics <span class="s-grade">Grade 12</span></li>
+  1046→          <li>Physics <span class="s-grade">Grade 12</span></li>
+  1047→          <li>Computer Science <span class="s-grade">Grade 12</span></li>
+  1048→          <li>English <span class="s-grade">Grade 12</span></li>
+  1049→          <li>Kiswahili <span class="s-grade">Grade 12</span></li>
+  1050→          <li>Arabic <span class="s-grade">Grade 12</span></li>
+  1051→        </ul>
+  1052→      </div>
+  1053→      <div class="reveal" data-delay="1">
+  1054→        <ul class="lang-list">
+  1055→          <li><span class="lang-name">Arabic</span><span class="lang-bar"><i style="--w:1"></i></span><span class="lang-lvl">Native</span></li>
+  1056→          <li><span class="lang-name">English</span><span class="lang-bar"><i style="--w:.95"></i></span><span class="lang-lvl">Fluent</span></li>
+  1057→          <li><span class="lang-name">Kiswahili</span><span class="lang-bar"><i style="--w:.9"></i></span><span class="lang-lvl">Fluent</span></li>
+  1058→          <li><span class="lang-name">French</span><span class="lang-bar"><i style="--w:.35"></i></span><span class="lang-lvl">Learning</span></li>
+  1059→        </ul>
+  1060→      </div>
+  1061→    </div>
+  1062→  </div>
+  1063→</section>
+  1064→</main>
+  1065→
+  1066→<footer>
+  1067→  <div class="wrap">
+  1068→    <p class="f-name reveal">Essam <em>Al Harthy</em></p>
+  1069→    <p class="reveal" data-delay="1">Applying to UWC Dilijan and the African Leadership Academy — looking for a place that will push me harder than I push myself.</p>
+  1070→    <div class="f-targets reveal" data-delay="2">
+  1071→      <span class="chip"><i></i>UWC Dilijan</span>
+  1072→      <span class="chip"><i></i>African Leadership Academy</span>
+  1073→    </div>
+  1074→    <p class="f-build reveal" data-delay="2"><span id="ageLine">16 · turns 17 on September 30, 2026</span> · Grade 12, Arusha Meru International School</p>
+  1075→    <p class="f-mono reveal" data-delay="3">
+  1076→      <span>Arusha, Tanzania</span><span>·</span><span>Class of 2027</span><span>·</span><span>Built with AI-assisted tools — directed &amp; tested by Essam</span>
+  1077→    </p>
+  1078→  </div>
+  1079→</footer>
+  1080→
+  1081→<script>
+  1082→(function(){
+  1083→"use strict";
+  1084→var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  1085→var finePointer = window.matchMedia("(pointer: fine)").matches;
+  1086→var root = document.documentElement;
+  1087→
+  1088→/* ================= LOADER — capped, never waits on fonts ================= */
+  1089→var loadedDone = false;
+  1090→function doneLoading(){ if(loadedDone) return; loadedDone = true; document.body.classList.add("loaded"); }
+  1091→if (reduced){ doneLoading(); }
+  1092→else {
+  1093→  window.addEventListener("load", doneLoading);
+  1094→  setTimeout(doneLoading, 900); /* hard cap — fixes the "loading forever" problem */
+  1095→}
+  1096→
+  1097→/* ================= THEME ================= */
+  1098→var THEME_BG = { dark:"#0F1115", light:"#F6F3EB" };
+  1099→var metaTheme = document.querySelector('meta[name="theme-color"]');
+  1100→var PAL = {};
+  1101→function refreshPalette(){
+  1102→  var cs = getComputedStyle(root);
+  1103→  PAL = {
+  1104→    accent:  cs.getPropertyValue("--accent").trim(),
+  1105→    accent2: cs.getPropertyValue("--accent-2").trim(),
+  1106→    muted:   cs.getPropertyValue("--muted").trim(),
+  1107→    text:    cs.getPropertyValue("--text").trim(),
+  1108→    card:    cs.getPropertyValue("--card").trim(),
+  1109→    bg:      cs.getPropertyValue("--bg").trim()
+  1110→  };
+  1111→}
+  1112→refreshPalette();
+  1113→
+  1114→function hexA(hex, a){
+  1115→  var h = hex.replace("#","");
+  1116→  if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  1117→  var n = parseInt(h, 16);
+  1118→  return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")";
+  1119→}
+  1120→
+  1121→var drawStatic = function(){}; /* reassigned by constellation; no-op unless reduced */
+  1122→
+  1123→var themeBtn = document.getElementById("themeBtn");
+  1124→function applyTheme(next, x, y){
+  1125→  if (metaTheme) metaTheme.setAttribute("content", THEME_BG[next]);
+  1126→  if (reduced){
+  1127→    root.setAttribute("data-theme", next);
+  1128→    refreshPalette(); drawStatic();
+  1129→    return;
+  1130→  }
+  1131→  var wipe = document.createElement("div");
+  1132→  wipe.className = "theme-wipe";
+  1133→  wipe.style.background = THEME_BG[next];
+  1134→  var r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  1135→  wipe.style.clipPath = "circle(0px at " + x + "px " + y + "px)";
+  1136→  document.body.appendChild(wipe);
+  1137→  requestAnimationFrame(function(){
+  1138→    requestAnimationFrame(function(){
+  1139→      wipe.style.clipPath = "circle(" + r + "px at " + x + "px " + y + "px)";
+  1140→    });
+  1141→  });
+  1142→  setTimeout(function(){
+  1143→    root.setAttribute("data-theme", next);
+  1144→    refreshPalette(); drawStatic();
+  1145→  }, 420);
+  1146→  setTimeout(function(){ wipe.remove(); }, 950);
+  1147→}
+  1148→themeBtn.addEventListener("click", function(){
+  1149→  var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  1150→  var r = themeBtn.getBoundingClientRect();
+  1151→  applyTheme(next, r.left + r.width/2, r.top + r.height/2);
+  1152→});
+  1153→
+  1154→/* ================= MOUSE TRACKER — physics-smoothed ================= */
+  1155→if (finePointer && !reduced){
+  1156→  var dot = document.querySelector(".cursor-dot"),
+  1157→      ring = document.querySelector(".cursor-ring"),
+  1158→      glow = document.querySelector(".cursor-glow");
+  1159→  var mx = innerWidth/2, my = innerHeight/2,
+  1160→      rx = mx, ry = my, gx = mx, gy = my,
+  1161→      hoverT = 1, hoverS = 1, pressT = 1, pressS = 1,
+  1162→      vis = 1, visT = 1, lastAng = 0;
+  1163→
+  1164→  document.addEventListener("pointermove", function(e){ mx = e.clientX; my = e.clientY; visT = 1; }, {passive:true});
+  1165→  document.addEventListener("pointerover", function(e){
+  1166→    hoverT = e.target.closest("a,button,summary,.chip,.game-card,.card,.project,.bring-card,.roster") ? 1.7 : 1;
+  1167→  }, {passive:true});
+  1168→  document.addEventListener("pointerdown", function(){ pressT = .72; });
+  1169→  document.addEventListener("pointerup", function(){ pressT = 1; });
+  1170→  document.documentElement.addEventListener("pointerleave", function(){ visT = 0; });
+  1171→  document.documentElement.addEventListener("pointerenter", function(){ visT = 1; });
+  1172→
+  1173→  var cLast = performance.now();
+  1174→  (function cLoop(now){
+  1175→    var dt = Math.min((now - cLast)/1000, .05); cLast = now;
+  1176→    var kDot  = 1 - Math.exp(-30 * dt),
+  1177→        kRing = 1 - Math.exp(-11 * dt),
+  1178→        kGlow = 1 - Math.exp(-4.5 * dt);
+  1179→    var prx = rx, pry = ry;
+  1180→    rx += (mx - rx) * kRing; ry += (my - ry) * kRing;
+  1181→    gx += (mx - gx) * kGlow; gy += (my - gy) * kGlow;
+  1182→    var vx = (rx - prx) / Math.max(dt, .001),
+  1183→        vy = (ry - pry) / Math.max(dt, .001),
+  1184→        sp = Math.hypot(vx, vy);
+  1185→    if (sp > 40) lastAng = Math.atan2(vy, vx);
+  1186→    var stretch = Math.min(sp / 2400, .28);
+  1187→    hoverS += (hoverT - hoverS) * (1 - Math.exp(-12 * dt));
+  1188→    pressS += (pressT - pressS) * (1 - Math.exp(-14 * dt));
+  1189→    vis    += (visT   - vis)    * (1 - Math.exp(-8  * dt));
+  1190→    var s = hoverS * pressS;
+  1191→    dot.style.transform  = "translate3d(" + mx + "px," + my + "px,0) translate(-50%,-50%) scale(" + pressS.toFixed(3) + ")";
+  1192→    dot.style.opacity = vis.toFixed(3);
+  1193→    ring.style.transform = "translate3d(" + rx.toFixed(2) + "px," + ry.toFixed(2) + "px,0) translate(-50%,-50%) rotate(" + lastAng.toFixed(3) + "rad) scale(" + (s * (1 + stretch)).toFixed(3) + "," + (s * (1 - stretch * .7)).toFixed(3) + ")";
+  1194→    ring.style.opacity = (.55 * vis).toFixed(3);
+  1195→    glow.style.transform = "translate3d(" + gx.toFixed(1) + "px," + gy.toFixed(1) + "px,0) translate(-50%,-50%)";
+  1196→    glow.style.opacity = vis.toFixed(3);
+  1197→    requestAnimationFrame(cLoop);
+  1198→  })(performance.now());
+  1199→}
+  1200→
+  1201→/* ================= MAGNETIC BUTTONS ================= */
+  1202→if (finePointer && !reduced){
+  1203→  document.querySelectorAll(".btn,.theme-btn,.menu-btn,.to-top").forEach(function(el){
+  1204→    var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+  1205→    function tick(){
+  1206→      cx += (tx - cx) * .18; cy += (ty - cy) * .18;
+  1207→      el.style.transform = "translate(" + cx.toFixed(2) + "px," + cy.toFixed(2) + "px)";
+  1208→      if (Math.abs(tx - cx) > .1 || Math.abs(ty - cy) > .1) raf = requestAnimationFrame(tick);
+  1209→      else { raf = null; el.style.transform = ""; }
+  1210→    }
+  1211→    function kick(){ if (!raf) raf = requestAnimationFrame(tick); }
+  1212→    el.addEventListener("pointermove", function(e){
+  1213→      var r = el.getBoundingClientRect();
+  1214→      tx = (e.clientX - r.left - r.width/2) * .25;
+  1215→      ty = (e.clientY - r.top - r.height/2) * .25;
+  1216→      kick();
+  1217→    }, {passive:true});
+  1218→    el.addEventListener("pointerleave", function(){ tx = 0; ty = 0; kick(); });
+  1219→  });
+  1220→}
+  1221→
+  1222→/* ================= 3D TILT ================= */
+  1223→if (finePointer && !reduced){
+  1224→  function addTilt(el, max){
+  1225→    var tX = 0, tY = 0, rX = 0, rY = 0, lift = 0, liftT = 0, raf = null, inside = false;
+  1226→    function frame(){
+  1227→      rX += (tX - rX) * .16; rY += (tY - rY) * .16; lift += (liftT - lift) * .16;
+  1228→      el.style.transform = "perspective(950px) rotateX(" + rX.toFixed(2) + "deg) rotateY(" + rY.toFixed(2) + "deg) translateY(" + (-4 * lift).toFixed(2) + "px)";
+  1229→      if (Math.abs(tX - rX) > .005 || Math.abs(tY - rY) > .005 || Math.abs(liftT - lift) > .005) raf = requestAnimationFrame(frame);
+  1230→      else { raf = null; if (!inside) el.style.transform = ""; }
+  1231→    }
+  1232→    function kick(){ if (!raf) raf = requestAnimationFrame(frame); }
+  1233→    el.addEventListener("pointerenter", function(){ inside = true; liftT = 1; kick(); });
+  1234→    el.addEventListener("pointermove", function(e){
+  1235→      var r = el.getBoundingClientRect();
+  1236→      tY = ((e.clientX - r.left) / r.width - .5) * 2 * max;
+  1237→      tX = -((e.clientY - r.top) / r.height - .5) * 2 * max;
+  1238→      kick();
+  1239→    }, {passive:true});
+  1240→    el.addEventListener("pointerleave", function(){ inside = false; tX = 0; tY = 0; liftT = 0; kick(); });
+  1241→  }
+  1242→  document.querySelectorAll(".project").forEach(function(el){ addTilt(el, 2.5); });
+  1243→  document.querySelectorAll(".bring-card,.card").forEach(function(el){ addTilt(el, 5); });
+  1244→  document.querySelectorAll(".game-card").forEach(function(el){ addTilt(el, 6); });
+  1245→  document.querySelectorAll(".ath-hero").forEach(function(el){ addTilt(el, 2); });
+  1246→}
+  1247→
+  1248→/* ================= NAV / SCROLL ORCHESTRATION ================= */
+  1249→var nav = document.getElementById("nav"),
+  1250→    progress = document.getElementById("progress"),
+  1251→    toTop = document.getElementById("toTop"),
+  1252→    aurora = document.getElementById("aurora"),
+  1253→    headerEl = document.getElementById("top"),
+  1254→    secNums = document.querySelectorAll(".sec-num"),
+  1255→    lastY = window.scrollY, ticking = false, mqBoost = 0;
+  1256→
+  1257→function onScroll(){
+  1258→  var y = window.scrollY;
+  1259→  nav.classList.toggle("scrolled", y > 10);
+  1260→  var h = document.documentElement.scrollHeight - innerHeight;
+  1261→  progress.style.transform = "scaleX(" + (h > 0 ? y / h : 0) + ")";
+  1262→  mqBoost = Math.min(Math.abs(y - lastY) * 4, 180);
+  1263→  lastY = y;
+  1264→  headerEl.classList.toggle("scrolled-past", y > 60);
+  1265→  toTop.classList.toggle("show", y > 700);
+  1266→  if (!reduced){
+  1267→    aurora.style.transform = "translateY(" + (y * .04).toFixed(1) + "px)";
+  1268→    secNums.forEach(function(n){
+  1269→      var r = n.parentElement.getBoundingClientRect();
+  1270→      if (r.top < innerHeight && r.bottom > 0)
+  1271→        n.style.transform = "translateY(" + ((r.top + r.height/2 - innerHeight/2) * -.06).toFixed(1) + "px)";
+  1272→    });
+  1273→  }
+  1274→  ticking = false;
+  1275→}
+  1276→window.addEventListener("scroll", function(){
+  1277→  if (!ticking){ ticking = true; requestAnimationFrame(onScroll); }
+  1278→}, {passive:true});
+  1279→onScroll();
+  1280→
+  1281→toTop.addEventListener("click", function(){ window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" }); });
+  1282→
+  1283→/* ================= ACTIVE SECTION SYNC ================= */
+  1284→var navA = document.querySelectorAll(".nav-links a, .mobile-menu a"),
+  1285→    sideA = document.querySelectorAll(".side-dots a");
+  1286→var secObserver = new IntersectionObserver(function(entries){
+  1287→  entries.forEach(function(en){
+  1288→    if (en.isIntersecting){
+  1289→      var id = "#" + en.target.id;
+  1290→      navA.forEach(function(a){ a.classList.toggle("active", a.getAttribute("href") === id); });
+  1291→      sideA.forEach(function(a){ a.classList.toggle("active", a.getAttribute("href") === id); });
+  1292→    }
+  1293→  });
+  1294→}, {rootMargin:"-40% 0px -55% 0px"});
+  1295→document.querySelectorAll("section[id]").forEach(function(s){ secObserver.observe(s); });
+  1296→
+  1297→/* ================= MOBILE MENU ================= */
+  1298→var menuBtn = document.getElementById("menuBtn"),
+  1299→    mobileMenu = document.getElementById("mobileMenu");
+  1300→menuBtn.addEventListener("click", function(){
+  1301→  var open = mobileMenu.classList.toggle("open");
+  1302→  menuBtn.classList.toggle("open", open);
+  1303→  menuBtn.setAttribute("aria-expanded", open);
+  1304→});
+  1305→mobileMenu.querySelectorAll("a").forEach(function(a){
+  1306→  a.addEventListener("click", function(){
+  1307→    mobileMenu.classList.remove("open");
+  1308→    menuBtn.classList.remove("open");
+  1309→    menuBtn.setAttribute("aria-expanded", "false");
+  1310→  });
+  1311→});
+  1312→
+  1313→/* ================= REVEALS ================= */
+  1314→var rio = new IntersectionObserver(function(entries){
+  1315→  entries.forEach(function(en){
+  1316→    if (en.isIntersecting){ en.target.classList.add("in"); rio.unobserve(en.target); }
+  1317→  });
+  1318→}, {threshold:.12});
+  1319→document.querySelectorAll(".reveal,.timeline").forEach(function(el){ rio.observe(el); });
+  1320→
+  1321→/* ================= SPOTLIGHT ================= */
+  1322→document.querySelectorAll(".spot").forEach(function(el){
+  1323→  el.addEventListener("pointermove", function(e){
+  1324→    var r = el.getBoundingClientRect();
+  1325→    el.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100) + "%");
+  1326→    el.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100) + "%");
+  1327→  }, {passive:true});
+  1328→});
+  1329→
+  1330→/* ================= COUNTERS ================= */
+  1331→var cio = new IntersectionObserver(function(entries){
+  1332→  entries.forEach(function(en){
+  1333→    if (!en.isIntersecting) return;
+  1334→    cio.unobserve(en.target);
+  1335→    var el = en.target, target = parseFloat(el.getAttribute("data-count")),
+  1336→        dur = 1600, t0 = performance.now();
+  1337→    function tick(now){
+  1338→      var p = Math.min((now - t0) / dur, 1),
+  1339→          e = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+  1340→      el.textContent = Math.round(target * e).toLocaleString("en-US");
+  1341→      if (p < 1) requestAnimationFrame(tick);
+  1342→    }
+  1343→    if (reduced){ el.textContent = target.toLocaleString("en-US"); }
+  1344→    else requestAnimationFrame(tick);
+  1345→  });
+  1346→}, {threshold:.5});
+  1347→document.querySelectorAll("[data-count]").forEach(function(c){ cio.observe(c); });
+  1348→
+  1349→/* ================= MARQUEE — JS-driven, scroll-velocity boost ================= */
+  1350→var mq = document.querySelector(".marquee"),
+  1351→    mqTrack = document.querySelector(".marquee-track");
+  1352→if (mqTrack && !reduced){
+  1353→  var mX = 0, mLast = performance.now(), mPaused = false, half = mqTrack.scrollWidth / 2;
+  1354→  var rehalf = function(){ half = mqTrack.scrollWidth / 2; };
+  1355→  window.addEventListener("resize", rehalf);
+  1356→  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rehalf);
+  1357→  mq.addEventListener("pointerenter", function(){ mPaused = true; });
+  1358→  mq.addEventListener("pointerleave", function(){ mPaused = false; });
+  1359→  (function mLoop(now){
+  1360→    var dt = Math.min((now - mLast) / 1000, .05); mLast = now;
+  1361→    var sp = (mPaused ? 0 : 34) + mqBoost;
+  1362→    mX -= sp * dt;
+  1363→    if (half > 0 && mX <= -half) mX += half;
+  1364→    mqTrack.style.transform = "translate3d(" + mX.toFixed(1) + "px,0,0)";
+  1365→    mqBoost *= Math.exp(-2.5 * dt);
+  1366→    requestAnimationFrame(mLoop);
+  1367→  })(performance.now());
+  1368→}
+  1369→
+  1370→/* ================= ROSTER — smooth animated expand/collapse ================= */
+  1371→var roster = document.querySelector(".roster");
+  1372→if (roster){
+  1373→  var rSummary = roster.querySelector("summary"),
+  1374→      rBody = roster.querySelector(".roster-body");
+  1375→  rSummary.addEventListener("click", function(e){
+  1376→    e.preventDefault();
+  1377→    if (reduced){ roster.open = !roster.open; return; }
+  1378→    if (roster.open){
+  1379→      rBody.style.height = rBody.scrollHeight + "px";
+  1380→      requestAnimationFrame(function(){ rBody.style.height = "0px"; });
+  1381→      var te1 = function(){ roster.open = false; rBody.style.height = ""; rBody.removeEventListener("transitionend", te1); };
+  1382→      rBody.addEventListener("transitionend", te1);
+  1383→    } else {
+  1384→      roster.open = true;
+  1385→      var h = rBody.scrollHeight;
+  1386→      rBody.style.height = "0px";
+  1387→      requestAnimationFrame(function(){ rBody.style.height = h + "px"; });
+  1388→      var te2 = function(){ rBody.style.height = ""; rBody.removeEventListener("transitionend", te2); };
+  1389→      rBody.addEventListener("transitionend", te2);
+  1390→    }
+  1391→  });
+  1392→}
+  1393→
+  1394→/* ================= DYNAMIC AGE (DOB: Sept 30, 2009) ================= */
+  1395→var ageLine = document.getElementById("ageLine");
+  1396→if (ageLine){
+  1397→  var nowD = new Date(), dobY = 2009, dobM = 8, dobD = 30;
+  1398→  var age = nowD.getFullYear() - dobY;
+  1399→  var had = nowD.getMonth() > dobM || (nowD.getMonth() === dobM && nowD.getDate() >= dobD);
+  1400→  if (!had) age--;
+  1401→  var txt;
+  1402→  if (nowD.getMonth() === dobM && nowD.getDate() === dobD) txt = age + " · birthday today — September 30";
+  1403→  else if (!had) txt = age + " · turns " + (age + 1) + " on September 30, " + nowD.getFullYear();
+  1404→  else txt = age + " · born September 30, 2009";
+  1405→  ageLine.textContent = txt;
+  1406→}
+  1407→
+  1408→/* ================= CONSTELLATION — Odin's five sub-agents ================= */
+  1409→var canvas = document.getElementById("agents");
+  1410→if (canvas && canvas.getContext){
+  1411→  var ctx = canvas.getContext("2d");
+  1412→  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  1413→  var W = 0, H = 0;
+  1414→  var mouse = {x:.5, y:.5}, pm = {x:.5, y:.5};
+  1415→  var hovered = -1, pinned = -1, lastPts = [];
+  1416→  var readout = document.getElementById("agentReadout"),
+  1417→      readoutName = document.getElementById("agentName"),
+  1418→      readoutRole = document.getElementById("agentRole");
+  1419→  var DEFAULT_NAME = "ODIN · FIVE SUB-AGENTS";
+  1420→  var DEFAULT_ROLE = finePointer
+  1421→    ? "hover a node to inspect · one human in the loop"
+  1422→    : "tap a node to inspect · one human in the loop";
+  1423→  if (!finePointer && readoutRole) readoutRole.textContent = DEFAULT_ROLE;
+  1424→
+  1425→  var agents = [
+  1426→    {name:"FORGE",  role:"print-on-demand designs · gated readiness check", r:.335, speed: .20, phase:0.4, size:4.5, dev:false},
+  1427→    {name:"HERALD", role:"drafts & publishes written content",              r:.285, speed:-.26, phase:1.7, size:4,   dev:false},
+  1428→    {name:"REEL",   role:"scripts & assembles faceless video",              r:.385, speed: .15, phase:2.9, size:4,   dev:false},
+  1429→    {name:"IDA",    role:"in development · role TBD",                       r:.245, speed:-.32, phase:4.2, size:3.5, dev:true},
+  1430→    {name:"LLOYD",  role:"in development · role TBD",                       r:.43,  speed: .22, phase:5.6, size:3.5, dev:true}
+  1431→  ];
+  1432→  agents.forEach(function(a, i){ a.angle = a.phase; a.trail = []; a.packet = i * .8; });
+  1433→
+  1434→  function rr(x, y, w, h, r){
+  1435→    ctx.beginPath();
+  1436→    ctx.moveTo(x + r, y);
+  1437→    ctx.arcTo(x + w, y, x + w, y + h, r);
+  1438→    ctx.arcTo(x + w, y + h, x, y + h, r);
+  1439→    ctx.arcTo(x, y + h, x, y, r);
+  1440→    ctx.arcTo(x, y, x + w, y, r);
+  1441→    ctx.closePath();
+  1442→  }
+  1443→
+  1444→  function resize(){
+  1445→    var r = canvas.parentElement.getBoundingClientRect();
+  1446→    W = Math.max(1, Math.round(r.width)); H = W;
+  1447→    canvas.width = W * dpr; canvas.height = H * dpr;
+  1448→    canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  1449→    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  1450→  }
+  1451→  resize();
+  1452→  window.addEventListener("resize", resize);
+  1453→
+  1454→  function corePos(){ return { x: W/2 + (pm.x - .5) * 16, y: H/2 + (pm.y - .5) * 12 }; }
+  1455→  function agentPos(a){
+  1456→    var c = corePos();
+  1457→    return {
+  1458→      x: c.x + Math.cos(a.angle) * a.r * W,
+  1459→      y: c.y + Math.sin(a.angle) * a.r * H * .9,
+  1460→      depth: (Math.sin(a.angle) + 1) / 2
+  1461→    };
+  1462→  }
+  1463→
+  1464→  var roTimer = null;
+  1465→  function setReadout(i){
+  1466→    var n, r;
+  1467→    if (i == null || i < 0){ n = DEFAULT_NAME; r = DEFAULT_ROLE; }
+  1468→    else { n = agents[i].name + (agents[i].dev ? " · IN DEV" : ""); r = agents[i].role; }
+  1469→    if (readoutName.textContent === n) return;
+  1470→    readout.classList.add("switching");
+  1471→    clearTimeout(roTimer);
+  1472→    roTimer = setTimeout(function(){
+  1473→      readoutName.textContent = n;
+  1474→      readoutRole.textContent = r;
+  1475→      readout.classList.remove("switching");
+  1476→    }, 160);
+  1477→  }
+  1478→
+  1479→  function update(dt){
+  1480→    agents.forEach(function(a){ a.angle += a.speed * dt; });
+  1481→    var k = 1 - Math.exp(-5 * dt);
+  1482→    pm.x += (mouse.x - pm.x) * k;
+  1483→    pm.y += (mouse.y - pm.y) * k;
+  1484→  }
+  1485→
+  1486→  function draw(t, dt){
+  1487→    ctx.clearRect(0, 0, W, H);
+  1488→    var c = corePos();
+  1489→    var pts = agents.map(agentPos);
+  1490→    lastPts = pts;
+  1491→    var shown = hovered >= 0 ? hovered : pinned;
+  1492→
+  1493→    agents.forEach(function(a, i){
+  1494→      a.trail.push({x: pts[i].x, y: pts[i].y});
+  1495→      var max = a.dev ? 10 : 18;
+  1496→      while (a.trail.length > max) a.trail.shift();
+  1497→    });
+  1498→
+  1499→    /* orbit rings */
+  1500→    ctx.lineWidth = 1;
+  1501→    agents.forEach(function(a){
+  1502→      ctx.beginPath();
+  1503→      ctx.setLineDash(a.dev ? [3, 6] : []);
+  1504→      ctx.strokeStyle = hexA(PAL.muted, a.dev ? .18 : .13);
+  1505→      ctx.ellipse(c.x, c.y, a.r * W, a.r * H * .9, 0, 0, Math.PI * 2);
+  1506→      ctx.stroke();
+  1507→    });
+  1508→    ctx.setLineDash([]);
+  1509→
+  1510→    /* comet trails */
+  1511→    agents.forEach(function(a){
+  1512→      var col = a.dev ? PAL.muted : PAL.accent2;
+  1513→      for (var j = 1; j < a.trail.length; j++){
+  1514→        var f = j / a.trail.length;
+  1515→        ctx.strokeStyle = hexA(col, f * f * (a.dev ? .14 : .3));
+  1516→        ctx.lineWidth = a.size * f * .9;
+  1517→        ctx.beginPath();
+  1518→        ctx.moveTo(a.trail[j-1].x, a.trail[j-1].y);
+  1519→        ctx.lineTo(a.trail[j].x, a.trail[j].y);
+  1520→        ctx.stroke();
+  1521→      }
+  1522→    });
+  1523→    ctx.lineWidth = 1;
+  1524→
+  1525→    /* links: core→agent + neighbour ring */
+  1526→    for (var i = 0; i < pts.length; i++){
+  1527→      var a = agents[i], p = pts[i];
+  1528→      var base = a.dev ? .08 : (.12 + .14 * p.depth);
+  1529→      if (i === shown) base = .55;
+  1530→      ctx.strokeStyle = hexA(i === shown ? PAL.accent2 : (a.dev ? PAL.muted : PAL.accent2), base);
+  1531→      ctx.lineWidth = i === shown ? 1.5 : 1;
+  1532→      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+  1533→      var n = pts[(i + 1) % pts.length];
+  1534→      ctx.strokeStyle = hexA(PAL.muted, .1);
+  1535→      ctx.lineWidth = 1;
+  1536→      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(n.x, n.y); ctx.stroke();
+  1537→    }
+  1538→
+  1539→    /* packets: teal out = delegation, gold back = reporting for approval */
+  1540→    agents.forEach(function(a, i){
+  1541→      if (a.dev) return;
+  1542→      a.packet += dt * .45;
+  1543→      var cyc = a.packet % 2, out = cyc < 1, tt = out ? cyc : cyc - 1;
+  1544→      var e = tt < .5 ? 2 * tt * tt : 1 - Math.pow(-2 * tt + 2, 2) / 2;
+  1545→      var q = out ? e : 1 - e;
+  1546→      var x = c.x + (pts[i].x - c.x) * q, y = c.y + (pts[i].y - c.y) * q;
+  1547→      var col = out ? PAL.accent2 : PAL.accent;
+  1548→      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fillStyle = hexA(col, .18); ctx.fill();
+  1549→      ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fillStyle = hexA(col, .95); ctx.fill();
+  1550→    });
+  1551→
+  1552→    /* core: sonar rings + heartbeat */
+  1553→    var beat = 1 + .09 * Math.sin(t * 2.4);
+  1554→    for (var k = 0; k < 2; k++){
+  1555→      var rt = ((t * .32) + k * .5) % 1;
+  1556→      ctx.beginPath(); ctx.arc(c.x, c.y, 10 + rt * 44, 0, Math.PI * 2);
+  1557→      ctx.strokeStyle = hexA(PAL.accent, (1 - rt) * .22); ctx.lineWidth = 1; ctx.stroke();
+  1558→    }
+  1559→    var g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, 34);
+  1560→    g.addColorStop(0, hexA(PAL.accent, .22)); g.addColorStop(1, hexA(PAL.accent, 0));
+  1561→    ctx.beginPath(); ctx.arc(c.x, c.y, 34, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+  1562→    ctx.beginPath(); ctx.arc(c.x, c.y, 7 * beat, 0, Math.PI * 2); ctx.fillStyle = PAL.accent; ctx.fill();
+  1563→    ctx.font = "500 8.5px 'IBM Plex Mono', monospace";
+  1564→    ctx.textAlign = "center";
+  1565→    ctx.fillStyle = hexA(PAL.muted, .9);
+  1566→    ctx.fillText("HUMAN APPROVAL", c.x, c.y + 26);
+  1567→    ctx.textAlign = "left";
+  1568→
+  1569→    /* nodes, back-to-front */
+  1570→    var order = pts.map(function(p, i){ return i; }).sort(function(a2, b2){ return pts[a2].depth - pts[b2].depth; });
+  1571→    order.forEach(function(i){
+  1572→      var a = agents[i], p = pts[i];
+  1573→      var d = p.depth, sc = .72 + .5 * d, al = .4 + .6 * d;
+  1574→      if (i === shown){ sc *= 1.35; al = 1; }
+  1575→      var col = a.dev ? PAL.muted : PAL.accent2;
+  1576→      var R = a.size * sc;
+  1577→      var gg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, R * 4);
+  1578→      gg.addColorStop(0, hexA(col, (a.dev ? .10 : .22) * al + (i === shown ? .15 : 0)));
+  1579→      gg.addColorStop(1, hexA(col, 0));
+  1580→      ctx.beginPath(); ctx.arc(p.x, p.y, R * 4, 0, Math.PI * 2); ctx.fillStyle = gg; ctx.fill();
+  1581→      ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, Math.PI * 2);
+  1582→      ctx.fillStyle = hexA(col, a.dev ? .55 * al + .2 : al);
+  1583→      ctx.fill();
+  1584→      if (a.dev){
+  1585→        ctx.beginPath(); ctx.setLineDash([2, 3]); ctx.arc(p.x, p.y, R + 3.5, 0, Math.PI * 2);
+  1586→        ctx.strokeStyle = hexA(PAL.muted, .5 * al); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+  1587→      }
+  1588→      /* label pill */
+  1589→      var label = a.name.toLowerCase() + (a.dev ? " · dev" : "");
+  1590→      ctx.font = "500 9.5px 'IBM Plex Mono', monospace";
+  1591→      var tw = ctx.measureText(label).width, pad = 6, bh = 17;
+  1592→      var right = p.x < W * .68;
+  1593→      var lx = right ? p.x + R + 8 : p.x - R - 8 - (tw + pad * 2);
+  1594→      var ly = p.y - bh / 2;
+  1595→      var la = .35 + .65 * d; if (i === shown) la = 1;
+  1596→      rr(lx, ly, tw + pad * 2, bh, 8);
+  1597→      ctx.fillStyle = hexA(PAL.card, .72 * la); ctx.fill();
+  1598→      ctx.strokeStyle = hexA(PAL.muted, .25 * la); ctx.lineWidth = 1; ctx.stroke();
+  1599→      ctx.fillStyle = hexA(i === shown ? PAL.text : PAL.muted, la);
+  1600→      ctx.fillText(label, lx + pad, ly + bh / 2 + 3.5);
+  1601→    });
+  1602→  }
+  1603→
+  1604→  /* pointer: hover to inspect, tap to pin */
+  1605→  var wrapEl = canvas.parentElement;
+  1606→  wrapEl.addEventListener("pointermove", function(e){
+  1607→    var r = canvas.getBoundingClientRect();
+  1608→    mouse.x = (e.clientX - r.left) / r.width;
+  1609→    mouse.y = (e.clientY - r.top) / r.height;
+  1610→    var mxp = e.clientX - r.left, myp = e.clientY - r.top, found = -1;
+  1611→    lastPts.forEach(function(p, i){ if (Math.hypot(p.x - mxp, p.y - myp) < 24) found = i; });
+  1612→    if (found !== hovered){
+  1613→      hovered = found;
+  1614→      canvas.style.cursor = found >= 0 ? "pointer" : "";
+  1615→      setReadout(hovered >= 0 ? hovered : pinned);
+  1616→    }
+  1617→  }, {passive:true});
+  1618→  wrapEl.addEventListener("pointerleave", function(){
+  1619→    hovered = -1; mouse.x = .5; mouse.y = .5;
+  1620→    canvas.style.cursor = "";
+  1621→    setReadout(pinned);
+  1622→  });
+  1623→  wrapEl.addEventListener("pointerdown", function(e){
+  1624→    var r = canvas.getBoundingClientRect();
+  1625→    var mxp = e.clientX - r.left, myp = e.clientY - r.top, found = -1;
+  1626→    lastPts.forEach(function(p, i){ if (Math.hypot(p.x - mxp, p.y - myp) < 26) found = i; });
+  1627→    if (found >= 0){ pinned = (pinned === found ? -1 : found); setReadout(pinned); }
+  1628→  });
+  1629→
+  1630→  /* static renderer for reduced motion / theme swap */
+  1631→  drawStatic = function(){
+  1632→    if (!reduced) return;
+  1633→    agents.forEach(function(a){ a.trail = []; });
+  1634→    for (var s = 0; s < 60; s++){
+  1635→      update(1/30);
+  1636→      var pts = agents.map(agentPos);
+  1637→      agents.forEach(function(a, i){
+  1638→        a.trail.push({x: pts[i].x, y: pts[i].y});
+  1639→        var m = a.dev ? 10 : 18;
+  1640→        while (a.trail.length > m) a.trail.shift();
+  1641→      });
+  1642→    }
+  1643→    draw(2.5, 0);
+  1644→  };
+  1645→
+  1646→  if (reduced){
+  1647→    drawStatic();
+  1648→    if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawStatic);
+  1649→  } else {
+  1650→    var inView = true;
+  1651→    new IntersectionObserver(function(en){ inView = en[0].isIntersecting; }).observe(canvas);
+  1652→    var lastT = performance.now();
+  1653→    (function loop(now){
+  1654→      var dt = Math.min((now - lastT) / 1000, .05); lastT = now;
+  1655→      if (inView && !document.hidden){ update(dt); draw(now / 1000, dt); }
+  1656→      requestAnimationFrame(loop);
+  1657→    })(performance.now());
+  1658→  }
+  1659→}
+  1660→})();
+  1661→</script>
+  1662→</body>
+  1663→</html>
