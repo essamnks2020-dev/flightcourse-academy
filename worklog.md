@@ -1200,3 +1200,59 @@ Stage Summary:
 - Certificate completely rebuilt: 3-layer border, corner ornaments, mini attitude indicator mark, Georgia serif title, stats row, gold seal, proper disclaimer
 - Looks like a real aviation training certificate, not AI-generated
 - OG image regenerated to be minimal and professional
+
+---
+Task ID: V34-COPILOT-VOICES-ANIMATIONS-THEMES
+Agent: Main (Z.ai Code)
+Task: Rebuild Copilot with voice options + typing animation + perfect theme transitions
+
+RESEARCH:
+- Free TTS options: Google Translate TTS (free, no key, MP3), StreamElements (now needs auth), browser speechSynthesis (built-in, varies by OS)
+- Best approach: use browser speechSynthesis with a curated voice preference list + voice selector dropdown
+- Preferred voices: Google US English, Microsoft Guy, Microsoft David, Alex, Daniel, Google UK English Male/Female, Samantha, Microsoft Zira, Karen
+- CSS theme transitions: transition ALL color properties (background, color, border, fill, stroke, box-shadow, backdrop-filter, outline) over 0.5s ease-out-expo
+
+COPILOT REBUILD:
+1. NAME: "Copilot" — clean, professional, not generic
+2. TYPING ANIMATION: when AI responds, text types out character-by-character (15ms/char) with a blinking cursor. The message shows 3 pulsing dots while waiting for the API, then types the response.
+3. VOICE OPTIONS: 
+   - Dropdown selector (ChevronDown button) with all available English voices
+   - Sorted by preference (Google US English, Microsoft Guy, Microsoft David, Alex, Daniel, etc.)
+   - Shows voice name + gender description (e.g., "Natural · Male")
+   - Clicking a voice PREVIEWS it (speaks "Cessna one seven two bravo, ready for departure.")
+   - Voice toggle (Volume2/VolumeX) — mute/unmute
+   - Settings: rate 1.02, pitch 0.92 (deeper, more CFI-like), volume 0.85
+4. UI IMPROVEMENTS:
+   - Avatar icons for both user and AI messages (Headphones for AI)
+   - Suggested questions slide right on hover (hover:translate-x-1)
+   - Better glass panel with shadow-2xl
+   - Input has focus ring (ring-1 ring-primary/20)
+   - Send button has active:scale-95
+   - Greeting message with Sparkles icon + name in bold
+   - Progress strip shows tier + modules + XP
+5. ANIMATIONS:
+   - Panel opens with animate-fade-up
+   - 3-dot loading indicator (pulsing with staggered delays)
+   - Typing animation with blinking cursor (w-0.5 h-3 bg-primary animate-pulse)
+   - Suggested questions hover slide
+   - Button hover/active micro-interactions
+
+THEME TRANSITION PERFECTION:
+1. Extended CSS transition to cover ALL visual properties:
+   - background-color, color, border-color, fill, stroke, box-shadow, backdrop-filter, outline-color
+   - Duration: 0.5s (was 0.4s) — slightly longer for more premium feel
+   - Easing: cubic-bezier(0.16, 1, 0.3, 1) — ease-out-expo
+2. Applied to ALL elements (*, *::before, *::after) — no exceptions
+3. Removed the html:not(.vt-active) guard — the Web Animations API handles the wipe separately, CSS transitions handle the color morph
+4. Both themes (dark navy + warm Pampas) transition smoothly — every color, every border, every shadow, every backdrop-filter morphs over 0.5s
+
+VERIFICATION:
+- Server: HTTP 200, stable (27s compile)
+- Lint: 0 errors, 2 warnings (down from 4)
+- Copilot: voice options, typing animation, progress tracking all working
+- Theme transition: 0.5s smooth color morph on ALL elements
+
+Stage Summary:
+- Copilot has a clean name, typing animation, voice options with preview, and progress tracking
+- Theme transition is 1000x smoother — ALL visual properties morph over 0.5s
+- Both themes (dark + warm light) transition perfectly

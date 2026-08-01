@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Headphones, X, Send, Volume2, VolumeX, Sparkles, TrendingUp } from "lucide-react";
+import { Headphones, X, Send, Volume2, VolumeX, ChevronDown, Sparkles, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/lib/progress-store";
 
 interface Message {
   role: "user" | "assistant";
   text: string;
+  id: number;
 }
 
 const SUGGESTED = [
@@ -17,25 +18,21 @@ const SUGGESTED = [
   "Explain VOR navigation",
 ];
 
-// Try to find a good voice
-function pickVoice(): SpeechSynthesisVoice | null {
-  if (typeof window === "undefined" || !window.speechSynthesis) return null;
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length === 0) return null;
-  // Prefer male, English voices — sounds more like a CFI
-  const preferred = [
-    "Google US English",
-    "Microsoft Guy",
-    "Microsoft David",
-    "Alex",
-    "Daniel",
-  ];
-  for (const name of preferred) {
-    const v = voices.find((v) => v.name.includes(name));
-    if (v) return v;
-  }
-  return voices.find((v) => v.lang.startsWith("en")) || voices[0];
-}
+// Curated list of good voices to try (varies by OS/browser)
+const PREFERRED_VOICES = [
+  { name: "Google US English", lang: "en-US", desc: "Natural · Male" },
+  { name: "Microsoft Guy", lang: "en-US", desc: "Warm · Male" },
+  { name: "Microsoft David", lang: "en-US", desc: "Deep · Male" },
+  { name: "Alex", lang: "en-US", desc: "Classic · Male" },
+  { name: "Daniel", lang: "en-GB", desc: "British · Male" },
+  { name: "Google UK English Male", lang: "en-GB", desc: "British · Male" },
+  { name: "Samantha", lang: "en-US", desc: "Clear · Female" },
+  { name: "Microsoft Zira", lang: "en-US", desc: "Professional · Female" },
+  { name: "Google UK English Female", lang: "en-GB", desc: "British · Female" },
+  { name: "Karen", lang: "en-AU", desc: "Australian · Female" },
+];
+
+let msgId = 0;
 
 export function PilotHelper() {
   const [open, setOpen] = React.useState(false);
@@ -43,43 +40,92 @@ export function PilotHelper() {
   const [input, setInput] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [voiceOn, setVoiceOn] = React.useState(true);
-  const [voice, setVoice] = React.useState<SpeechSynthesisVoice | null>(null);
+  const [voices, setVoices] = React.useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = React.useState<string>("");
+  const [showVoiceMenu, setShowVoiceMenu] = React.useState(false);
+  const [typingText, setTypingText] = React.useState("");
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const progress = useProgress();
 
+  // Load available voices
   React.useEffect(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      const setV = () => setVoice(pickVoice());
-      setV();
-      window.speechSynthesis.onvoiceschanged = setV;
-    }
-  }, []);
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const loadVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices();
+      // Filter to English voices, sorted by preference
+      const englishVoices = allVoices.filter(v => v.lang.startsWith("en"));
+      // Sort: preferred voices first, then others
+      const sorted = [...englishVoices].sort((a, b) => {
+        const aPref = PREFERRED_VOICES.findIndex(p => a.name.includes(p.name));
+        const bPref = PREFERRED_VOICES.findIndex(p => b.name.includes(p.name));
+        if (aPref !== -1 && bPref !== -1) return aPref - bPref;
+        if (aPref !== -1) return -1;
+        if (bPref !== -1) return 1;
+        return 0;
+      });
+      setVoices(sorted);
+      // Auto-select the best available voice
+      if (sorted.length > 0 && !selectedVoiceURI) {
+        setSelectedVoiceURI(sorted[0].voiceURI);
+      }
+    };
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    return () => {
+      if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, [selectedVoiceURI]);
 
   React.useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, loading]);
+  }, [messages, loading, typingText]);
 
   function speak(text: string) {
     if (!voiceOn || typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
+    const voice = voices.find(v => v.voiceURI === selectedVoiceURI);
     if (voice) utter.voice = voice;
-    utter.rate = 1.05;
-    utter.pitch = 0.95;
-    utter.volume = 0.8;
+    utter.rate = 1.02;
+    utter.pitch = 0.92;
+    utter.volume = 0.85;
     window.speechSynthesis.speak(utter);
+  }
+
+  // Typing animation for AI responses
+  function animateTyping(fullText: string, msgId: number) {
+    let i = 0;
+    const speed = 15; // ms per character
+    const interval = setInterval(() => {
+      if (i <= fullText.length) {
+        setTypingText(fullText.slice(0, i));
+        i++;
+      } else {
+        clearInterval(interval);
+        setTypingText("");
+        setMessages(m => m.map(msg =>
+          msg.id === msgId ? { ...msg, text: fullText } : msg
+        ));
+        speak(fullText);
+      }
+    }, speed);
+    return interval;
   }
 
   async function ask(q: string) {
     const question = q.trim();
     if (!question || loading) return;
 
-    const userMsg: Message = { role: "user", text: question };
-    setMessages((m) => [...m, userMsg]);
+    const userMsg: Message = { role: "user", text: question, id: ++msgId };
+    setMessages(m => [...m, userMsg]);
     setInput("");
     setLoading(true);
+
+    // Add placeholder AI message
+    const aiMsgId = ++msgId;
+    setMessages(m => [...m, { role: "assistant", text: "", id: aiMsgId }]);
 
     try {
       const res = await fetch("/api/pilot-helper", {
@@ -90,12 +136,16 @@ export function PilotHelper() {
       const data = await res.json();
 
       const answerText = data.answer || data.error || "I couldn't reach the AI. Please try again.";
-      const aiMsg: Message = { role: "assistant", text: answerText };
-      setMessages((m) => [...m, aiMsg]);
-      speak(answerText);
+
+      // Animate the typing
+      const interval = animateTyping(answerText, aiMsgId);
+
+      // Cleanup on unmount
+      return () => clearInterval(interval);
     } catch {
-      const errMsg = "I couldn't reach the AI. Please try again.";
-      setMessages((m) => [...m, { role: "assistant", text: errMsg }]);
+      setMessages(m => m.map(msg =>
+        msg.id === aiMsgId ? { ...msg, text: "I couldn't reach the AI. Please try again." } : msg
+      ));
     } finally {
       setLoading(false);
     }
@@ -104,19 +154,20 @@ export function PilotHelper() {
   const completedCount = progress.getCompletedCount();
   const xp = progress.xp;
   const tier = progress.getLicenseTier();
+  const selectedVoice = voices.find(v => v.voiceURI === selectedVoiceURI);
 
   return (
     <>
       {/* Floating button */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         aria-label={open ? "Close Copilot" : "Open Copilot"}
         className={cn(
           "fixed bottom-5 right-5 z-50 flex size-12 items-center justify-center rounded-full",
           "bg-primary text-primary-foreground",
-          "shadow-[0_8px_30px_-4px_oklch(0.75_0.13_68_/_50%)] hover:shadow-[0_12px_40px_-4px_oklch(0.75_0.13_68_/_65%)]",
+          "shadow-[0_8px_30px_-4px_oklch(0.78_0.14_70_/_50%)] hover:shadow-[0_12px_40px_-4px_oklch(0.78_0.14_70_/_65%)]",
           "ring-1 ring-primary/30",
-          "transition-all duration-200 hover:scale-105 active:scale-95",
+          "transition-all duration-300 hover:scale-105 active:scale-95",
           open && "rotate-90"
         )}
       >
@@ -126,33 +177,95 @@ export function PilotHelper() {
       {/* Chat panel */}
       {open && (
         <div
-          className="glass animate-fade-up fixed bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[380px] flex-col rounded-2xl p-4 shadow-2xl"
-          style={{ maxHeight: "560px" }}
+          className="glass animate-fade-up fixed bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[400px] flex-col rounded-2xl shadow-2xl"
+          style={{ maxHeight: "600px" }}
         >
           {/* Header */}
-          <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/20">
-                <Headphones className="size-3.5 text-primary" />
+          <div className="flex items-center justify-between border-b border-border p-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/20">
+                <Headphones className="size-4 text-primary" />
               </div>
               <div className="flex flex-col">
                 <span className="font-semibold text-sm tracking-tight">Copilot</span>
-                <span className="text-[9px] text-muted-foreground">Your AI flight instructor</span>
+                <span className="text-[9px] text-muted-foreground leading-none mt-0.5">Your AI flight instructor</span>
               </div>
             </div>
-            <button
-              onClick={() => setVoiceOn((v) => !v)}
-              className="flex size-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-primary"
-              aria-label={voiceOn ? "Mute voice" : "Unmute voice"}
-              title={voiceOn ? "Voice on" : "Voice off"}
-            >
-              {voiceOn ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Voice toggle */}
+              <button
+                onClick={() => setVoiceOn(v => !v)}
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-lg border transition-all",
+                  voiceOn
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground"
+                )}
+                aria-label={voiceOn ? "Mute voice" : "Unmute voice"}
+                title={voiceOn ? "Voice on" : "Voice off"}
+              >
+                {voiceOn ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
+              </button>
+              {/* Voice selector */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowVoiceMenu(v => !v)}
+                  className="flex size-7 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all hover:text-primary"
+                  aria-label="Select voice"
+                  title={selectedVoice ? selectedVoice.name : "Select voice"}
+                >
+                  <ChevronDown className="size-3.5" />
+                </button>
+                {showVoiceMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowVoiceMenu(false)} />
+                    <div className="glass thin-scroll absolute right-0 top-full mt-1 max-h-60 w-56 overflow-y-auto rounded-xl p-1.5 shadow-xl z-50">
+                      <p className="label-instrument text-muted-foreground px-2 py-1.5">Voice options</p>
+                      {voices.length === 0 ? (
+                        <p className="px-2 py-2 text-xs text-muted-foreground">No voices available in this browser</p>
+                      ) : (
+                        voices.map(v => {
+                          const pref = PREFERRED_VOICES.find(p => v.name.includes(p.name));
+                          return (
+                            <button
+                              key={v.voiceURI}
+                              onClick={() => {
+                                setSelectedVoiceURI(v.voiceURI);
+                                setShowVoiceMenu(false);
+                                // Preview the voice
+                                if (voiceOn) {
+                                  window.speechSynthesis?.cancel();
+                                  const u = new SpeechSynthesisUtterance("Cessna one seven two bravo, ready for departure.");
+                                  u.voice = v;
+                                  u.rate = 1.02;
+                                  u.pitch = 0.92;
+                                  u.volume = 0.85;
+                                  window.speechSynthesis?.speak(u);
+                                }
+                              }}
+                              className={cn(
+                                "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs transition-colors",
+                                selectedVoiceURI === v.voiceURI
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              <span className="truncate max-w-[140px]">{v.name.replace("Microsoft ", "MS ").replace("Google ", "G ")}</span>
+                              {pref && <span className="text-[9px] text-muted-foreground shrink-0">{pref.desc.split(" · ")[1]}</span>}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Progress strip */}
           {completedCount > 0 && (
-            <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2 text-xs">
+            <div className="flex items-center gap-3 border-b border-border px-4 py-2.5 text-xs">
               <TrendingUp className="size-3.5 text-accent shrink-0" />
               <span className="text-muted-foreground">
                 <span className="text-foreground font-medium">{tier.name}</span> · {completedCount}/16 modules · {xp} XP
@@ -161,48 +274,68 @@ export function PilotHelper() {
           )}
 
           {/* Messages */}
-          <div ref={scrollRef} className="thin-scroll flex-1 overflow-y-auto min-h-0">
+          <div ref={scrollRef} className="thin-scroll flex-1 overflow-y-auto min-h-0 p-4">
             {messages.length === 0 ? (
-              <div className="flex flex-col gap-2 py-2">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Hi, I&apos;m Copilot — ask me anything about flying, radio calls, navigation, or weather.
-                </p>
-                {SUGGESTED.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => ask(s)}
-                    className="glass rounded-lg px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:text-foreground hover:border-primary/30"
-                  >
-                    {s}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-2">
+                <div className="mb-2 flex items-start gap-2">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                    <Sparkles className="size-3 text-primary" />
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Hi, I&apos;m <span className="text-foreground font-medium">Copilot</span> — your AI flight instructor.
+                    Ask me anything about flying, radio calls, navigation, or weather.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {SUGGESTED.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => ask(s)}
+                      className="glass rounded-lg px-3 py-2 text-left text-xs text-muted-foreground transition-all hover:text-foreground hover:border-primary/30 hover:translate-x-1"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2 py-1">
-                {messages.map((m, i) => (
+              <div className="flex flex-col gap-3">
+                {messages.map(m => (
                   <div
-                    key={i}
+                    key={m.id}
                     className={cn(
-                      "max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed",
-                      m.role === "user"
-                        ? "self-end bg-primary text-primary-foreground"
-                        : "self-start bg-muted text-foreground"
+                      "flex gap-2 max-w-[90%]",
+                      m.role === "user" ? "self-end flex-row-reverse" : "self-start"
                     )}
                   >
-                    {m.text}
+                    {m.role === "assistant" && (
+                      <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/15 mt-0.5">
+                        <Headphones className="size-3 text-primary" />
+                      </div>
+                    )}
+                    <div
+                      className={cn(
+                        "rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed",
+                        m.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      )}
+                    >
+                      {/* Typing animation for the last AI message */}
+                      {m.role === "assistant" && m.text === "" && loading ? (
+                        <div className="flex items-center gap-1.5 py-1">
+                          <span className="size-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: "0s" }} />
+                          <span className="size-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: "0.2s" }} />
+                          <span className="size-2 rounded-full bg-primary/60 animate-pulse" style={{ animationDelay: "0.4s" }} />
+                        </div>
+                      ) : m.role === "assistant" && m.id === messages[messages.length - 1]?.id && typingText ? (
+                        <span>{typingText}<span className="inline-block w-0.5 h-3 bg-primary ml-0.5 animate-pulse" /></span>
+                      ) : (
+                        m.text
+                      )}
+                    </div>
                   </div>
                 ))}
-                {loading && (
-                  <div className="self-start flex gap-1 rounded-xl bg-muted px-3 py-3">
-                    {[0, 1, 2].map((i) => (
-                      <span
-                        key={i}
-                        className="size-1.5 rounded-full bg-primary animate-pulse"
-                        style={{ animationDelay: `${i * 0.2}s` }}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -213,19 +346,19 @@ export function PilotHelper() {
               e.preventDefault();
               ask(input);
             }}
-            className="mt-3 flex gap-2"
+            className="border-t border-border p-3 flex gap-2"
           >
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={e => setInput(e.target.value)}
               placeholder="Ask Copilot…"
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40"
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none transition-all placeholder:text-muted-foreground focus:border-primary/40 focus:ring-1 focus:ring-primary/20"
             />
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:brightness-110 disabled:opacity-40"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:brightness-110 active:scale-95 disabled:opacity-40"
             >
               <Send className="size-3.5" />
             </button>
