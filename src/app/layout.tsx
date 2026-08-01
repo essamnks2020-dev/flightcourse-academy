@@ -46,12 +46,14 @@ export const metadata: Metadata = {
     title: "FlightCourse Academy — Learn to fly in a flight simulator",
     description:
       "16 modules from cold cockpit to IFR approach. Quizzes, checklists, badges and a real syllabus for simulator pilots.",
+    images: [{ url: "/og-image.png", width: 1344, height: 768, alt: "FlightCourse Academy" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "FlightCourse Academy",
     description:
       "A real syllabus for flight simulator pilots. Ground school to IFR in 16 modules.",
+    images: ["/og-image.png"],
   },
 };
 

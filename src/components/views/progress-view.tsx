@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Clock, Lock, Medal, Star } from "lucide-react";
+import { ArrowRight, Check, Clock, Lock, Medal, Star, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNav } from "@/lib/nav-store";
 import { BADGES, useProgress } from "@/lib/progress-store";
@@ -33,11 +33,86 @@ export function ProgressView() {
     getLicenseTier,
     isModuleCompleted,
     resetProgress,
+    certificateName,
+    setCertificateName,
   } = useProgress();
   const { navigate, openModule } = useNav();
 
   const tier = getLicenseTier();
   const completedCount = getCompletedCount();
+
+  function generateCertificate() {
+    const name = certificateName || "Student Pilot";
+    const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const w = 1200, h = 850;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Background
+    ctx.fillStyle = "#0b1220";
+    ctx.fillRect(0, 0, w, h);
+
+    // Border
+    ctx.strokeStyle = "#F2B134";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(40, 40, w - 80, h - 80);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(55, 55, w - 110, h - 110);
+
+    // Title
+    ctx.fillStyle = "#F2B134";
+    ctx.font = "bold 48px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("FlightCourse Academy", w / 2, 180);
+
+    ctx.fillStyle = "#8B8F99";
+    ctx.font = "18px monospace";
+    ctx.fillText("FLIGHT SIMULATION TRAINING CERTIFICATE", w / 2, 220);
+
+    // "Certificate of Completion"
+    ctx.fillStyle = "#E9E7E0";
+    ctx.font = "36px serif";
+    ctx.fillText("Certificate of Completion", w / 2, 320);
+
+    // "This certifies that"
+    ctx.fillStyle = "#8B8F99";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("This certifies that", w / 2, 400);
+
+    // Name
+    ctx.fillStyle = "#F2B134";
+    ctx.font = "bold 52px serif";
+    ctx.fillText(name, w / 2, 470);
+
+    // Description
+    ctx.fillStyle = "#E9E7E0";
+    ctx.font = "20px sans-serif";
+    ctx.fillText("has successfully completed all 16 modules of the", w / 2, 540);
+    ctx.fillText("FlightCourse Academy ground-school curriculum", w / 2, 570);
+    ctx.fillText("from cold cockpit to IFR approaches.", w / 2, 600);
+
+    // Date
+    ctx.fillStyle = "#8B8F99";
+    ctx.font = "16px monospace";
+    ctx.fillText(`Completed on ${date}`, w / 2, 680);
+
+    // XP
+    ctx.fillText(`${xp} XP earned · ${completedCount} modules completed`, w / 2, 710);
+
+    // Disclaimer
+    ctx.fillStyle = "#5a5e68";
+    ctx.font = "12px sans-serif";
+    ctx.fillText("For simulation training only — not a substitute for real-world flight instruction.", w / 2, 780);
+
+    // Download
+    const link = document.createElement("a");
+    link.download = `FlightCourse-Certificate-${name.replace(/\s+/g, "-")}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
 
   const nextModule =
     allModules.find((m) => !isModuleCompleted(m.id)) ?? allModules[0];
@@ -235,6 +310,42 @@ export function ProgressView() {
           })}
         </div>
       </section>
+
+      {/* Certificate */}
+      {completedCount >= 16 && (
+        <section className="mt-12 flex flex-col gap-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border pb-3">
+            <h2 className="text-xl font-semibold tracking-tight">Certificate of Completion</h2>
+          </div>
+          <div className="glass glow-primary rounded-2xl p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <Award className="size-6 text-primary" />
+                <div>
+                  <p className="font-semibold tracking-tight">You completed all 16 modules!</p>
+                  <p className="text-sm text-muted-foreground">Enter your name to generate a printable certificate.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="text"
+                  placeholder="Your full name"
+                  defaultValue={certificateName || ""}
+                  onChange={(e) => setCertificateName(e.target.value)}
+                  className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40"
+                />
+                <button
+                  onClick={() => generateCertificate()}
+                  className="fp-toggle-btn px-5 py-2 text-sm"
+                >
+                  <Award className="size-4" />
+                  Generate certificate
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Reset */}
       <div className="mt-8 flex justify-center">

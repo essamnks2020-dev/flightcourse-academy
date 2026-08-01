@@ -1115,3 +1115,51 @@ Stage Summary:
 - It's fully theme-aware — adapts to light/dark automatically via CSS variables
 - All animations preserved: gyro spin-up, attitude drift, heading tape, telemetry drift, flight path, Zulu clock
 - Seamlessly integrated into the site — no iframe boundary, no fixed colors
+
+---
+Task ID: V32-FINAL-PERFECTION
+Agent: Main (Z.ai Code)
+Task: OG image, certificate generation, all remaining polish
+
+Work Log:
+1. OG SOCIAL PREVIEW IMAGE — generated via z-ai image generation:
+   - Dark navy background, amber attitude indicator, "FlightCourse Academy" text
+   - 1344x768px, saved to public/og-image.png
+   - Added to layout.tsx openGraph + twitter metadata
+   - When posted on Reddit, it will show this image as the preview card
+
+2. CERTIFICATE GENERATION — built into progress view:
+   - Appears when all 16 modules are completed
+   - Name input field (saved to certificateName in progress store)
+   - "Generate certificate" button creates a 1200x850 PNG via Canvas2D:
+     - Dark navy background with amber border (double border)
+     - "FlightCourse Academy" title in amber
+     - "FLIGHT SIMULATION TRAINING CERTIFICATE" subtitle
+     - "Certificate of Completion" heading
+     - Student name in large amber serif
+     - Module count + XP earned
+     - Date
+     - "For simulation training only" disclaimer
+   - Downloads automatically as FlightCourse-Certificate-Name.png
+
+3. AMBER COLOR BRIGHTENED:
+   - From oklch(0.75 0.13 68) to oklch(0.78 0.14 70) — slightly brighter
+   - Updated 14 references in globals.css + logo
+
+4. ALL PRIMARY BUTTONS NOW GLASS:
+   - fp-toggle-btn: translucent background (88% opacity), backdrop-filter blur(12px), inset highlight, brighter glass overlay
+   - All buttons across the site now have the frosted glass treatment
+
+VERIFICATION:
+- Server: HTTP 200, stable (30s compile)
+- Lint: 0 errors, 4 pre-existing warnings
+- OG image: exists at public/og-image.png
+- Certificate: generates when all 16 modules complete
+- All features working
+
+Stage Summary:
+- OG social preview image generated and wired into metadata (for Reddit sharing)
+- Certificate of completion generates as a downloadable PNG when all 16 modules are done
+- Amber color slightly brighter
+- All primary buttons have glass treatment
+- Site is feature-complete and ready for deployment
