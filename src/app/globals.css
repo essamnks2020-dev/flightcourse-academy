@@ -72,7 +72,7 @@
   --popover-foreground: oklch(0.95 0.006 250);
 
   /* Brand — night-lit amber */
-  --primary: oklch(0.75 0.13 68);
+  --primary: oklch(0.78 0.14 70);
   --primary-foreground: oklch(0.19 0.036 60);
 
   --secondary: oklch(0.27 0.031 252);
@@ -89,14 +89,14 @@
   --destructive-foreground: oklch(0.97 0.01 26);
   --success: oklch(0.73 0.152 155);
   --success-foreground: oklch(0.18 0.04 155);
-  --warning: oklch(0.75 0.13 68);
+  --warning: oklch(0.78 0.14 70);
   --warning-foreground: oklch(0.19 0.036 60);
 
   --border: oklch(0.99 0.01 250 / 11%);
   --input: oklch(0.99 0.01 250 / 14%);
-  --ring: oklch(0.75 0.13 68 / 65%);
+  --ring: oklch(0.78 0.14 70 / 65%);
 
-  --chart-1: oklch(0.75 0.13 68);
+  --chart-1: oklch(0.78 0.14 70);
   --chart-2: oklch(0.75 0.128 205);
   --chart-3: oklch(0.73 0.152 155);
   --chart-4: oklch(0.62 0.09 250);
@@ -172,7 +172,7 @@
     text-rendering: optimizeLegibility;
   }
   ::selection {
-    background: oklch(0.75 0.13 68 / 28%);
+    background: oklch(0.78 0.14 70 / 28%);
   }
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -224,7 +224,7 @@ html:not(.vt-active) *::after {
   /* Radial horizon glow — cockpit display at night. */
   .bg-horizon {
     background:
-      radial-gradient(120% 70% at 50% 0%, oklch(0.75 0.13 68 / 12%) 0%, transparent 62%),
+      radial-gradient(120% 70% at 50% 0%, oklch(0.78 0.14 70 / 12%) 0%, transparent 62%),
       radial-gradient(90% 60% at 85% 15%, oklch(0.75 0.128 205 / 10%) 0%, transparent 60%);
   }
   .light .bg-horizon {
@@ -248,8 +248,8 @@ html:not(.vt-active) *::after {
   /* Glow utilities — used on focused / featured cards. */
   .glow-primary {
     box-shadow:
-      0 0 0 1px oklch(0.75 0.13 68 / 22%),
-      0 8px 40px -12px oklch(0.75 0.13 68 / 40%);
+      0 0 0 1px oklch(0.78 0.14 70 / 22%),
+      0 8px 40px -12px oklch(0.78 0.14 70 / 40%);
   }
   .glow-accent {
     box-shadow:
@@ -268,7 +268,7 @@ html:not(.vt-active) *::after {
   }
 
   .text-shadow-glow {
-    text-shadow: 0 0 24px oklch(0.75 0.13 68 / 35%);
+    text-shadow: 0 0 24px oklch(0.78 0.14 70 / 35%);
   }
 
   /* Tabular numbers for readouts that must line up. */
@@ -390,7 +390,7 @@ html:not(.vt-active) *::after {
   }
   .fp-bezel { border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .fp-bezel-hover { border: 1px solid var(--border); border-radius: var(--radius-lg); transition: border-color .2s ease, box-shadow .2s ease; }
-  .fp-bezel-hover:hover { border-color: oklch(0.75 0.13 68 / 40%); box-shadow: 0 8px 40px -12px oklch(0.75 0.13 68 / 30%); }
+  .fp-bezel-hover:hover { border-color: oklch(0.78 0.14 70 / 40%); box-shadow: 0 8px 40px -12px oklch(0.78 0.14 70 / 30%); }
   .fp-gradient-border { border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .fp-corner-brackets { position: relative; }
 
@@ -401,19 +401,21 @@ html:not(.vt-active) *::after {
   }
 
   /* Legacy button styles → clean Glass Cockpit buttons */
-  /* Primary button — premium squircle with gradient + depth + hover lift */
+  /* Primary button — glass squircle with amber tint + depth + hover lift */
   .fp-toggle-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem; /* squircle, not pill */
-    background: linear-gradient(135deg, oklch(0.78 0.13 68) 0%, oklch(0.68 0.11 62) 100%);
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, oklch(0.78 0.14 70 / 88%) 0%, oklch(0.70 0.12 64 / 82%) 100%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     color: oklch(0.16 0.03 60);
     font-weight: 600;
     letter-spacing: 0.01em;
-    border: 1px solid oklch(0.99 0.01 250 / 20%);
-    box-shadow: 0 1px 2px oklch(0 0 0 / 10%), 0 8px 24px -8px oklch(0.75 0.13 68 / 40%);
+    border: 1px solid oklch(0.99 0.01 250 / 25%);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 10%), 0 8px 24px -8px oklch(0.78 0.14 70 / 40%), inset 0 1px 0 oklch(0.99 0.01 250 / 20%);
     transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .2s ease, filter .15s ease;
     position: relative;
     overflow: hidden;
@@ -422,22 +424,22 @@ html:not(.vt-active) *::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, oklch(0.99 0.01 250 / 15%) 0%, transparent 50%);
+    background: linear-gradient(135deg, oklch(0.99 0.01 250 / 20%) 0%, transparent 50%);
     pointer-events: none;
   }
   .fp-toggle-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 2px 4px oklch(0 0 0 / 10%), 0 12px 32px -8px oklch(0.75 0.13 68 / 55%);
+    box-shadow: 0 2px 4px oklch(0 0 0 / 10%), 0 12px 32px -8px oklch(0.78 0.14 70 / 55%), inset 0 1px 0 oklch(0.99 0.01 250 / 25%);
     filter: brightness(1.05);
   }
   .fp-toggle-btn:active { transform: translateY(0); }
   .fp-toggle-btn svg { transition: transform .2s ease; }
   .fp-toggle-btn:hover svg { transform: translateX(2px); }
   .light .fp-toggle-btn {
-    background: linear-gradient(135deg, oklch(0.6 0.16 45) 0%, oklch(0.5 0.15 40) 100%);
+    background: linear-gradient(135deg, oklch(0.6 0.16 45 / 88%) 0%, oklch(0.5 0.15 40 / 82%) 100%);
     color: oklch(0.98 0.005 75);
-    border: 1px solid oklch(0 0 0 / 10%);
-    box-shadow: 0 1px 2px oklch(0 0 0 / 8%), 0 8px 24px -8px oklch(0.55 0.15 45 / 35%);
+    border: 1px solid oklch(0 0 0 / 12%);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 8%), 0 8px 24px -8px oklch(0.55 0.15 45 / 35%), inset 0 1px 0 oklch(0.99 0.01 250 / 30%);
   }
 
   /* Secondary button — glassy outline with depth */
@@ -458,7 +460,7 @@ html:not(.vt-active) *::after {
   }
   .fp-outline-btn:hover {
     transform: translateY(-2px);
-    border-color: oklch(0.75 0.13 68 / 45%);
+    border-color: oklch(0.78 0.14 70 / 45%);
     background: oklch(0.99 0.01 250 / 8%);
     box-shadow: 0 4px 12px -4px oklch(0 0 0 / 15%), inset 0 1px 0 oklch(0.99 0.01 250 / 12%);
   }
