@@ -44,70 +44,227 @@ export function ProgressView() {
   function generateCertificate() {
     const name = certificateName || "Student Pilot";
     const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-    const w = 1200, h = 850;
+    const w = 1400, h = 1000;
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Background
-    ctx.fillStyle = "#0b1220";
+    const cx = w / 2;
+
+    // ═══ BACKGROUND ═══
+    // Deep navy with subtle radial vignette
+    const bgGrad = ctx.createRadialGradient(cx, h / 2, 200, cx, h / 2, 800);
+    bgGrad.addColorStop(0, "#0f1828");
+    bgGrad.addColorStop(1, "#080d18");
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // Border
-    ctx.strokeStyle = "#F2B134";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(40, 40, w - 80, h - 80);
+    // ═══ BORDER SYSTEM ═══
+    // Outer thin border
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.25)";
     ctx.lineWidth = 1;
-    ctx.strokeRect(55, 55, w - 110, h - 110);
+    ctx.strokeRect(50, 50, w - 100, h - 100);
 
-    // Title
+    // Inner thicker border
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.5)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(65, 65, w - 130, h - 130);
+
+    // Innermost hairline
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.15)";
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(75, 75, w - 150, h - 150);
+
+    // Corner ornaments (subtle L-shaped marks)
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.4)";
+    ctx.lineWidth = 1.5;
+    const cornerLen = 30;
+    const cornerOff = 65;
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(cornerOff, cornerOff + cornerLen);
+    ctx.lineTo(cornerOff, cornerOff);
+    ctx.lineTo(cornerOff + cornerLen, cornerOff);
+    ctx.stroke();
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(w - cornerOff - cornerLen, cornerOff);
+    ctx.lineTo(w - cornerOff, cornerOff);
+    ctx.lineTo(w - cornerOff, cornerOff + cornerLen);
+    ctx.stroke();
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(cornerOff, h - cornerOff - cornerLen);
+    ctx.lineTo(cornerOff, h - cornerOff);
+    ctx.lineTo(cornerOff + cornerLen, h - cornerOff);
+    ctx.stroke();
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(w - cornerOff - cornerLen, h - cornerOff);
+    ctx.lineTo(w - cornerOff, h - cornerOff);
+    ctx.lineTo(w - cornerOff, h - cornerOff - cornerLen);
+    ctx.stroke();
+
+    // ═══ HEADER ═══
+    // Small attitude indicator mark (simplified)
+    const markY = 145;
+    const markR = 22;
+    ctx.save();
+    ctx.translate(cx, markY);
+    // Bezel
+    ctx.beginPath();
+    ctx.arc(0, 0, markR, 0, Math.PI * 2);
+    ctx.fillStyle = "#111927";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.4)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Sky half
+    ctx.beginPath();
+    ctx.arc(0, 0, markR - 3, Math.PI, 0);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(62, 146, 204, 0.3)";
+    ctx.fill();
+    // Ground half
+    ctx.beginPath();
+    ctx.arc(0, 0, markR - 3, 0, Math.PI);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(107, 91, 61, 0.3)";
+    ctx.fill();
+    // Horizon line
+    ctx.beginPath();
+    ctx.moveTo(-markR + 3, 0);
+    ctx.lineTo(markR - 3, 0);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Aircraft symbol
+    ctx.beginPath();
+    ctx.moveTo(-8, 1);
+    ctx.lineTo(-2, 0);
+    ctx.moveTo(2, 0);
+    ctx.lineTo(8, -1);
+    ctx.strokeStyle = "#F2B134";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
     ctx.fillStyle = "#F2B134";
-    ctx.font = "bold 48px sans-serif";
+    ctx.fill();
+    ctx.restore();
+
+    // Brand name
+    ctx.fillStyle = "#E9E7E0";
+    ctx.font = "600 28px 'Instrument Sans', sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("FlightCourse Academy", w / 2, 180);
+    ctx.fillText("FlightCourse Academy", cx, markY + 50);
 
-    ctx.fillStyle = "#8B8F99";
-    ctx.font = "18px monospace";
-    ctx.fillText("FLIGHT SIMULATION TRAINING CERTIFICATE", w / 2, 220);
+    // Subtitle
+    ctx.fillStyle = "rgba(139, 143, 153, 0.7)";
+    ctx.font = "400 11px 'JetBrains Mono', monospace";
+    ctx.fillText("FLIGHT SIMULATION GROUND SCHOOL", cx, markY + 72);
 
-    // "Certificate of Completion"
+    // ═══ DIVIDER ═══
+    const divY = 260;
+    ctx.beginPath();
+    ctx.moveTo(cx - 120, divY);
+    ctx.lineTo(cx - 20, divY);
+    ctx.moveTo(cx + 20, divY);
+    ctx.lineTo(cx + 120, divY);
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.3)";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, divY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(242, 177, 52, 0.5)";
+    ctx.fill();
+
+    // ═══ CERTIFICATE TITLE ═══
     ctx.fillStyle = "#E9E7E0";
-    ctx.font = "36px serif";
-    ctx.fillText("Certificate of Completion", w / 2, 320);
+    ctx.font = "400 42px Georgia, serif";
+    ctx.fillText("Certificate of Completion", cx, 330);
 
-    // "This certifies that"
-    ctx.fillStyle = "#8B8F99";
-    ctx.font = "20px sans-serif";
-    ctx.fillText("This certifies that", w / 2, 400);
+    // ═══ "This is to certify that" ═══
+    ctx.fillStyle = "rgba(139, 143, 153, 0.8)";
+    ctx.font = "400 16px 'Instrument Sans', sans-serif";
+    ctx.fillText("This is to certify that", cx, 400);
 
-    // Name
+    // ═══ NAME ═══
     ctx.fillStyle = "#F2B134";
-    ctx.font = "bold 52px serif";
-    ctx.fillText(name, w / 2, 470);
+    ctx.font = "600 56px Georgia, serif";
+    ctx.fillText(name, cx, 475);
 
-    // Description
+    // Underline beneath name
+    const nameWidth = ctx.measureText(name).width;
+    ctx.beginPath();
+    ctx.moveTo(cx - nameWidth / 2 - 20, 495);
+    ctx.lineTo(cx + nameWidth / 2 + 20, 495);
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.2)";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // ═══ DESCRIPTION ═══
     ctx.fillStyle = "#E9E7E0";
-    ctx.font = "20px sans-serif";
-    ctx.fillText("has successfully completed all 16 modules of the", w / 2, 540);
-    ctx.fillText("FlightCourse Academy ground-school curriculum", w / 2, 570);
-    ctx.fillText("from cold cockpit to IFR approaches.", w / 2, 600);
+    ctx.font = "400 18px 'Instrument Sans', sans-serif";
+    ctx.fillText("has successfully completed all 16 modules of the", cx, 555);
+    ctx.fillText("FlightCourse Academy ground-school curriculum,", cx, 583);
+    ctx.fillText("from cold cockpit startup through IFR approaches.", cx, 611);
 
-    // Date
-    ctx.fillStyle = "#8B8F99";
-    ctx.font = "16px monospace";
-    ctx.fillText(`Completed on ${date}`, w / 2, 680);
+    // ═══ STATS ROW ═══
+    const statsY = 680;
+    ctx.fillStyle = "rgba(139, 143, 153, 0.6)";
+    ctx.font = "400 11px 'JetBrains Mono', monospace";
+    ctx.fillText("MODULES COMPLETED", cx - 180, statsY);
+    ctx.fillText("XP EARNED", cx, statsY);
+    ctx.fillText("DATE", cx + 180, statsY);
 
-    // XP
-    ctx.fillText(`${xp} XP earned · ${completedCount} modules completed`, w / 2, 710);
+    ctx.fillStyle = "#E9E7E0";
+    ctx.font = "500 24px 'JetBrains Mono', monospace";
+    ctx.fillText("16 / 16", cx - 180, statsY + 30);
+    ctx.fillText(`${xp}`, cx, statsY + 30);
+    ctx.font = "400 14px 'Instrument Sans', sans-serif";
+    ctx.fillText(date, cx + 180, statsY + 28);
 
-    // Disclaimer
-    ctx.fillStyle = "#5a5e68";
-    ctx.font = "12px sans-serif";
-    ctx.fillText("For simulation training only — not a substitute for real-world flight instruction.", w / 2, 780);
+    // ═══ GOLD SEAL ═══
+    const sealY = 800;
+    const sealR = 35;
+    ctx.save();
+    ctx.translate(cx, sealY);
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(0, 0, sealR, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Inner circle
+    ctx.beginPath();
+    ctx.arc(0, 0, sealR - 6, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(242, 177, 52, 0.08)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(242, 177, 52, 0.2)";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    // Star/diamond in center
+    ctx.beginPath();
+    ctx.moveTo(0, -12);
+    ctx.lineTo(4, 0);
+    ctx.lineTo(0, 12);
+    ctx.lineTo(-4, 0);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(242, 177, 52, 0.6)";
+    ctx.fill();
+    ctx.restore();
 
-    // Download
+    // ═══ DISCLAIMER ═══
+    ctx.fillStyle = "rgba(90, 94, 104, 0.6)";
+    ctx.font = "400 11px 'Instrument Sans', sans-serif";
+    ctx.fillText("This certificate is for simulation training purposes only and does not constitute", cx, 880);
+    ctx.fillText("certification by the FAA or any aviation authority. Not a substitute for real-world flight instruction.", cx, 898);
+
+    // ═══ DOWNLOAD ═══
     const link = document.createElement("a");
     link.download = `FlightCourse-Certificate-${name.replace(/\s+/g, "-")}.png`;
     link.href = canvas.toDataURL("image/png");

@@ -1163,3 +1163,40 @@ Stage Summary:
 - Amber color slightly brighter
 - All primary buttons have glass treatment
 - Site is feature-complete and ready for deployment
+
+---
+Task ID: V33-CERTIFICATE-PROFESSIONAL-REBUILD
+Agent: Main (Z.ai Code)
+Task: Research + rebuild certificate to be professional, not AI-slop
+
+RESEARCH:
+- Professional certificates use: consistent typography, clear visual hierarchy, brand colors with restraint, white space, clarity, credibility, structure
+- NOT: fancy borders, gold foil effects, busy decoration
+- Key: trust and authority through restraint
+
+CERTIFICATE REBUILD (from 1200x850 → 1400x1000, much more detailed):
+1. BACKGROUND: radial gradient (navy center → darker edges) for depth, not flat
+2. BORDER SYSTEM: 3 layers — outer thin (25% amber), inner thick (50% amber), innermost hairline (15%) — creates a proper framed look
+3. CORNER ORNAMENTS: L-shaped marks at all 4 corners (subtle, professional)
+4. HEADER: miniature attitude indicator mark (sky/ground/horizon/aircraft) + "FlightCourse Academy" in Instrument Sans + "FLIGHT SIMULATION GROUND SCHOOL" subtitle in mono
+5. DIVIDER: two lines flanking a center dot (professional separator)
+6. CERTIFICATE TITLE: "Certificate of Completion" in Georgia serif (classic, authoritative)
+7. NAME: in amber Georgia serif, 56px, with a subtle underline beneath
+8. DESCRIPTION: 3 lines, Instrument Sans, clear and professional
+9. STATS ROW: 3 columns (MODULES COMPLETED / XP EARNED / DATE) with mono labels + values
+10. GOLD SEAL: double-ring circle with diamond center — subtle, not gaudy
+11. DISCLAIMER: 2 lines, properly worded ("does not constitute certification by the FAA")
+12. Downloaded as 1400x1000 PNG (higher resolution than before)
+
+OG IMAGE: regenerated as a minimal attitude indicator on dark navy (no text, no AI-slop elements)
+
+VERIFICATION:
+- Server: HTTP 200, stable (29s compile)
+- Lint: 0 errors, 4 pre-existing warnings
+- Certificate generates as a professional 1400x1000 PNG
+- OG image regenerated
+
+Stage Summary:
+- Certificate completely rebuilt: 3-layer border, corner ornaments, mini attitude indicator mark, Georgia serif title, stats row, gold seal, proper disclaimer
+- Looks like a real aviation training certificate, not AI-generated
+- OG image regenerated to be minimal and professional
