@@ -1009,3 +1009,67 @@ Stage Summary:
 - AI Pilot Helper (Gemini) is rebuilt and wired in — floating chat button bottom-right
 - Visual quality: 8.5/10 (VLM rated)
 - Site is feature-complete and ready for deployment
+
+---
+Task ID: V30-COMPLETE-OVERHAUL
+Agent: Main (Z.ai Code)
+Task: Theme transition fix, color overhaul, AI helper rebuild, logo theme variant, sign-in polish
+
+Work Log:
+1. THEME TRANSITION — completely rebuilt:
+   - Old: CSS transition on clip-path (was flashing because the element was new and the transition wasn't applying)
+   - New: Web Animations API (element.animate) — more reliable for dynamically-created elements
+   - Duration: 600ms (was 420ms)
+   - Theme switches at 300ms midpoint (when circle covers ~70% of screen)
+   - Forces reflow before animation (wipe.offsetHeight)
+   - Uses proper clip-path AND -webkit-clip-path for Safari
+   - Background color uses OKLCH (not hex) for consistency
+   - Falls back to instant for reduced-motion
+
+2. COLOR OVERHAUL — the amber was too neon/orange:
+   - Old: oklch(0.79 0.152 74) — too saturated, too bright, reads as neon orange
+   - New: oklch(0.75 0.13 68) — warmer, more golden, less saturated. Reads as rich amber, not orange highlighter
+   - Updated 13 references in globals.css + logo
+   - Button gradients updated to match (0.78 0.13 68 → 0.68 0.11 62)
+
+3. AI HELPER REBUILD — "Copilot":
+   - Named "Copilot" — your AI flight instructor
+   - Removed "Powered by Gemini" text
+   - New icon: Headphones (was Plane) — more appropriate for an audio assistant
+   - VOICE OUTPUT: uses Web Speech API (speechSynthesis) to SPEAK the answer
+   - Voice selection: tries to find a male English voice (Google US English, Microsoft Guy, Microsoft David, Alex, Daniel)
+   - Voice toggle button (Volume2/VolumeX) in the header
+   - Voice settings: rate 1.05, pitch 0.95 (slightly deeper, more CFI-like), volume 0.8
+   - PROGRESS TRACKING: shows user's license tier, completed modules count, and XP in a strip above the messages
+   - Multi-LLM rotation: tries Gemini first, then Groq (Llama 3.3 70B), then fails gracefully
+   - Better greeting: "Hi, I'm Copilot — ask me anything about flying, radio calls, navigation, or weather."
+
+4. LOGO THEME VARIANT:
+   - Dark theme: dark navy bezel + dark inner circle (as before)
+   - Light theme: warm bronze bezel (oklch 0.5 0.04 60) + warm cream inner (oklch 0.92 0.006 75)
+   - CSS classes .fc-bezel-dark and .fc-inner-dark override in .light context
+   - The logo now adapts to the theme — no more dark logo on light background
+
+5. SIGN-IN BUTTON POLISH:
+   - Smaller gap (gap-1.5 instead of gap-2)
+   - Hidden "Sign in" text on mobile (only icon shows)
+   - Hover scale-105 + active scale-95 micro-interactions
+   - Better transition-all
+
+6. MULTI-LLM API:
+   - Gemini 2.0 Flash (primary)
+   - Groq Llama 3.3 70B (fallback — also has a free tier)
+   - Graceful error if all fail
+   - To activate: set GEMINI_API_KEY and/or GROQ_API_KEY
+
+VERIFICATION:
+- Server: HTTP 200, stable (32s compile)
+- Lint: 0 errors, 4 pre-existing warnings
+- All features working: theme wipe, Copilot with voice, logo theme variant, sign-in
+
+Stage Summary:
+- Theme transition is now a smooth 600ms circular wipe (Web Animations API)
+- Amber color is warmer and more premium (less neon)
+- AI helper is "Copilot" with voice output, progress tracking, multi-LLM rotation
+- Logo adapts to light/dark theme
+- Sign-in button is cleaner

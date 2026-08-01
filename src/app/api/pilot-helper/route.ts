@@ -2,63 +2,79 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-const SYSTEM_PROMPT = `You are a friendly, knowledgeable CFI (Certified Flight Instructor) helping a flight-simulator student. Answer concisely (under 150 words) in plain English. If asked about something dangerous or illegal, refuse. Always remind that this is for simulation training only. You are part of FlightCourse Academy, a free flight-training website for simulator pilots. Be encouraging, never condescending. Use aviation terms but explain them if the student seems new.`;
+const SYSTEM_PROMPT = `You are "Copilot" — a friendly, knowledgeable CFI (Certified Flight Instructor) helping a flight-simulator student on FlightCourse Academy. Answer concisely (under 150 words) in plain English. If asked about something dangerous or illegal, refuse. Always remind that this is for simulation training only. Be encouraging, never condescending. Use aviation terms but explain them if the student seems new.`;
+
+// Multi-LLM rotation: try Gemini first, then Groq, then Cloudflare
+async function tryGemini(question: string, apiKey: string): Promise<string | null> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ parts: [{ text: question }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 250 },
+      }),
+    }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+}
+
+async function tryGroq(question: string, apiKey: string): Promise<string | null> {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: question },
+      ],
+      max_tokens: 250,
+      temperature: 0.7,
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content || null;
+}
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        error: "AI helper is not configured. The site owner needs to set GEMINI_API_KEY.",
-        setup: true,
-      },
-      { status: 503 }
-    );
-  }
-
   try {
     const { question } = await req.json();
-
     if (!question || typeof question !== "string") {
       return NextResponse.json({ error: "Question is required" }, { status: 400 });
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [{ parts: [{ text: question }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 250,
-          },
-        }),
-      }
-    );
+    // Try each LLM in order until one works
+    const providers: { name: string; key: string; fn: (q: string, k: string) => Promise<string | null> }[] = [
+      { name: "gemini", key: process.env.GEMINI_API_KEY || "", fn: tryGemini },
+      { name: "groq", key: process.env.GROQ_API_KEY || "", fn: tryGroq },
+    ];
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return NextResponse.json(
-          { error: "The AI is busy right now. Please try again in a moment." },
-          { status: 429 }
-        );
+    for (const provider of providers) {
+      if (!provider.key) continue;
+      try {
+        const answer = await provider.fn(question, provider.key);
+        if (answer) {
+          return NextResponse.json({ answer });
+        }
+      } catch {
+        // Try next provider
       }
-      return NextResponse.json(
-        { error: "I couldn't reach the AI. Please try again." },
-        { status: 502 }
-      );
     }
 
-    const data = await response.json();
-    const answer =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I couldn't generate an answer. Please try rephrasing your question.";
-
-    return NextResponse.json({ answer });
+    // All providers failed
+    return NextResponse.json(
+      { error: "I'm having trouble connecting right now. Please try again in a moment." },
+      { status: 503 }
+    );
   } catch {
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },

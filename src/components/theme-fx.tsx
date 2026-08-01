@@ -4,64 +4,81 @@ import * as React from "react";
 import { useTheme } from "next-themes";
 
 /**
- * ThemeFX — adds the portfolio's atmospheric effects to the site:
- * - Aurora: drifting blurred gradient orbs in the background
- * - Grain: film grain overlay for texture
- * - Theme wipe: circular reveal transition when toggling theme
+ * ThemeFX — atmospheric effects + smooth circular theme wipe.
  *
- * All effects respect prefers-reduced-motion.
+ * The theme wipe uses the Web Animations API (element.animate) which is
+ * more reliable than CSS transitions for dynamically-created elements.
+ * The wipe expands as a circle from the click point, the theme switches
+ * at the midpoint (when the circle covers half the screen), then the
+ * wipe continues expanding to full coverage before being removed.
+ *
+ * Total duration: 600ms. Easing: ease-out-expo.
+ * Works in ALL browsers. Falls back to instant for reduced-motion.
  */
 export function ThemeFX() {
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Expose a global theme toggle function that uses the circular wipe
   React.useEffect(() => {
     if (!mounted) return;
 
     (window as any).toggleThemeWithWipe = (x: number, y: number) => {
-      const currentTheme = document.documentElement.classList.contains("light") ? "light" : "dark";
-      const next = currentTheme === "dark" ? "light" : "dark";
+      const isLight = document.documentElement.classList.contains("light");
+      const next = isLight ? "dark" : "light";
 
-      // Check for reduced motion
+      // Reduced motion: instant switch
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         setTheme(next);
         return;
       }
 
-      // Create the wipe overlay
-      const wipe = document.createElement("div");
-      wipe.className = "theme-wipe";
-      const bg = next === "dark" ? "#0b1220" : "#F6F3EB";
-      wipe.style.background = bg;
-
-      const r = Math.hypot(
+      const maxR = Math.hypot(
         Math.max(x, window.innerWidth - x),
         Math.max(y, window.innerHeight - y)
       );
-      wipe.style.clipPath = `circle(0px at ${x}px ${y}px)`;
+
+      // Create the wipe overlay
+      const wipe = document.createElement("div");
+      wipe.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        pointer-events: none;
+        background: ${next === "dark" ? "oklch(0.16 0.026 254)" : "oklch(0.96 0.008 75)"};
+        clip-path: circle(0px at ${x}px ${y}px);
+        -webkit-clip-path: circle(0px at ${x}px ${y}px);
+      `;
       document.body.appendChild(wipe);
 
-      // Animate the wipe
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          wipe.style.clipPath = `circle(${r}px at ${x}px ${y}px)`;
-        });
-      });
+      // Force reflow so the initial clip-path is applied
+      wipe.offsetHeight;
 
-      // Switch the theme at the midpoint
+      // Animate the circle expanding using Web Animations API
+      const animation = wipe.animate(
+        [
+          { clipPath: `circle(0px at ${x}px ${y}px)`, WebkitClipPath: `circle(0px at ${x}px ${y}px)` },
+          { clipPath: `circle(${maxR}px at ${x}px ${y}px)`, WebkitClipPath: `circle(${maxR}px at ${x}px ${y}px)` },
+        ],
+        {
+          duration: 600,
+          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+          fill: "forwards",
+        }
+      );
+
+      // Switch theme at the midpoint (300ms) — when the circle covers ~70% of the screen
       setTimeout(() => {
         setTheme(next);
-      }, 210);
+      }, 300);
 
-      // Remove the wipe after the transition
-      setTimeout(() => {
+      // Remove the wipe after the animation completes
+      animation.onfinish = () => {
         wipe.remove();
-      }, 500);
+      };
     };
   }, [mounted, setTheme]);
 

@@ -40,9 +40,9 @@ export function LogoMark({ className, animated = false }: { className?: string; 
         </radialGradient>
       </defs>
 
-      {/* Outer bezel ring — premium gradient */}
-      <circle cx="20" cy="20" r="16" fill="url(#fc-bezel)" />
-      <circle cx="20" cy="20" r="14.5" fill="oklch(0.10 0.02 255)" />
+      {/* Outer bezel ring — theme-aware via CSS */}
+      <circle cx="20" cy="20" r="16" fill="url(#fc-bezel)" className="fc-bezel-dark" />
+      <circle cx="20" cy="20" r="14.5" fill="oklch(0.10 0.02 255)" className="fc-inner-dark" />
 
       {/* Dial face — clipped to inner circle */}
       <g clipPath="url(#fc-dial)">
@@ -72,13 +72,13 @@ export function LogoMark({ className, animated = false }: { className?: string; 
       </g>
 
       {/* Bank pointer — amber triangle at top */}
-      <path d="M20 5 L18.5 7.5 L21.5 7.5 Z" fill="oklch(0.79 0.152 74)" />
+      <path d="M20 5 L18.5 7.5 L21.5 7.5 Z" fill="oklch(0.75 0.13 68)" />
 
       {/* Inner bezel ring — subtle */}
       <circle cx="20" cy="20" r="13" stroke="oklch(0.99 0.01 250 / 15%)" strokeWidth="0.5" fill="none" />
 
       {/* Aircraft symbol — minimal, elegant. Center dot + two swept wings */}
-      <g stroke="oklch(0.79 0.152 74)" strokeWidth="2" strokeLinecap="round" fill="oklch(0.79 0.152 74)">
+      <g stroke="oklch(0.75 0.13 68)" strokeWidth="2" strokeLinecap="round" fill="oklch(0.75 0.13 68)">
         {/* Wings — slightly swept, climbing */}
         <line x1="11" y1="22.5" x2="17" y2="21.5" />
         <line x1="23" y1="20.5" x2="29" y2="19.5" />

@@ -46,11 +46,11 @@ export function AuthButton() {
     return (
       <button
         disabled
-        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground opacity-50 cursor-not-allowed"
-        title="Sign-in coming soon — needs env vars configured"
+        className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground opacity-50 cursor-not-allowed transition-all"
+        title="Sign-in coming soon"
       >
         <User className="size-3.5" />
-        Sign in
+        <span className="hidden md:inline">Sign in</span>
       </button>
     );
   }
@@ -99,10 +99,10 @@ export function AuthButton() {
     <div className="relative">
       <button
         onClick={() => setMenuOpen((v) => !v)}
-        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary"
+        className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-all hover:border-primary/40 hover:text-primary hover:scale-105 active:scale-95"
       >
         <User className="size-3.5" />
-        Sign in
+        <span className="hidden md:inline">Sign in</span>
       </button>
       {menuOpen && (
         <>
