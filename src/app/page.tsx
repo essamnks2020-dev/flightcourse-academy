@@ -6,6 +6,7 @@ import { useNav } from "@/lib/nav-store";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MouseTracker } from "@/components/mouse-tracker";
+import { ThemeFX } from "@/components/theme-fx";
 import { HomeView } from "@/components/views/home-view";
 import { LogoMark } from "@/components/brand/logo";
 
@@ -153,6 +154,7 @@ export default function Page() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <ThemeFX />
       <MouseTracker />
       <Navbar />
       <main className="flex-1">

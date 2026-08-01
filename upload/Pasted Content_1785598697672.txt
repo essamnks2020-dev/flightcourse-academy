@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c0f16">
+<title>Radio Builder — FlightCourse Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: oklch(0.13 0.018 254);
+  --panel: oklch(0.19 0.022 254);
+  --panel-hi: oklch(0.25 0.024 254);
+  --panel-lo: oklch(0.15 0.02 254);
+  --lcd: oklch(0.085 0.014 254);
+  --amber: oklch(0.79 0.152 74);
+  --amber-dim: oklch(0.79 0.152 74 / 16%);
+  --cyan: oklch(0.75 0.128 205);
+  --cyan-dim: oklch(0.75 0.128 205 / 13%);
+  --red: oklch(0.68 0.18 27);
+  --text: oklch(0.92 0.01 250);
+  --dim: oklch(0.66 0.02 250);
+  --faint: oklch(0.5 0.02 250);
+  --stroke: oklch(0.99 0.01 250 / 10%);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --sans: "Instrument Sans", system-ui, sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:15px;line-height:1.55;min-height:100vh;
+  background-image:
+    radial-gradient(1200px 600px at 70% -10%, oklch(0.75 0.128 205 / 5%), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, oklch(0.79 0.152 74 / 4%), transparent 60%),
+    repeating-linear-gradient(45deg, oklch(0.99 0.01 250 / 1.1%) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(-45deg, oklch(0.99 0.01 250 / 1.1%) 0 2px, transparent 2px 5px);
+}
+::selection{background:var(--amber-dim)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+button{font-family:var(--sans);cursor:pointer}
+button:disabled{cursor:not-allowed}
+
+/* ---------- avionics primitives ---------- */
+.lcd-label{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);display:block}
+.lcd-label.cyan{color:var(--cyan)}
+.lcd-label.amber{color:var(--amber)}
+
+.bezel{
+  position:relative;border-radius:18px;padding:12px;
+  background:linear-gradient(180deg, var(--panel-hi) 0%, var(--panel) 12%, var(--panel-lo) 100%);
+  border:1px solid oklch(0.99 0.01 250 / 7%);
+  box-shadow:
+    inset 0 1px 0 oklch(0.99 0.01 250 / 10%),
+    inset 0 -2px 6px rgba(0,0,0,.5),
+    0 24px 60px rgba(0,0,0,.55),
+    0 2px 8px rgba(0,0,0,.4);
+}
+.screws{
+  background-image:
+    radial-gradient(circle 4px at 16px 16px, oklch(0.5 0.02 254) 0 1.4px, oklch(0.24 0.02 254) 1.8px 3px, oklch(0.07 0.015 254) 3.4px, transparent 4px),
+    radial-gradient(circle 4px at calc(100% - 16px) 16px, oklch(0.5 0.02 254) 0 1.4px, oklch(0.24 0.02 254) 1.8px 3px, oklch(0.07 0.015 254) 3.4px, transparent 4px),
+    radial-gradient(circle 4px at 16px calc(100% - 16px), oklch(0.5 0.02 254) 0 1.4px, oklch(0.24 0.02 254) 1.8px 3px, oklch(0.07 0.015 254) 3.4px, transparent 4px),
+    radial-gradient(circle 4px at calc(100% - 16px) calc(100% - 16px), oklch(0.5 0.02 254) 0 1.4px, oklch(0.24 0.02 254) 1.8px 3px, oklch(0.07 0.015 254) 3.4px, transparent 4px);
+  background-repeat:no-repeat;
+}
+.lcd{
+  position:relative;overflow:hidden;border-radius:10px;
+  background:linear-gradient(180deg, oklch(0.1 0.016 254), var(--lcd) 30%);
+  border:1px solid oklch(0 0 0 / 60%);
+  box-shadow:
+    inset 0 2px 14px rgba(0,0,0,.85),
+    inset 0 0 50px oklch(0.75 0.128 205 / 4%),
+    inset 0 -1px 0 oklch(0.99 0.01 250 / 4%);
+}
+.lcd::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
+  background:repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,.16) 2px 3px);
+}
+.lcd::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:4;
+  background:linear-gradient(112deg, transparent 25%, oklch(0.99 0.01 250 / 4.5%) 42%, oklch(0.99 0.01 250 / 1.5%) 50%, transparent 62%);
+}
+.lcd.boot{animation:lcdBoot .55s steps(1) both}
+@keyframes lcdBoot{0%{opacity:0}10%{opacity:.7}16%{opacity:.15}26%{opacity:1}34%{opacity:.35}46%{opacity:1}}
+.lcd-num{
+  font-family:var(--mono);color:var(--amber);font-variant-numeric:tabular-nums;
+  text-shadow:0 0 8px oklch(0.79 0.152 74 / 55%), 0 0 26px oklch(0.79 0.152 74 / 28%);
+}
+.lcd-num.cyan{color:var(--cyan);text-shadow:0 0 8px oklch(0.75 0.128 205 / 55%), 0 0 26px oklch(0.75 0.128 205 / 28%)}
+
+.ann{
+  font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.16em;
+  padding:5px 0;width:46px;text-align:center;border-radius:4px;display:inline-block;
+  background:oklch(0.11 0.016 254);color:oklch(0.42 0.02 250);
+  border:1px solid oklch(0.99 0.01 250 / 7%);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.8);
+  transition:all .12s var(--ease);
+}
+.ann.tx.on{background:var(--amber);color:oklch(0.22 0.05 74);border-color:oklch(0.99 0.01 250 / 30%);
+  box-shadow:0 0 14px oklch(0.79 0.152 74 / 70%), 0 0 34px oklch(0.79 0.152 74 / 30%), inset 0 1px 0 oklch(0.99 0.01 250 / 45%)}
+.ann.rx.on{background:var(--cyan);color:oklch(0.2 0.05 230);border-color:oklch(0.99 0.01 250 / 30%);
+  box-shadow:0 0 14px oklch(0.75 0.128 205 / 70%), 0 0 34px oklch(0.75 0.128 205 / 30%), inset 0 1px 0 oklch(0.99 0.01 250 / 45%)}
+
+.softkeys{display:flex;justify-content:space-around;gap:8px;padding:10px 8px 2px}
+.softkey{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:2px 6px}
+.softkey span{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--faint);transition:color .2s}
+.softkey i{width:38px;height:13px;border-radius:3px;display:block;
+  background:linear-gradient(180deg, oklch(0.32 0.02 254), oklch(0.22 0.02 254));
+  box-shadow:inset 0 1px 0 oklch(0.99 0.01 250 / 14%), 0 2px 3px rgba(0,0,0,.6);
+  transition:all .1s}
+.softkey:hover span{color:var(--cyan)}
+.softkey:active i{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
+
+/* ---------- layout ---------- */
+#app{max-width:1080px;margin:0 auto;padding:0 18px 80px}
+header{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 16px;margin:10px 0 22px;border-radius:14px;
+  background:linear-gradient(180deg, var(--panel-hi), var(--panel-lo));
+  border:1px solid oklch(0.99 0.01 250 / 7%);
+  box-shadow:inset 0 1px 0 oklch(0.99 0.01 250 / 9%), 0 10px 30px rgba(0,0,0,.45);
+  position:sticky;top:8px;z-index:20;backdrop-filter:blur(8px);
+}
+.brand-title{font-weight:700;font-size:15px;letter-spacing:.06em}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.rank-chip{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:8px;
+  background:var(--lcd);border:1px solid oklch(0 0 0 / 55%);
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.7);transition:box-shadow .5s var(--ease)}
+.rank-chip.rankup{box-shadow:0 0 26px oklch(0.79 0.152 74 / 50%), inset 0 2px 8px rgba(0,0,0,.7);border-color:oklch(0.79 0.152 74 / 60%)}
+.rank-chip .lcd-label{color:var(--amber)}
+.xpbar{width:84px;height:5px;border-radius:3px;background:oklch(0.99 0.01 250 / 9%);overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
+#xpFill{height:100%;width:0%;background:linear-gradient(90deg, oklch(0.79 0.152 74 / 70%), var(--amber));border-radius:3px;transition:width 1s var(--ease);box-shadow:0 0 8px var(--amber)}
+#xpText{font-size:11px;color:var(--dim)}
+.icon-btn{background:linear-gradient(180deg, oklch(0.3 0.02 254), oklch(0.2 0.02 254));border:1px solid oklch(0.99 0.01 250 / 8%);border-radius:8px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;color:var(--dim);transition:all .2s var(--ease);box-shadow:inset 0 1px 0 oklch(0.99 0.01 250 / 12%), 0 2px 4px rgba(0,0,0,.5)}
+.icon-btn:hover{color:var(--amber)}
+.icon-btn:active{transform:translateY(1px)}
+.icon-btn.off{color:var(--faint)}
+.icon-btn.off svg .waves{display:none}
+.icon-btn svg{width:16px;height:16px}
+#courseProg{height:3px;background:oklch(0.99 0.01 250 / 7%);margin:-14px 0 22px;border-radius:2px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+#courseProgFill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--amber));transition:width .8s var(--ease);box-shadow:0 0 10px oklch(0.79 0.152 74 / 50%)}
+
+.screen{animation:rise .5s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- buttons ---------- */
+.primary{
+  background:linear-gradient(180deg, oklch(0.84 0.15 78), oklch(0.72 0.15 70));
+  color:oklch(0.2 0.05 74);border:1px solid oklch(0.99 0.01 250 / 25%);border-radius:10px;
+  font-weight:700;font-size:13px;letter-spacing:.1em;padding:13px 26px;
+  box-shadow:0 0 20px oklch(0.79 0.152 74 / 25%), inset 0 1px 0 oklch(0.99 0.01 250 / 40%), 0 4px 0 oklch(0.5 0.1 65), 0 8px 20px rgba(0,0,0,.4);
+  transition:all .15s var(--ease);text-shadow:0 1px 0 oklch(0.99 0.01 250 / 25%);
+}
+.primary:hover{filter:brightness(1.07);box-shadow:0 0 30px oklch(0.79 0.152 74 / 40%), inset 0 1px 0 oklch(0.99 0.01 250 / 40%), 0 4px 0 oklch(0.5 0.1 65), 0 8px 24px rgba(0,0,0,.45)}
+.primary:active{transform:translateY(3px);box-shadow:0 0 20px oklch(0.79 0.152 74 / 25%), inset 0 1px 0 oklch(0.99 0.01 250 / 40%), 0 1px 0 oklch(0.5 0.1 65)}
+.primary.big{width:100%;padding:16px;font-size:14px;margin-top:18px}
+.ghost{
+  background:linear-gradient(180deg, oklch(0.26 0.02 254), oklch(0.18 0.02 254));
+  border:1px solid oklch(0.99 0.01 250 / 9%);color:var(--dim);border-radius:8px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;padding:9px 14px;transition:all .2s var(--ease);
+  box-shadow:inset 0 1px 0 oklch(0.99 0.01 250 / 10%), 0 2px 4px rgba(0,0,0,.4);
+}
+.ghost:hover{color:var(--cyan);border-color:oklch(0.75 0.128 205 / 40%)}
+.ghost:active{transform:translateY(1px)}
+.ghost:disabled{opacity:.35}
+.ghost:disabled:hover{color:var(--dim);border-color:oklch(0.99 0.01 250 / 9%)}
+
+/* ---------- start screen ---------- */
+.hero{padding:34px 2px 26px;position:relative}
+.hero-inner{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.hero-text{flex:1;min-width:280px}
+.hero h1{font-size:clamp(42px,7vw,66px);font-weight:700;line-height:1.02;letter-spacing:-.03em;margin:10px 0 14px}
+.hero h1 em{font-style:normal;color:var(--amber);text-shadow:0 0 30px oklch(0.79 0.152 74 / 50%)}
+.lede{max-width:540px;color:var(--dim);font-size:16px}
+.adi{
+  width:120px;height:120px;border-radius:50%;flex:none;position:relative;overflow:hidden;
+  border:6px solid oklch(0.24 0.02 254);
+  box-shadow:0 0 0 1px oklch(0.99 0.01 250 / 10%), inset 0 4px 18px rgba(0,0,0,.8), 0 14px 34px rgba(0,0,0,.5);
+}
+.adi-ball{position:absolute;inset:-40%;animation:adiSway 9s ease-in-out infinite}
+@keyframes adiSway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.adi-ball::before{content:"";position:absolute;left:0;right:0;top:0;height:50%;background:linear-gradient(180deg, oklch(0.45 0.1 230), oklch(0.35 0.09 235))}
+.adi-ball::after{content:"";position:absolute;left:0;right:0;bottom:0;height:50%;background:linear-gradient(180deg, oklch(0.42 0.09 70), oklch(0.3 0.07 65))}
+.adi-horizon{position:absolute;left:0;right:0;top:50%;height:2px;background:oklch(0.95 0.01 250);z-index:2;transform:translateY(-1px)}
+.adi-wing{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:56px;height:4px;border-radius:2px;
+  background:linear-gradient(90deg, var(--amber) 0 20px, transparent 20px 26px, var(--amber) 26px 30px, transparent 30px 36px, var(--amber) 36px 56px);
+  filter:drop-shadow(0 0 4px oklch(0.79 0.152 74 / 60%))}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.mode-card{text-align:left;color:var(--text);transition:all .25s var(--ease);position:relative;cursor:pointer}
+.mode-card:hover{transform:translateY(-2px)}
+.mode-card.sel{border-color:oklch(0.79 0.152 74 / 55%);box-shadow:0 0 0 1px oklch(0.79 0.152 74 / 30%), 0 0 34px oklch(0.79 0.152 74 / 12%), inset 0 1px 0 oklch(0.99 0.01 250 / 10%), 0 24px 60px rgba(0,0,0,.55)}
+.mode-card.sel::after{content:"";position:absolute;top:16px;right:16px;width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px var(--amber)}
+.mode-name{display:block;font-weight:700;font-size:20px;letter-spacing:.04em;margin:8px 0 6px}
+.mode-desc{display:block;color:var(--dim);font-size:13px}
+.stat-row{display:flex;gap:0;margin-bottom:6px;padding:16px 22px}
+.stat{flex:1;text-align:center}
+.stat+.stat{border-left:1px solid var(--stroke)}
+.stat b{display:block;font-family:var(--mono);font-size:20px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;text-shadow:0 0 12px oklch(0.79 0.152 74 / 40%)}
+.stat span{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+.pro-card{margin-top:22px;border-style:dashed;border-color:oklch(0.79 0.152 74 / 25%)}
+.pro-card p{color:var(--dim);font-size:13px;margin:8px 0 14px;max-width:520px}
+.pro-row{display:flex;gap:10px}
+.pro-row input{
+  flex:1;background:var(--lcd);border:1px solid oklch(0 0 0 / 55%);border-radius:8px;
+  color:var(--text);font-family:var(--mono);font-size:13px;padding:11px 14px;outline:none;transition:border-color .25s;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.7);
+}
+.pro-row input:focus{border-color:oklch(0.75 0.128 205 / 50%)}
+.pro-row button{background:none;border:1px solid oklch(0.79 0.152 74 / 45%);color:var(--amber);border-radius:8px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;padding:0 18px;transition:all .25s var(--ease)}
+.pro-row button:hover{background:var(--amber-dim)}
+#proMsg{font-size:11px;color:var(--cyan);margin-top:10px;min-height:14px}
+.locked-list{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.locked-list li{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.locked-list svg{width:11px;height:11px;flex:none}
+.fineprint{text-align:center;color:var(--faint);font-size:11px;margin-top:26px;font-family:var(--mono);letter-spacing:.04em}
+
+/* ---------- MFD stage ---------- */
+#stageWrap{margin-bottom:16px;animation:rise .5s var(--ease) both}
+.mfd{padding:12px 12px 8px}
+.mfd-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 8px 10px}
+.hdg-tape{
+  flex:1;max-width:340px;height:30px;position:relative;overflow:hidden;border-radius:6px;
+  background:var(--lcd);border:1px solid oklch(0 0 0 / 55%);box-shadow:inset 0 2px 8px rgba(0,0,0,.8);
+  display:flex;align-items:center;justify-content:space-between;padding:0 12px;
+}
+.hdg-tape::before{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg, oklch(0.99 0.01 250 / 14%) 0 1px, transparent 1px 12px);
+  -webkit-mask:linear-gradient(180deg, #000 0 8px, transparent 8px);mask:linear-gradient(180deg, #000 0 8px, transparent 8px)}
+.hdg-side{font-family:var(--mono);font-size:9px;color:var(--faint)}
+.hdg-center{display:flex;flex-direction:column;align-items:center;line-height:1}
+.hdg-bug{color:var(--amber);font-size:7px;text-shadow:0 0 6px var(--amber)}
+#hdgRead{font-size:13px;font-weight:700;color:var(--amber);text-shadow:0 0 8px oklch(0.79 0.152 74 / 60%)}
+.map-lcd{padding:0}
+#mapCanvas{display:block;width:100%;height:300px;position:relative;z-index:2}
+.comlog{
+  margin-top:10px;height:112px;overflow-y:auto;padding:10px 16px;
+  font-size:11px;line-height:1.9;scrollbar-width:thin;scrollbar-color:oklch(0.99 0.01 250 / 15%) transparent;
+}
+.log-line{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:logIn .3s var(--ease);position:relative;z-index:2}
+@keyframes logIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.log-line.tx{color:var(--amber)}
+.log-line.rx{color:oklch(0.75 0.128 205 / 75%)}
+.log-line.sys{color:var(--faint)}
+
+/* ---------- briefing ---------- */
+.brief-card h2{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:8px 0 18px}
+.brief-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.brief-cell{background:var(--lcd);border:1px solid oklch(0 0 0 / 55%);border-radius:8px;padding:11px 14px;box-shadow:inset 0 2px 8px rgba(0,0,0,.7)}
+.brief-cell b{display:block;font-family:var(--mono);font-size:15px;font-weight:500;margin-top:3px;font-variant-numeric:tabular-nums}
+.brief-cell b.amber{color:var(--amber);text-shadow:0 0 10px oklch(0.79 0.152 74 / 45%)}
+.brief-cell b.cyan{color:var(--cyan);text-shadow:0 0 10px oklch(0.75 0.128 205 / 45%)}
+.task{color:var(--dim);border-left:2px solid var(--amber);padding-left:14px;margin-bottom:18px}
+.task b{color:var(--text)}
+#elBox{margin-bottom:16px}
+#elList{list-style:none;margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}
+#elList li{font-family:var(--mono);font-size:11px;color:var(--cyan);background:var(--cyan-dim);border:1px solid oklch(0.75 0.128 205 / 25%);border-radius:6px;padding:6px 10px}
+.exam-note{font-family:var(--mono);font-size:11px;color:var(--amber);background:var(--amber-dim);border:1px solid oklch(0.79 0.152 74 / 30%);border-radius:8px;padding:10px 12px;margin-bottom:16px}
+.tip{font-size:11px;color:var(--faint);font-family:var(--mono);letter-spacing:.03em;border-top:1px solid var(--stroke);padding-top:14px}
+.scen-dots{display:flex;gap:6px;margin-top:14px}
+.scen-dots i{width:22px;height:4px;border-radius:2px;background:oklch(0.99 0.01 250 / 10%)}
+.scen-dots i.done{background:var(--cyan);box-shadow:0 0 6px oklch(0.75 0.128 205 / 60%)}
+.scen-dots i.cur{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+
+/* ---------- COM radio unit ---------- */
+.radio-bezel{max-width:600px;margin:0 auto;padding:14px}
+.com-display{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:12px}
+.com-display>*{position:relative;z-index:2}
+.com-col{flex:1}
+.com-col .lcd-label{margin-bottom:4px}
+.freq{font-size:34px;font-weight:700;letter-spacing:.05em;line-height:1}
+.freq.stby{font-size:24px;opacity:.9}
+.flip{
+  width:40px;height:40px;border-radius:8px;flex:none;font-size:17px;color:var(--cyan);
+  background:linear-gradient(180deg, oklch(0.3 0.02 254), oklch(0.2 0.02 254));
+  border:1px solid oklch(0.99 0.01 250 / 10%);
+  box-shadow:inset 0 1px 0 oklch(0.99 0.01 250 / 12%), 0 3px 0 oklch(0.1 0.015 254), 0 6px 12px rgba(0,0,0,.5);
+  transition:all .1s var(--ease);
+}
+.flip:hover{color:var(--amber)}
+.flip:active{transform:translateY(2px);box-shadow:inset 0 1px 0 oklch(0.99 0.01 250 / 12%), 0 1px 0 oklch(0.1 0.015 254)}
+.ann-col{display:flex;flex-direction:column;gap:6px;flex:none}
+.radio-mid{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:0 2px}
+.pos-chip{flex:1;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--cyan);
+  background:var(--lcd);border:1px solid oklch(0 0 0 / 55%);border-radius:6px;padding:8px 12px;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.7);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer-box{text-align:right}
+.timer{font-size:20px;color:var(--cyan);font-variant-numeric:tabular-nums;text-shadow:0 0 10px oklch(0.75 0.128 205 / 50%)}
+.timer.hot{color:var(--amber);text-shadow:0 0 10px oklch(0.79 0.152 74 / 60%)}
+.radio-ctl{display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:0 2px}
+.seg{display:flex;border:1px solid oklch(0 0 0 / 55%);border-radius:8px;overflow:hidden;flex:1;background:var(--lcd);box-shadow:inset 0 2px 8px rgba(0,0,0,.7)}
+.seg button{flex:1;background:none;border:none;color:var(--faint);font-family:var(--mono);font-size:11px;letter-spacing:.16em;padding:10px;transition:all .2s var(--ease)}
+.seg button.on{background:var(--cyan-dim);color:var(--cyan);text-shadow:0 0 8px oklch(0.75 0.128 205 / 60%);box-shadow:inset 0 0 12px oklch(0.75 0.128 205 / 12%)}
+.seg button:disabled{opacity:.3;cursor:not-allowed}
+.knob-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.knob-ring{position:relative;width:56px;height:56px;display:grid;place-items:center}
+.knob-ring::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:repeating-conic-gradient(oklch(0.99 0.01 250 / 22%) 0 1.2deg, transparent 1.2deg 30deg);
+  -webkit-mask:radial-gradient(circle, transparent 23px, #000 24px 27px, transparent 28px);
+  mask:radial-gradient(circle, transparent 23px, #000 24px 27px, transparent 28px)}
+.knob{
+  width:40px;height:40px;border-radius:50%;cursor:pointer;border:1px solid oklch(0.99 0.01 250 / 12%);
+  background:radial-gradient(circle at 35% 28%, oklch(0.36 0.02 254), oklch(0.17 0.02 254) 72%);
+  box-shadow:0 4px 10px rgba(0,0,0,.6), inset 0 1px 0 oklch(0.99 0.01 250 / 15%);
+  position:relative;transition:transform .45s var(--ease);
+}
+.knob::after{content:"";position:absolute;top:3px;left:50%;width:2.5px;height:11px;background:var(--cyan);border-radius:2px;transform:translateX(-50%);box-shadow:0 0 6px var(--cyan)}
+.knob-wrap span{font-family:var(--mono);font-size:8px;letter-spacing:.16em;color:var(--faint)}
+.livetx{
+  min-height:54px;border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text);margin-bottom:12px;line-height:1.6;
+}
+.livetx .ghost-t{color:var(--faint)}
+.sigmeter{display:flex;align-items:flex-end;gap:3px;height:18px;margin-bottom:12px;opacity:0;transition:opacity .2s;padding:0 2px}
+.sigmeter.on{opacity:1}
+.sigmeter i{width:6px;background:var(--amber);border-radius:2px;height:20%;box-shadow:0 0 6px oklch(0.79 0.152 74 / 60%);animation:sig .5s ease-in-out infinite alternate}
+.sigmeter i:nth-child(2){animation-delay:.08s}.sigmeter i:nth-child(3){animation-delay:.16s}
+.sigmeter i:nth-child(4){animation-delay:.24s}.sigmeter i:nth-child(5){animation-delay:.32s}
+.sigmeter i:nth-child(6){animation-delay:.4s}.sigmeter i:nth-child(7){animation-delay:.12s}
+@keyframes sig{from{height:15%}to{height:100%}}
+#pttWrap{text-align:center;padding:8px 0 6px;position:relative}
+.ptt-ring{position:relative;width:164px;height:164px;margin:0 auto;display:grid;place-items:center}
+.ptt-ring::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:repeating-conic-gradient(oklch(0.99 0.01 250 / 10%) 0 1deg, transparent 1deg 15deg);
+  -webkit-mask:radial-gradient(circle, transparent 70px, #000 71px 74px, transparent 75px);
+  mask:radial-gradient(circle, transparent 70px, #000 71px 74px, transparent 75px)}
+.ptt-ring.beckon::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid oklch(0.79 0.152 74 / 45%);animation:beckon 1.9s ease-out infinite;pointer-events:none}
+@keyframes beckon{0%{transform:scale(.92);opacity:0}35%{opacity:1}100%{transform:scale(1.14);opacity:0}}
+#pttBtn{
+  width:132px;height:132px;border-radius:50%;border:2px solid oklch(0.79 0.152 74 / 50%);
+  background:radial-gradient(circle at 35% 28%, oklch(0.36 0.06 74), oklch(0.19 0.04 72) 68%);
+  color:var(--amber);display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  box-shadow:0 8px 0 oklch(0.11 0.025 70), 0 18px 40px rgba(0,0,0,.6), inset 0 2px 0 oklch(0.99 0.01 250 / 18%), inset 0 -8px 18px rgba(0,0,0,.5);
+  transition:transform .07s var(--ease), box-shadow .07s var(--ease), background .2s;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+#pttBtn span{font-weight:700;font-size:21px;letter-spacing:.16em;text-shadow:0 0 12px oklch(0.79 0.152 74 / 60%)}
+#pttBtn small{font-family:var(--mono);font-size:8px;letter-spacing:.2em;color:oklch(0.79 0.152 74 / 70%)}
+#pttBtn.active{
+  transform:translateY(7px) scale(.97);
+  box-shadow:0 1px 0 oklch(0.11 0.025 70), 0 4px 14px rgba(0,0,0,.6), inset 0 5px 18px rgba(0,0,0,.6), 0 0 46px oklch(0.79 0.152 74 / 40%);
+  background:radial-gradient(circle at 35% 28%, oklch(0.48 0.1 74), oklch(0.28 0.06 72) 70%);
+}
+#pttBtn:disabled{opacity:.35;cursor:not-allowed}
+#pttBtn:focus-visible,.flip:focus-visible,.softkey:focus-visible,.knob:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.ptt-hint{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--faint);margin-top:12px;text-transform:uppercase}
+#typeRow{display:flex;gap:10px}
+#callInput{
+  flex:1;background:var(--lcd);border:1px solid oklch(0 0 0 / 55%);border-radius:8px;
+  color:var(--text);font-family:var(--mono);font-size:13px;padding:13px 14px;outline:none;transition:border-color .25s;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.7);
+}
+#callInput:focus{border-color:oklch(0.79 0.152 74 / 55%);box-shadow:inset 0 2px 8px rgba(0,0,0,.7), 0 0 0 3px oklch(0.79 0.152 74 / 12%)}
+#btnHint{margin-top:14px;width:100%}
+#hintBox{margin-top:10px;font-size:11px;color:var(--cyan);background:var(--cyan-dim);border:1px solid oklch(0.75 0.128 205 / 25%);border-radius:8px;padding:10px 14px;text-align:center}
+
+/* ---------- feedback ---------- */
+.feed-grid{display:grid;grid-template-columns:360px 1fr;gap:14px;align-items:start}
+.score-card{text-align:center;padding:18px}
+.score-big{font-size:74px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;margin:10px 0 4px;
+  color:var(--amber);text-shadow:0 0 16px oklch(0.79 0.152 74 / 60%), 0 0 48px oklch(0.79 0.152 74 / 30%)}
+.tier{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--cyan);text-transform:uppercase;margin-bottom:8px}
+.perfect{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--amber);border:1px solid oklch(0.79 0.152 74 / 50%);border-radius:20px;display:inline-block;padding:4px 12px;margin-bottom:8px;animation:pulseP 1.6s var(--ease) infinite}
+@keyframes pulseP{0%,100%{box-shadow:0 0 0 0 oklch(0.79 0.152 74 / 40%)}50%{box-shadow:0 0 0 7px transparent}}
+.radar-lcd{margin-top:8px;padding:6px}
+#radarCanvas{width:100%;height:224px;display:block;position:relative;z-index:2}
+.dim-row{display:flex;align-items:center;gap:10px;margin-top:8px;text-align:left}
+.dim-row .lcd-label{width:92px;flex:none}
+.dim-bar{flex:1;height:5px;border-radius:3px;background:oklch(0.99 0.01 250 / 8%);overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
+.dim-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg, oklch(0.75 0.128 205 / 70%), var(--cyan));border-radius:3px;transition:width 1s var(--ease);box-shadow:0 0 6px oklch(0.75 0.128 205 / 60%)}
+.dim-row b{font-family:var(--mono);font-size:11px;width:30px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.xp-gain{margin-top:16px;color:var(--amber);font-size:13px;letter-spacing:.08em;text-shadow:0 0 10px oklch(0.79 0.152 74 / 45%)}
+.diff-card .lcd-label{margin:16px 0 8px}
+.diff-card .lcd-label:first-child{margin-top:0}
+.diff{font-family:var(--mono);font-size:13.5px;line-height:2.1;border-radius:8px;padding:12px 14px;position:relative;z-index:2}
+.tk{padding:2px 1px;border-bottom:2px solid transparent;transition:background .15s,color .15s;position:relative;z-index:2}
+.tk.ok{color:var(--text);border-bottom-color:oklch(0.75 0.128 205 / 45%)}
+.tk.miss{color:var(--amber);border-bottom:2px dashed oklch(0.79 0.152 74 / 70%)}
+.tk.extra{color:var(--faint);text-decoration:line-through}
+.tk.speaking{background:var(--amber-dim);color:var(--amber);border-radius:4px}
+#btnPlay{margin-top:10px;width:100%;background:linear-gradient(180deg, oklch(0.26 0.02 254), oklch(0.18 0.02 254));border:1px solid oklch(0.75 0.128 205 / 40%);color:var(--cyan);border-radius:8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;padding:11px;transition:all .2s var(--ease);box-shadow:inset 0 1px 0 oklch(0.99 0.01 250 / 10%)}
+#btnPlay:hover{background:var(--cyan-dim)}
+#elsList{list-style:none;display:flex;flex-direction:column;gap:5px}
+#elsList li{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+#elsList li b{width:17px;height:17px;border-radius:5px;display:grid;place-items:center;font-size:10px;flex:none;font-weight:700}
+#elsList li.e-ok{color:var(--text)}
+#elsList li.e-ok b{background:var(--cyan-dim);color:var(--cyan);border:1px solid oklch(0.75 0.128 205 / 35%)}
+#elsList li.e-mid b{background:var(--amber-dim);color:var(--amber);border:1px solid oklch(0.79 0.152 74 / 35%)}
+#elsList li.e-bad b{background:oklch(0.62 0.19 27 / 14%);color:var(--red);border:1px solid oklch(0.62 0.19 27 / 40%)}
+#notesList{list-style:none}
+#notesList li{font-size:13px;color:var(--dim);padding:9px 0 9px 18px;border-bottom:1px solid oklch(0.99 0.01 250 / 6%);position:relative}
+#notesList li::before{content:"";position:absolute;left:0;top:16px;width:7px;height:7px;border-radius:2px;background:var(--amber);opacity:.75;box-shadow:0 0 6px oklch(0.79 0.152 74 / 50%)}
+#notesList li.good::before{background:var(--cyan);box-shadow:0 0 6px oklch(0.75 0.128 205 / 50%)}
+.feed-actions{display:flex;gap:10px;margin-top:20px}
+.feed-actions .ghost{flex:1;padding:13px}
+.feed-actions .primary{flex:2;margin:0}
+
+/* ---------- summary ---------- */
+.sum-card{max-width:640px;margin:0 auto;text-align:center;padding:26px}
+.sum-card h2{font-size:30px;letter-spacing:-.02em;margin:8px 0 4px}
+.sum-sub{color:var(--dim);font-size:13px;margin-bottom:20px;font-family:var(--mono)}
+.sum-rows{text-align:left;margin-bottom:18px}
+.sum-row{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid oklch(0.99 0.01 250 / 6%);font-size:13px}
+.sum-row .mono.n{width:22px;color:var(--faint);font-size:11px}
+.sum-row .nm{flex:1;color:var(--dim)}
+.sum-row .spark{width:64px;height:18px;display:flex;align-items:flex-end}
+.sum-row .spark i{width:100%;background:linear-gradient(180deg, var(--cyan), oklch(0.75 0.128 205 / 40%));border-radius:2px;box-shadow:0 0 6px oklch(0.75 0.128 205 / 40%)}
+.sum-row .sc{font-family:var(--mono);color:var(--amber);font-variant-numeric:tabular-nums;width:34px;text-align:right;text-shadow:0 0 8px oklch(0.79 0.152 74 / 40%)}
+.pass-banner{
+  border:1px solid oklch(0.79 0.152 74 / 50%);border-radius:12px;padding:20px;margin-bottom:18px;
+  background:linear-gradient(160deg, oklch(0.79 0.152 74 / 10%), transparent);
+  box-shadow:0 0 44px oklch(0.79 0.152 74 / 14%), inset 0 1px 0 oklch(0.99 0.01 250 / 8%);
+}
+.pass-banner.fail{border-color:var(--stroke);background:var(--lcd);box-shadow:inset 0 2px 10px rgba(0,0,0,.6)}
+.pass-banner .big{font-weight:700;font-size:22px;letter-spacing:.06em}
+.pass-banner .big.amber{color:var(--amber);text-shadow:0 0 20px oklch(0.79 0.152 74 / 55%)}
+.pass-banner .mono-sub{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px;letter-spacing:.06em}
+.rank-progress{margin:16px 0 4px;text-align:left}
+.rank-progress .xpbar{width:100%;height:6px;margin-top:8px}
+.sum-actions{display:flex;gap:10px;margin-top:20px}
+.sum-actions button{flex:1;margin:0!important;padding:14px}
+
+@media(max-width:860px){
+  .feed-grid{grid-template-columns:1fr}
+  .mode-grid{grid-template-columns:1fr}
+  .brief-grid{grid-template-columns:repeat(2,1fr)}
+  #mapCanvas{height:240px}
+  .stat-row{flex-wrap:wrap}
+  .stat{flex:1 1 40%;padding:8px 0}
+  .rank-chip .lcd-label{display:none}
+  .xpbar{width:56px}
+  .adi{display:none}
+  .freq{font-size:27px}
+  .freq.stby{font-size:19px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="screws">
+    <div class="brand">
+      <span class="lcd-label cyan">FlightCourse Academy</span>
+      <span class="brand-title">RADIO BUILDER</span>
+    </div>
+    <div class="hdr-right">
+      <button id="muteBtn" class="icon-btn" title="Toggle sound" aria-label="Toggle sound">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon>
+          <g class="waves"><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9.4 9.4 0 0 1 0 13"></path></g>
+        </svg>
+      </button>
+      <div class="rank-chip" id="rankChip">
+        <span class="lcd-label" id="rankName">Student Pilot</span>
+        <div class="xpbar"><div id="xpFill"></div></div>
+        <span class="mono" id="xpText">0 XP</span>
+      </div>
+    </div>
+  </header>
+  <div id="courseProg" class="hidden"><div id="courseProgFill"></div></div>
+
+  <main>
+    <!-- START -->
+    <section id="scrStart" class="screen">
+      <div class="hero">
+        <div class="hero-inner">
+          <div class="hero-text">
+            <span class="lcd-label cyan">Non-Towered Operations · CTAF Phraseology</span>
+            <h1>Radio<br><em>Builder</em></h1>
+            <p class="lede">Read the scenario. Key the mic. Make the call. Graded on five dimensions — phraseology, brevity, phonetics, timing, completeness — against FAA AC 90-66C standard calls.</p>
+          </div>
+          <div class="adi" aria-hidden="true">
+            <div class="adi-ball"></div>
+            <div class="adi-horizon"></div>
+            <div class="adi-wing"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mode-grid">
+        <button class="mode-card bezel sel" id="modeTrain">
+          <span class="lcd-label cyan">Syllabus · 8 scenarios</span>
+          <span class="mode-name">TRAINING</span>
+          <span class="mode-desc">Full briefing, graded-element checklist, optional structure hint. Learn the pattern leg by leg.</span>
+        </button>
+        <button class="mode-card bezel" id="modeCheck">
+          <span class="lcd-label amber">5 random · no hints · 1.5× XP</span>
+          <span class="mode-name">CHECKRIDE</span>
+          <span class="mode-desc">Examiner rules. Cold scenarios, no checklist. Average 75+ to pass the ride.</span>
+        </button>
+      </div>
+      <div class="stat-row bezel screws">
+        <div class="stat"><b id="stRank">STUDENT</b><span>Rank</span></div>
+        <div class="stat"><b id="stXp">0</b><span>Total XP</span></div>
+        <div class="stat"><b id="stStreak">0</b><span>Streak</span></div>
+        <div class="stat"><b id="stBest">—</b><span>Best Call</span></div>
+      </div>
+      <button id="btnStart" class="primary big">START ENGINE ▸</button>
+      <div class="bezel pro-card">
+        <span class="lcd-label amber">Radio Builder Pro</span>
+        <p>40+ scenarios · towered ops &amp; clearances · emergency phraseology · busy-CTAF step-on drills · printable endorsement records for your logbook.</p>
+        <ul class="locked-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>NIGHT OPS — RIVERSIDE AFTER DARK</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>BUSY CTAF — STEPPED-ON CALLS</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>EMERGENCY — ROUGH ENGINE ON DOWNWIND</li>
+        </ul>
+        <div class="pro-row" style="margin-top:16px">
+          <input id="proEmail" type="email" placeholder="you@hangar.fly" autocomplete="off">
+          <button id="proBtn">JOIN WAITLIST</button>
+        </div>
+        <div id="proMsg" class="mono"></div>
+      </div>
+      <p class="fineprint">TRAINING AID — ALWAYS VERIFY AGAINST THE CURRENT FAA AIM &amp; AC 90-66C</p>
+    </section>
+
+    <!-- MFD STAGE -->
+    <div id="stageWrap" class="hidden">
+      <div class="bezel screws mfd">
+        <div class="mfd-top">
+          <span class="lcd-label cyan">MFD · NAV MAP</span>
+          <div class="hdg-tape">
+            <span class="hdg-side" id="hdgL">240</span>
+            <div class="hdg-center"><span class="hdg-bug">▼</span><b id="hdgRead" class="mono">270</b></div>
+            <span class="hdg-side" id="hdgR">300</span>
+          </div>
+          <span class="lcd-label amber" id="mfdAp">CTAF</span>
+        </div>
+        <div class="lcd map-lcd"><canvas id="mapCanvas"></canvas></div>
+        <div id="comLog" class="comlog mono lcd"></div>
+        <div class="softkeys">
+          <button class="softkey" id="skAtis"><span>ATIS</span><i></i></button>
+          <button class="softkey" id="skRply"><span>RPLY</span><i></i></button>
+          <button class="softkey" id="skMap"><span>MAP</span><i></i></button>
+          <button class="softkey" id="skMsg"><span>MSG</span><i></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRIEF -->
+    <section id="scrBrief" class="screen hidden">
+      <div class="bezel screws brief-card" style="padding:24px">
+        <span class="lcd-label cyan" id="briefIdx">SCENARIO 1 / 8</span>
+        <h2 id="briefTitle">—</h2>
+        <div class="brief-grid">
+          <div class="brief-cell"><span class="lcd-label">Airport</span><b id="bAp">—</b></div>
+          <div class="brief-cell"><span class="lcd-label">CTAF</span><b class="amber" id="bCtaf">—</b></div>
+          <div class="brief-cell"><span class="lcd-label">Runway</span><b id="bRwy">—</b></div>
+          <div class="brief-cell"><span class="lcd-label">Pattern</span><b id="bDir">—</b></div>
+          <div class="brief-cell"><span class="lcd-label">Your callsign</span><b class="cyan" id="bCs">—</b></div>
+          <div class="brief-cell"><span class="lcd-label">Position</span><b id="bPos">—</b></div>
+        </div>
+        <p class="task" id="briefTask">—</p>
+        <div id="elBox">
+          <span class="lcd-label">Graded elements</span>
+          <ul id="elList"></ul>
+        </div>
+        <div id="examNote" class="exam-note hidden">EXAMINER RULES — NO ELEMENT CHECKLIST. BRIEF THE CALL FROM MEMORY, THEN KEY UP.</div>
+        <div class="tip">AC 90-66C STRUCTURE — WHO YOU'RE CALLING → WHO YOU ARE → WHERE YOU ARE → WHAT YOU'RE DOING → WHO YOU'RE CALLING</div>
+        <div class="scen-dots" id="scenDots"></div>
+        <button id="btnBegin" class="primary big">KEY UP ▸</button>
+      </div>
+    </section>
+
+    <!-- LIVE — COM RADIO -->
+    <section id="scrLive" class="screen hidden">
+      <div class="bezel screws radio-bezel">
+        <div class="com-display lcd" id="comDisplay">
+          <div class="com-col">
+            <span class="lcd-label">COM1 · ACTIVE</span>
+            <div class="freq lcd-num" id="freqRead">122.800</div>
+          </div>
+          <button class="flip" id="btnFlip" title="Flip-flop active/standby">⇄</button>
+          <div class="com-col" style="text-align:right">
+            <span class="lcd-label">STANDBY</span>
+            <div class="freq stby lcd-num cyan" id="stbyRead">122.750</div>
+          </div>
+          <div class="ann-col">
+            <span class="ann tx" id="ledTx">TX</span>
+            <span class="ann rx" id="ledRx">RX</span>
+          </div>
+        </div>
+        <div class="radio-mid">
+          <div class="pos-chip" id="livePos">—</div>
+          <div class="timer-box"><span class="lcd-label">Response</span><div class="timer mono" id="timer">0.0s</div></div>
+        </div>
+        <div class="radio-ctl">
+          <div class="seg" id="modeSeg">
+            <button data-m="say" class="on">SAY</button>
+            <button data-m="type">TYPE</button>
+          </div>
+          <div class="knob-wrap">
+            <div class="knob-ring"><div class="knob" id="sqlKnob" title="Squelch"></div></div>
+            <span>SQL</span>
+          </div>
+        </div>
+        <div id="liveTx" class="mono livetx lcd"><span class="ghost-t">Standby…</span></div>
+        <div class="sigmeter" id="sigMeter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div id="pttWrap">
+          <div class="ptt-ring" id="pttRing"><button id="pttBtn"><span>PTT</span><small>HOLD TO TALK</small></button></div>
+          <div class="ptt-hint">or hold SPACE</div>
+        </div>
+        <div id="typeRow" class="hidden">
+          <input id="callInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="riverside traffic, cessna one seven two bravo…">
+          <button id="btnTx" class="primary">TRANSMIT ▸</button>
+        </div>
+        <button id="btnHint" class="ghost">STRUCTURE HINT (−10 PTS)</button>
+        <div id="hintBox" class="hidden mono">[airport] traffic → [callsign] → [position] → [runway] → [intentions] → [airport] traffic</div>
+      </div>
+    </section>
+
+    <!-- FEEDBACK -->
+    <section id="scrFeed" class="screen hidden">
+      <div class="feed-grid">
+        <div class="bezel screws score-card">
+          <span class="lcd-label cyan">Transmission scored</span>
+          <div class="score-big mono" id="scoreBig">0</div>
+          <div class="tier" id="tierTag">—</div>
+          <div id="perfectBadge" class="perfect hidden">PERFECT CALL · +25 XP</div>
+          <div class="lcd radar-lcd"><canvas id="radarCanvas"></canvas></div>
+          <div id="dimList"></div>
+          <div class="xp-gain mono" id="xpGain">+0 XP</div>
+        </div>
+        <div class="bezel screws diff-card" style="padding:20px">
+          <span class="lcd-label">Reference call — AC 90-66C</span>
+          <div id="diffRef" class="diff lcd"></div>
+          <button id="btnPlay">▸ PLAY REFERENCE AUDIO</button>
+          <span class="lcd-label">Your transmission</span>
+          <div id="diffYou" class="diff lcd"></div>
+          <span class="lcd-label">Graded elements</span>
+          <ul id="elsList"></ul>
+          <span class="lcd-label">Coaching notes</span>
+          <ul id="notesList"></ul>
+          <div class="feed-actions">
+            <button id="btnRetry" class="ghost">↻ RETRY</button>
+            <button id="btnNext" class="primary">NEXT ▸</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    <section id="scrSum" class="screen hidden">
+      <div class="bezel screws sum-card">
+        <span class="lcd-label cyan" id="sumMode">Debrief</span>
+        <h2 id="sumTitle">Flight Complete</h2>
+        <p class="sum-sub" id="sumSub">—</p>
+        <div id="passBanner"></div>
+        <div class="sum-rows" id="sumRows"></div>
+        <div class="rank-progress">
+          <span class="lcd-label" id="rankProgLabel">Rank progress</span>
+          <div class="xpbar"><div id="sumXpFill" style="height:100%;width:0%;background:linear-gradient(90deg,oklch(0.79 0.152 74 / 70%),var(--amber));border-radius:3px;transition:width 1.2s var(--ease);box-shadow:0 0 8px var(--amber)"></div></div>
+        </div>
+        <div class="sum-actions">
+          <button id="btnHome" class="ghost">CHANGE MODE</button>
+          <button id="btnAgain" class="primary">FLY AGAIN ▸</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   RADIO BUILDER — CTAF phraseology trainer · glass cockpit ed.
+   FlightCourse Academy · built on FAA AC 90-66C
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const DIGIT = {0:'zero',1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine'};
+const PHON_L = ['alpha','bravo','charlie','delta','echo','foxtrot','golf','hotel'];
+
+/* roundRect fallback for older engines */
+if(typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h){ this.rect(x,y,w,h); return this; };
+}
+
+/* ---------------- scenario data ---------------- */
+const POS_TOKENS = {
+  'entering-downwind':  () => ['entering','downwind'],
+  'midfield-downwind':  () => ['midfield','downwind'],
+  'turning-base':       () => ['turning','base'],
+  'turning-final':      () => ['turning','final'],
+  'clear-of-runway':    s  => ['clear','of','runway',...s.rwySp.split(' ')],
+  'going-around':       () => ['going','around'],
+};
+const POS = {
+  'entering-downwind':  {p:[-1.15, 1.1], h:90},
+  'midfield-downwind':  {p:[ 0.30, 1.1], h:90},
+  'turning-base':       {p:[ 2.30, 0.8], h:0},
+  'turning-final':      {p:[ 2.30, 0.12],h:270},
+  'clear-of-runway':    {p:[ 0.45,-0.5], h:0},
+  'going-around':       {p:[-0.10, 0],   h:270},
+};
+const SCN = [
+  {ap:'Riverside',ctaf:'122.800',rwy:'27',rwySp:'two seven',rwyBad:'twenty seven',hdg:270,dir:'left',
+   cs:'Cessna 172 Bravo',csSp:'cessna one seven two bravo',pos:'entering-downwind',posLabel:'Entering downwind — 45° entry',intent:null,
+   ref:'riverside traffic cessna one seven two bravo entering downwind runway two seven riverside traffic',
+   say:'Riverside traffic. Cessna one seven two Bravo. Entering downwind, runway two seven. Riverside traffic.',phon:[]},
+  {ap:'Cedar Lake',ctaf:'122.750',rwy:'22',rwySp:'two two',rwyBad:'twenty two',hdg:220,dir:'right',
+   cs:'Piper 43 Lima',csSp:'piper four tree lima',pos:'turning-base',posLabel:'Turning base',intent:null,
+   ref:'cedar lake traffic piper four tree lima turning base runway two two cedar lake traffic',
+   say:'Cedar Lake traffic. Piper four tree Lima. Turning base, runway two two. Cedar Lake traffic.',
+   phon:[{good:'tree',bad:'three',ctx:'“43” is “four tree”'}]},
+  {ap:'Riverside',ctaf:'122.800',rwy:'27',rwySp:'two seven',rwyBad:'twenty seven',hdg:270,dir:'left',
+   cs:'Cessna 172 Bravo',csSp:'cessna one seven two bravo',pos:'turning-final',posLabel:'Turning final',intent:null,
+   ref:'riverside traffic cessna one seven two bravo turning final runway two seven riverside traffic',
+   say:'Riverside traffic. Cessna one seven two Bravo. Turning final, runway two seven. Riverside traffic.',phon:[]},
+  {ap:'Cedar Lake',ctaf:'122.750',rwy:'22',rwySp:'two two',rwyBad:'twenty two',hdg:220,dir:'right',
+   cs:'Piper 43 Lima',csSp:'piper four tree lima',pos:'clear-of-runway',posLabel:'Clear of the runway',intent:null,noRwy:true,
+   ref:'cedar lake traffic piper four tree lima clear of runway two two cedar lake traffic',
+   say:'Cedar Lake traffic. Piper four tree Lima. Clear of runway two two. Cedar Lake traffic.',
+   phon:[{good:'tree',bad:'three',ctx:'“43” is “four tree”'}]},
+  {ap:'Riverside',ctaf:'122.800',rwy:'27',rwySp:'two seven',rwyBad:'twenty seven',hdg:270,dir:'left',
+   cs:'Cessna 172 Bravo',csSp:'cessna one seven two bravo',pos:'going-around',posLabel:'Going around — bounced landing',intent:null,
+   ref:'riverside traffic cessna one seven two bravo going around runway two seven riverside traffic',
+   say:'Riverside traffic. Cessna one seven two Bravo. Going around, runway two seven. Riverside traffic.',phon:[],
+   taskNote:'You bounced it — ballooned and sinking. Firewall the throttle and announce the go-around.'},
+  {ap:'Cedar Lake',ctaf:'122.750',rwy:'22',rwySp:'two two',rwyBad:'twenty two',hdg:220,dir:'right',
+   cs:'Piper 43 Lima',csSp:'piper four tree lima',pos:'midfield-downwind',posLabel:'Midfield downwind',intent:null,
+   ref:'cedar lake traffic piper four tree lima midfield downwind runway two two cedar lake traffic',
+   say:'Cedar Lake traffic. Piper four tree Lima. Midfield downwind, runway two two. Cedar Lake traffic.',
+   phon:[{good:'tree',bad:'three',ctx:'“43” is “four tree”'}]},
+  {ap:'Riverside',ctaf:'122.800',rwy:'27',rwySp:'two seven',rwyBad:'twenty seven',hdg:270,dir:'left',
+   cs:'Skyhawk 95 Delta',csSp:'skyhawk niner fife delta',pos:'entering-downwind',posLabel:'Entering downwind — full stop',intent:'full stop',
+   ref:'riverside traffic skyhawk niner fife delta entering downwind runway two seven full stop riverside traffic',
+   say:'Riverside traffic. Skyhawk niner fife Delta. Entering downwind, runway two seven, full stop. Riverside traffic.',
+   phon:[{good:'niner',bad:'nine',ctx:'“95” is “niner fife”'},{good:'fife',bad:'five',ctx:'“95” is “niner fife”'}]},
+  {ap:'Cedar Lake',ctaf:'122.750',rwy:'22',rwySp:'two two',rwyBad:'twenty two',hdg:220,dir:'right',
+   cs:'Bonanza 30 Tango',csSp:'bonanza tree zero tango',pos:'turning-final',posLabel:'Turning final — touch and go',intent:'touch and go',
+   ref:'cedar lake traffic bonanza tree zero tango turning final runway two two touch and go cedar lake traffic',
+   say:'Cedar Lake traffic. Bonanza tree zero Tango. Turning final, runway two two, touch and go. Cedar Lake traffic.',
+   phon:[{good:'tree',bad:'three',ctx:'“30” is “tree zero”'},{good:'zero',bad:'oh',ctx:'“30” is “tree zero” — never “oh”'}]},
+];
+const CHATTER = {
+  'Riverside': [
+    'cessna two one foxtrot, midfield downwind runway two seven, riverside',
+    'piper seven eight kilo, departing runway two seven, riverside',
+    'experimental three three romeo, turning final two seven, riverside',
+    'skyhawk four zero papa, clear of runway two seven, riverside',
+  ],
+  'Cedar Lake': [
+    'cirrus six five charlie, on the go runway two two, cedar lake',
+    'cherokee one zero alpha, entering downwind two two, cedar lake',
+    'kitfox eight niner juliet, turning base two two, cedar lake',
+  ],
+};
+const RANKS = [
+  {name:'Student Pilot',xp:0},{name:'Solo Endorsed',xp:250},{name:'Private Pilot',xp:600},
+  {name:'Instrument Rated',xp:1100},{name:'Commercial',xp:1800},{name:'ATP',xp:2800},
+];
+const TRAFFIC = [{sp:0.026,off:0.15,tag:'2-1 FOX'},{sp:0.019,off:0.62,tag:'7-8 KILO'}];
+
+/* ---------------- state ---------------- */
+const S = {
+  screen:'start', mode:'training', inputMode:'say',
+  order:[], pos:0, sc:null,
+  xp:0, streak:0, best:0,
+  results:[], xpAwarded:{},
+  t0:0, timerInt:null, hintUsed:false,
+  pttHeld:false, sayDone:true, transcript:'', recError:null,
+  plane:{state:'ramp',t0:0},
+  lastRes:null, radarT0:0, scoreT0:0, scoreTarget:null,
+  ambientInt:null, sqlOpen:true,
+  actFreq:null, stbyFreq:null, mapLabels:true,
+  beckonT:null,
+};
+
+/* ---------------- audio engine ---------------- */
+const AU = {
+  ctx:null, master:null, staticGain:null, muted:false, crackleInt:null, _staticTarget:0,
+  init(){
+    if(this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain(); this.master.gain.value = 0.9;
+    this.master.connect(this.ctx.destination);
+    const len = this.ctx.sampleRate * 2;
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+    const src = this.ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = this.ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1500; bp.Q.value=0.7;
+    this.staticGain = this.ctx.createGain(); this.staticGain.gain.value = 0;
+    src.connect(bp); bp.connect(this.staticGain); this.staticGain.connect(this.master);
+    src.start();
+    this.crackleInt = setInterval(()=>{
+      if(!this.ctx || this.muted) return;
+      const base = this._staticTarget || 0;
+      if(base > 0) this.staticGain.gain.setTargetAtTime(base*(0.6+Math.random()*0.8), this.ctx.currentTime, 0.06);
+    }, 260);
+  },
+  setStatic(on){
+    if(!this.ctx) return;
+    this._staticTarget = on ? 0.02 : 0;
+    this.staticGain.gain.setTargetAtTime(this._staticTarget, this.ctx.currentTime, 0.25);
+  },
+  duck(on){
+    if(!this.ctx || !this._staticTarget) return;
+    this.staticGain.gain.setTargetAtTime(on ? 0.005 : this._staticTarget, this.ctx.currentTime, 0.05);
+  },
+  squelch(){
+    if(!this.ctx || this.muted || !this._staticTarget) return;
+    const t = this.ctx.currentTime;
+    this.staticGain.gain.cancelScheduledValues(t);
+    this.staticGain.gain.setValueAtTime(0.085, t);
+    this.staticGain.gain.setTargetAtTime(this._staticTarget, t+0.09, 0.08);
+  },
+  tone(freq, dur, type, vol, when){
+    if(!this.ctx || this.muted) return;
+    const t = (when || this.ctx.currentTime);
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  click(){ this.tone(1400, 0.035, 'square', 0.1); },
+  beep(){ this.tone(950, 0.11, 'sine', 0.12); },
+  stinger(pass){
+    if(!this.ctx) return;
+    if(pass){ [523,659,784].forEach((f,i)=>this.tone(f, 0.16, 'triangle', 0.1, this.ctx.currentTime + i*0.11)); }
+    else { [330,262].forEach((f,i)=>this.tone(f, 0.2, 'triangle', 0.1, this.ctx.currentTime + i*0.14)); }
+  },
+};
+
+/* ---------------- speech ---------------- */
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v=>/en[-_]US/i.test(v.lang) && /google|natural|samantha|zira|aria|jenny/i.test(v.name))
+      || vs.find(v=>/^en/i.test(v.lang)) || null;
+}
+function speak(text, onword){
+  if(AU.muted || !('speechSynthesis' in window)) return null;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.95; u.pitch = 1;
+  const v = pickVoice(); if(v) u.voice = v;
+  if(onword){
+    const words = []; const re = /\S+/g; let m;
+    while((m = re.exec(text)) !== null) words.push({start:m.index, end:m.index + m[0].length});
+    u.onboundary = e => {
+      if(e.charIndex == null) return;
+      let wi = words.findIndex(w => e.charIndex >= w.start && e.charIndex < w.end);
+      if(wi < 0) wi = words.findIndex(w => e.charIndex < w.start);
+      if(wi >= 0) onword(wi);
+    };
+  }
+  speechSynthesis.speak(u);
+  return u;
+}
+function speakRef(){
+  const s = S.sc; if(!s) return;
+  clearSpeaking();
+  const u = speak(s.say, markSpeaking);
+  if(u) u.onend = () => clearSpeaking();
+}
+function markSpeaking(tokIdx){
+  $('diffRef').querySelectorAll('.tk').forEach((sp,i)=> sp.classList.toggle('speaking', i === tokIdx));
+}
+function clearSpeaking(){
+  $('diffRef').querySelectorAll('.tk.speaking').forEach(sp=>sp.classList.remove('speaking'));
+}
+function playAtis(){
+  if(!S.sc || S.screen === 'start' || S.screen === 'sum') return;
+  const s = S.sc;
+  const info = PHON_L[S.pos % PHON_L.length];
+  const wind = String(s.hdg).padStart(3,'0').split('').map(d=>DIGIT[d]).join(' ');
+  const kt = 3 + (S.pos % 5);
+  const txt = `${s.ap} information ${info}. Wind ${wind} at ${DIGIT[kt]}. Runway ${s.rwySp} in use, ${s.dir} traffic. Advise on initial call.`;
+  AU.squelch(); flashRx();
+  log(`◂ ${s.ap.toLowerCase()} information ${info} — wind ${wind} at ${DIGIT[kt]}, runway ${s.rwySp} in use`, 'rx');
+  speak(txt);
+}
+
+let rec = null;
+function initRec(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return null;
+  const r = new SR();
+  r.lang = 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  r.onresult = e => {
+    let fin = '', inter = '';
+    for(const res of e.results){
+      if(res.isFinal) fin += res[0].transcript + ' ';
+      else inter += res[0].transcript;
+    }
+    S.transcript = (fin + inter).trim();
+    updateLiveTx(S.transcript || '…');
+  };
+  r.onend = () => {
+    if(S.pttHeld && !S.recError){ try{ r.start(); }catch(e){} return; }
+    finishSay();
+  };
+  r.onerror = e => { S.recError = e.error; };
+  return r;
+}
+
+/* ---------------- text engine ---------------- */
+/* UPGRADE: digit runs from speech recognition ("172", "43", "95") are
+   expanded digit-by-digit so "Cessna 172 Bravo" scores as
+   "cessna one seven two bravo". */
+function tokenize(str){
+  let s = ' ' + String(str).toLowerCase() + ' ';
+  s = s.replace(/([a-z])(\d)/g,'$1 $2').replace(/(\d)([a-z])/g,'$1 $2');
+  s = s.replace(/[^a-z0-9 ]/g,' ');
+  const out = [];
+  s.split(/\s+/).filter(Boolean).forEach(t => {
+    if(/^\d+$/.test(t)) t.split('').forEach(d => out.push(DIGIT[d]));
+    else out.push(t);
+  });
+  return out;
+}
+function findSeq(hay, needle, start){
+  let j = 0, first = -1;
+  for(let i = start; i < hay.length && j < needle.length; i++){
+    if(hay[i] === needle[j]){ if(j === 0) first = i; j++; }
+  }
+  return j === needle.length ? first : -1;
+}
+function align(a, b){
+  const n = a.length, m = b.length;
+  const dp = Array.from({length:n+1}, () => new Uint16Array(m+1));
+  for(let i = n-1; i >= 0; i--) for(let j = m-1; j >= 0; j--)
+    dp[i][j] = a[i] === b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+  const aOk = new Array(n).fill(false), bOk = new Array(m).fill(false);
+  let i = 0, j = 0;
+  while(i < n && j < m){
+    if(a[i] === b[j]){ aOk[i] = bOk[j] = true; i++; j++; }
+    else if(dp[i+1][j] >= dp[i][j+1]) i++; else j++;
+  }
+  return {aOk, bOk, lcs: dp[0][0]};
+}
+function buildReq(s){
+  const ap = s.ap.toLowerCase().split(' ');
+  const els = [
+    {label:`Open — “${s.ap} traffic”`, tokens:[...ap,'traffic']},
+    {label:'Full callsign', tokens:s.csSp.split(' ')},
+    {label:'Position report', tokens:POS_TOKENS[s.pos](s)},
+  ];
+  if(!s.noRwy) els.push({label:`Runway — “${s.rwySp}”`, tokens:['runway',...s.rwySp.split(' ')]});
+  if(s.intent) els.push({label:`Intentions — “${s.intent}”`, tokens:s.intent.split(' ')});
+  els.push({label:`Close — “${s.ap} traffic”`, tokens:[...ap,'traffic']});
+  return els;
+}
+function checkElements(player, els){
+  let cur = 0;
+  return els.map(el => {
+    const at = findSeq(player, el.tokens, cur);
+    if(at >= 0){ cur = at + el.tokens.length; return {...el, ok:true}; }
+    const any = findSeq(player, el.tokens, 0);
+    return {...el, ok:any >= 0, outOfOrder:any >= 0};
+  });
+}
+function scoreCall(raw, s, elapsed){
+  const player = tokenize(raw), ref = tokenize(s.ref);
+  const notes = [];
+  const els = buildReq(s);
+  if(!player.length){
+    return {overall:0, dims:{phraseology:0,brevity:0,phonetics:0,timing:0,completeness:0},
+      notes:['No transmission received. Key the mic and make the call.'], player, ref, al:null,
+      els:els.map(e=>({...e,ok:false}))};
+  }
+  const joined = ' ' + player.join(' ') + ' ';
+  const forbidden = joined.includes(' any traffic in the area ');
+  const elRes = checkElements(player, els);
+  const foundN = elRes.filter(e => e.ok || e.outOfOrder).length;
+  const completeness = Math.round(foundN / elRes.length * 100);
+  elRes.forEach(e => {
+    if(!e.ok && !e.outOfOrder) notes.push('Missing: ' + e.label + '.');
+    else if(e.outOfOrder) notes.push('Out of order: ' + e.label + ' — sequence matters on the radio.');
+  });
+  const al = align(player, ref);
+  const phraseology = Math.round(2 * al.lcs / (player.length + ref.length) * 100);
+  const extra = Math.max(0, player.length - ref.length);
+  let brevity = Math.max(0, 100 - Math.max(0, extra - 2) * 9);
+  if(forbidden){
+    brevity = Math.min(brevity, 15);
+    notes.push('Never say “any traffic in the area, please advise.” AC 90-66C: state who you are, where you are, and your intentions — the CTAF is not a request line.');
+  } else if(extra > 4){
+    const extras = player.filter((_,i)=>!al.aOk[i]).slice(0,5).join(' ');
+    notes.push(`Tighten it — ${extra} extra word${extra>1?'s':''}${extras?` (“${extras}”)`:''}.`);
+  }
+  let phT = 0, phO = 0;
+  (s.phon || []).forEach(p => {
+    phT++;
+    if(player.includes(p.good)) phO++;
+    else notes.push(`Phonetics: ${p.ctx} — say “${p.good}”, not “${p.bad}”.`);
+  });
+  phT++;
+  if(joined.includes(' ' + s.rwyBad + ' ')) notes.push(`Runway numbers go digit by digit — “runway ${s.rwySp}”, never “${s.rwyBad}”.`);
+  else phO++;
+  const phonetics = Math.round(phO / phT * 100);
+  const timing = elapsed <= 5 ? 100 : elapsed >= 28 ? 0 : Math.round(100 * (1 - (elapsed - 5) / 23));
+  if(elapsed > 12) notes.push(`Anticipate the call — you keyed up in ${elapsed.toFixed(1)}s. Brief it before you need it.`);
+  const dims = {phraseology, brevity, phonetics, timing, completeness};
+  let overall = Math.round(phraseology*.3 + completeness*.25 + brevity*.15 + phonetics*.15 + timing*.15);
+  if(S.hintUsed){ overall = Math.max(0, overall - 10); notes.push('Structure hint used (−10). Next time brief it from memory.'); }
+  if(!notes.length) notes.push('Clean call. An examiner would just nod.');
+  return {overall, dims, notes, player, ref, al, els: elRes};
+}
+function tierOf(o){
+  return o >= 90 ? 'EXAMINER STANDARD' : o >= 75 ? 'SHARP' : o >= 60 ? 'PROFICIENT' : o >= 40 ? 'DEVELOPING' : 'REVIEW AC 90-66C';
+}
+
+/* ---------------- ranks / xp ---------------- */
+function rankFor(xp){
+  let r = RANKS[0], next = null;
+  for(let i = 0; i < RANKS.length; i++){
+    if(xp >= RANKS[i].xp) r = RANKS[i]; else { next = RANKS[i]; break; }
+  }
+  return {cur:r, next};
+}
+function updateRankUI(flash){
+  const {cur, next} = rankFor(S.xp);
+  $('rankName').textContent = cur.name;
+  $('xpText').textContent = S.xp + ' XP';
+  const pct = next ? ((S.xp - cur.xp) / (next.xp - cur.xp)) * 100 : 100;
+  $('xpFill').style.width = pct + '%';
+  if(flash){
+    $('rankChip').classList.add('rankup');
+    setTimeout(()=>$('rankChip').classList.remove('rankup'), 1800);
+  }
+}
+function updateStartStats(){
+  $('stRank').textContent = rankFor(S.xp).cur.name.split(' ')[0].toUpperCase();
+  $('stXp').textContent = S.xp;
+  $('stStreak').textContent = S.streak;
+  $('stBest').textContent = S.best || '—';
+}
+
+/* ---------------- com log ---------------- */
+function log(txt, cls){
+  const el = $('comLog');
+  const d = document.createElement('div');
+  d.className = 'log-line' + (cls ? ' ' + cls : '');
+  d.textContent = txt;
+  el.appendChild(d);
+  while(el.children.length > 40) el.removeChild(el.firstChild);
+  el.scrollTop = el.scrollHeight;
+}
+function flashRx(){
+  $('ledRx').classList.add('on');
+  setTimeout(()=>$('ledRx').classList.remove('on'), 900);
+}
+function startAmbient(){
+  stopAmbient();
+  const tick = () => {
+    const pool = CHATTER[S.sc.ap] || [];
+    const line = pool[Math.floor(Math.random()*pool.length)];
+    AU.squelch(); flashRx();
+    setTimeout(()=>log('◂ ' + line, 'rx'), 180);
+    S.ambientInt = setTimeout(tick, 7000 + Math.random()*6000);
+  };
+  S.ambientInt = setTimeout(tick, 3500 + Math.random()*3000);
+}
+function stopAmbient(){ if(S.ambientInt){ clearTimeout(S.ambientInt); S.ambientInt = null; } }
+
+/* ---------------- screens ---------------- */
+function showScreen(name){
+  S.screen = name;
+  ['scrStart','scrBrief','scrLive','scrFeed','scrSum'].forEach(id => $(id).classList.add('hidden'));
+  const map = {start:'scrStart', brief:'scrBrief', live:'scrLive', feed:'scrFeed', sum:'scrSum'};
+  $(map[name]).classList.remove('hidden');
+  const inCourse = name === 'brief' || name === 'live' || name === 'feed';
+  $('stageWrap').classList.toggle('hidden', !inCourse);
+  $('courseProg').classList.toggle('hidden', !inCourse && name !== 'sum');
+  if(name !== 'live'){ stopAmbient(); AU.setStatic(false); }
+  if(name !== 'feed' && 'speechSynthesis' in window) speechSynthesis.cancel();
+  if(name !== 'live'){ clearTimeout(S.beckonT); $('pttRing').classList.remove('beckon'); }
+  if(name === 'start') updateStartStats();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function startCourse(){
+  AU.init();
+  if(AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume();
+  if('speechSynthesis' in window) speechSynthesis.getVoices();
+  S.results = []; S.xpAwarded = {}; S.pos = 0;
+  if(S.mode === 'training') S.order = SCN.map((_,i)=>i);
+  else S.order = SCN.map((_,i)=>i).sort(()=>Math.random()-0.5).slice(0,5);
+  loadScenario(0);
+}
+
+function loadScenario(i){
+  S.pos = i;
+  S.sc = SCN[S.order[i]];
+  S.plane.state = 'ramp';
+  S.actFreq = null; S.stbyFreq = null;
+  $('courseProgFill').style.width = (i / S.order.length * 100) + '%';
+  $('briefIdx').textContent = `SCENARIO ${i+1} / ${S.order.length} · ${S.mode.toUpperCase()}`;
+  $('briefTitle').textContent = `${S.sc.ap} — ${S.sc.posLabel.split('—')[0].trim()}`;
+  $('bAp').textContent = S.sc.ap;
+  $('bCtaf').textContent = S.sc.ctaf;
+  $('bRwy').textContent = 'RWY ' + S.sc.rwy;
+  $('bDir').textContent = S.sc.dir.toUpperCase() + ' TFC';
+  $('bCs').textContent = S.sc.cs;
+  $('bPos').textContent = S.sc.posLabel;
+  $('briefTask').innerHTML = (S.sc.taskNote ? S.sc.taskNote + '<br>' : '') +
+    `Make the <b>${S.sc.posLabel.toLowerCase()}</b> call on the CTAF.`;
+  const isCheck = S.mode === 'checkride';
+  $('elBox').classList.toggle('hidden', isCheck);
+  $('examNote').classList.toggle('hidden', !isCheck);
+  if(!isCheck) $('elList').innerHTML = buildReq(S.sc).map(e=>`<li>${e.label}</li>`).join('');
+  $('scenDots').innerHTML = S.order.map((_,k)=>
+    `<i class="${k < i ? 'done' : k === i ? 'cur' : ''}"></i>`).join('');
+  /* heading tape */
+  const h = S.sc.hdg;
+  $('hdgRead').textContent = String(h).padStart(3,'0');
+  $('hdgL').textContent = String((h + 330) % 360).padStart(3,'0');
+  $('hdgR').textContent = String((h + 30) % 360).padStart(3,'0');
+  $('mfdAp').textContent = S.sc.ap.toUpperCase();
+  $('comLog').innerHTML = '';
+  log(`— ${S.sc.ap.toUpperCase()} · CTAF ${S.sc.ctaf} · RWY ${S.sc.rwy} ${S.sc.dir.toUpperCase()} TRAFFIC —`, 'sys');
+  log(`you are ${S.sc.cs.toLowerCase()} · ${S.sc.posLabel.toLowerCase()}`, 'sys');
+  showScreen('brief');
+}
+
+function beginLive(){
+  showScreen('live');
+  S.hintUsed = false; S.transcript = ''; S.sayDone = true; S.recError = null;
+  $('hintBox').classList.add('hidden');
+  $('btnHint').classList.toggle('hidden', S.mode === 'checkride');
+  $('btnHint').disabled = false;
+  S.actFreq = S.sc.ctaf;
+  S.stbyFreq = S.sc.ctaf === '122.800' ? '122.750' : '122.800';
+  $('freqRead').textContent = S.actFreq;
+  $('stbyRead').textContent = S.stbyFreq;
+  $('livePos').textContent = '▸ ' + S.sc.posLabel + ' · ' + S.sc.cs;
+  const cd = $('comDisplay');
+  cd.classList.remove('boot'); void cd.offsetWidth; cd.classList.add('boot');
+  $('callInput').value = '';
+  updateLiveTx(null);
+  setInputMode(S.inputMode);
+  S.t0 = performance.now();
+  S.plane.state = 'move'; S.plane.t0 = performance.now();
+  AU.setStatic(S.sqlOpen);
+  log(`CTAF ${S.actFreq} — squelch ${S.sqlOpen ? 'open' : 'closed'}`, 'sys');
+  startAmbient();
+  $('timer').textContent = '0.0s';
+  $('timer').classList.remove('hot');
+  clearInterval(S.timerInt);
+  S.timerInt = setInterval(()=>{
+    const t = (performance.now() - S.t0) / 1000;
+    $('timer').textContent = t.toFixed(1) + 's';
+    $('timer').classList.toggle('hot', t > 12);
+  }, 100);
+  /* UPGRADE: beckon the PTT if the pilot freezes */
+  clearTimeout(S.beckonT);
+  S.beckonT = setTimeout(()=>{
+    if(S.screen === 'live' && S.inputMode === 'say' && !S.pttHeld)
+      $('pttRing').classList.add('beckon');
+  }, 6000);
+  if(S.inputMode === 'type') $('callInput').focus();
+}
+
+function updateLiveTx(txt){
+  $('liveTx').innerHTML = txt ? escapeHtml(txt) : '<span class="ghost-t">Standby…</span>';
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function setInputMode(m){
+  S.inputMode = m;
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  $('pttWrap').classList.toggle('hidden', m !== 'say');
+  $('typeRow').classList.toggle('hidden', m !== 'type');
+  if(m !== 'say'){ clearTimeout(S.beckonT); $('pttRing').classList.remove('beckon'); }
+  if(m === 'type' && S.screen === 'live') $('callInput').focus();
+}
+
+/* ---------------- PTT ---------------- */
+let scoring = false;
+function pttPress(){
+  if(S.screen !== 'live' || S.inputMode !== 'say' || S.pttHeld || scoring) return;
+  clearTimeout(S.beckonT);
+  $('pttRing').classList.remove('beckon');
+  if(!rec){
+    log('speech recognition unavailable in this browser — switched to TYPE', 'sys');
+    setInputMode('type');
+    return;
+  }
+  S.pttHeld = true; S.sayDone = false; S.recError = null; S.transcript = '';
+  $('pttBtn').classList.add('active');
+  $('ledTx').classList.add('on');
+  $('sigMeter').classList.add('on');
+  AU.click(); AU.duck(true);
+  updateLiveTx('…');
+  try{ rec.start(); }catch(e){}
+}
+function pttRelease(){
+  if(!S.pttHeld) return;
+  S.pttHeld = false;
+  $('pttBtn').classList.remove('active');
+  $('ledTx').classList.remove('on');
+  $('sigMeter').classList.remove('on');
+  AU.beep(); AU.duck(false);
+  if(rec){ try{ rec.stop(); }catch(e){} }
+  else finishSay();
+}
+function finishSay(){
+  if(S.sayDone) return;
+  S.sayDone = true;
+  const txt = S.transcript;
+  if(!txt){
+    log('— no audio captured —', 'sys');
+    updateLiveTx(null);
+    if(S.recError === 'not-allowed' || S.recError === 'service-not-allowed'){
+      log('mic permission denied — switch to TYPE', 'sys');
+    }
+    return;
+  }
+  submitCall(txt);
+}
+
+/* ---------------- submit & feedback ---------------- */
+function submitCall(raw){
+  if(S.screen !== 'live' || scoring) return;
+  if(!raw || !raw.trim()){ $('callInput').focus(); return; }
+  scoring = true;
+  clearInterval(S.timerInt);
+  stopAmbient();
+  clearTimeout(S.beckonT);
+  $('pttRing').classList.remove('beckon');
+  const elapsed = (performance.now() - S.t0) / 1000;
+  $('ledTx').classList.add('on');
+  setTimeout(()=>$('ledTx').classList.remove('on'), 350);
+  AU.beep();
+  log('▸ YOU: ' + raw.trim(), 'tx');
+  const res = scoreCall(raw, S.sc, elapsed);
+  S.lastRes = res;
+  setTimeout(()=>{ renderFeedback(res); scoring = false; }, 500);
+}
+
+function renderFeedback(res){
+  S.plane.state = 'hold';
+  $('diffRef').innerHTML = res.ref.map((t,i)=>`<span class="tk ${res.al && res.al.bOk[i] ? 'ok' : 'miss'}">${t}</span>`).join(' ');
+  $('diffYou').innerHTML = res.player.length
+    ? res.player.map((t,i)=>`<span class="tk ${res.al && res.al.aOk[i] ? 'ok' : 'extra'}">${t}</span>`).join(' ')
+    : '<span class="tk miss">— no transmission —</span>';
+  /* UPGRADE: graded-element checklist in the debrief */
+  $('elsList').innerHTML = res.els.map(e => {
+    const cls = e.ok ? 'e-ok' : e.outOfOrder ? 'e-mid' : 'e-bad';
+    const mark = e.ok ? '✓' : e.outOfOrder ? '~' : '✕';
+    return `<li class="${cls}"><b>${mark}</b>${e.label}${e.outOfOrder ? ' — out of order' : ''}</li>`;
+  }).join('');
+  $('notesList').innerHTML = res.notes.map(n=>
+    `<li class="${res.notes.length===1 && res.overall>=90 ? 'good' : ''}">${n}</li>`).join('');
+  $('tierTag').textContent = tierOf(res.overall);
+  const perfect = res.overall >= 100;
+  $('perfectBadge').classList.toggle('hidden', !perfect);
+  const dims = [['PHRASEOLOGY',res.dims.phraseology],['BREVITY',res.dims.brevity],['PHONETICS',res.dims.phonetics],['TIMING',res.dims.timing],['COMPLETENESS',res.dims.completeness]];
+  $('dimList').innerHTML = dims.map(d=>
+    `<div class="dim-row"><span class="lcd-label">${d[0]}</span><div class="dim-bar"><i data-w="${d[1]}"></i></div><b>${d[1]}</b></div>`).join('');
+  const mult = S.mode === 'checkride' ? 1.5 : 1;
+  if(res.overall >= 75) S.streak++; else S.streak = 0;
+  let gain = Math.round(res.overall * mult) + (res.overall >= 75 ? Math.min(25, (S.streak-1) * 5) : 0) + (perfect ? 25 : 0);
+  const prev = S.xpAwarded[S.pos] || 0;
+  const award = Math.max(0, gain - prev);
+  S.xpAwarded[S.pos] = Math.max(prev, gain);
+  const rankBefore = rankFor(S.xp).cur.name;
+  S.xp += award;
+  S.best = Math.max(S.best, res.overall);
+  const rankAfter = rankFor(S.xp).cur.name;
+  S.results[S.pos] = {sc:S.sc, overall:res.overall};
+  $('xpGain').textContent = '+' + award + ' XP' + (S.streak > 1 && res.overall >= 75 ? ` · STREAK ×${S.streak}` : '');
+  $('btnNext').textContent = S.pos + 1 >= S.order.length ? 'SEE RESULTS ▸' : 'NEXT ▸';
+  showScreen('feed');
+  S.radarT0 = performance.now(); S.scoreT0 = performance.now(); S.scoreTarget = res.overall;
+  $('scoreBig').textContent = '0';
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.dim-bar i').forEach(el => el.style.width = el.dataset.w + '%');
+  });
+  updateRankUI(rankBefore !== rankAfter);
+  updateStartStats();
+  if(rankBefore !== rankAfter){ AU.stinger(true); log(`RANK UP — ${rankAfter.toUpperCase()}`, 'sys'); }
+  else AU.stinger(res.overall >= 75);
+  setTimeout(speakRef, 800);
+}
+
+/* ---------------- summary ---------------- */
+function renderSummary(){
+  stopAmbient(); AU.setStatic(false);
+  const scores = S.results.filter(Boolean).map(r => r.overall);
+  const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0) / scores.length) : 0;
+  const isCheck = S.mode === 'checkride';
+  $('sumMode').textContent = isCheck ? 'Checkride debrief' : 'Training debrief';
+  $('sumTitle').textContent = isCheck ? 'The Ride Is Over' : 'Flight Complete';
+  $('sumSub').textContent = `${scores.length} CALLS · AVG ${avg} · BEST ${Math.max(...scores, 0)}`;
+  if(isCheck){
+    const pass = avg >= 75;
+    $('passBanner').innerHTML = `<div class="pass-banner ${pass ? '' : 'fail'}">
+      <div class="big ${pass ? 'amber' : ''}">${pass ? 'CHECKRIDE PASSED' : 'DISAPPROVAL'}</div>
+      <div class="mono-sub">${pass ? 'PRACTICAL TEST STANDARDS — CTAF PHRASEOLOGY · AVG ' + avg : 'AVERAGE ' + avg + ' — 75 REQUIRED. RETRAIN AND RIDE AGAIN.'}</div>
+    </div>`;
+    AU.stinger(pass);
+  } else {
+    $('passBanner').innerHTML = '';
+  }
+  $('sumRows').innerHTML = S.results.map((r,i)=>{
+    if(!r) return '';
+    return `<div class="sum-row"><span class="mono n">${String(i+1).padStart(2,'0')}</span>
+      <span class="nm">${r.sc.ap} — ${r.sc.posLabel.split('—')[0].trim().toLowerCase()}</span>
+      <span class="spark"><i style="height:${Math.max(8, r.overall)}%"></i></span>
+      <span class="sc">${r.overall}</span></div>`;
+  }).join('');
+  const {cur, next} = rankFor(S.xp);
+  $('rankProgLabel').textContent = next ? `${cur.name} → ${next.name} (${next.xp - S.xp} XP to go)` : `${cur.name} — top rank`;
+  showScreen('sum');
+  requestAnimationFrame(()=>{
+    $('sumXpFill').style.width = (next ? ((S.xp - cur.xp)/(next.xp - cur.xp))*100 : 100) + '%';
+  });
+  $('courseProgFill').style.width = '100%';
+}
+
+/* ---------------- map canvas ---------------- */
+function recip(rwy){ return String((parseInt(rwy,10) + 18) % 36).padStart(2,'0'); }
+function drawArrow(ctx,x,y,ang,color){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(5,0); ctx.lineTo(-3,3.5); ctx.lineTo(-3,-3.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawPlane(ctx,x,y,hdg,color,glow){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(hdg * Math.PI/180);
+  if(glow){ ctx.shadowColor = 'oklch(0.79 0.152 74)'; ctx.shadowBlur = 14; }
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(5,6); ctx.lineTo(0,3); ctx.lineTo(-5,6); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function loopPos(loop, mir, u, t){
+  const pts = loop.map(p => [p[0]*u, p[1]*u*mir]);
+  const segs = []; let tot = 0;
+  for(let i = 0; i < pts.length-1; i++){
+    const l = Math.hypot(pts[i+1][0]-pts[i][0], pts[i+1][1]-pts[i][1]);
+    segs.push(l); tot += l;
+  }
+  let d = ((t % 1) + 1) % 1 * tot;
+  for(let i = 0; i < segs.length; i++){
+    if(d <= segs[i]){
+      const f = d / segs[i];
+      const x = pts[i][0] + (pts[i+1][0]-pts[i][0]) * f;
+      const y = pts[i][1] + (pts[i+1][1]-pts[i][1]) * f;
+      const hdg = (Math.atan2(pts[i+1][0]-pts[i][0], -(pts[i+1][1]-pts[i][1])) * 180/Math.PI + 360) % 360;
+      return [x, y, hdg];
+    }
+    d -= segs[i];
+  }
+  return [pts[0][0], pts[0][1], 270];
+}
+function drawMap(now){
+  const c = $('mapCanvas');
+  const r = c.getBoundingClientRect();
+  if(r.width < 10) return;
+  const d = Math.min(devicePixelRatio || 1, 2);
+  if(c.width !== Math.round(r.width*d) || c.height !== Math.round(r.height*d)){
+    c.width = Math.round(r.width*d); c.height = Math.round(r.height*d);
+  }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(d,0,0,d,0,0);
+  const w = r.width, h = r.height;
+  ctx.fillStyle = 'oklch(0.11 0.016 254)'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle = 'oklch(0.99 0.01 250 / 4%)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for(let x = 0; x < w; x += 28){ ctx.moveTo(x,0); ctx.lineTo(x,h); }
+  for(let y = 0; y < h; y += 28){ ctx.moveTo(0,y); ctx.lineTo(w,y); }
+  ctx.stroke();
+  const s = S.sc; if(!s) return;
+  const mir = s.dir === 'right' ? -1 : 1;
+  const u = Math.min(w, h) * 0.17;
+  ctx.save();
+  ctx.translate(w/2, h*0.54);
+  ctx.rotate((s.hdg - 270) * Math.PI/180);
+  const L = p => [p[0]*u, p[1]*u*mir];
+  const loop = [[1,0],[-1.7,0],[-1.7,1.1],[2.3,1.1],[2.3,0],[1,0]];
+  ctx.setLineDash([5,5]); ctx.strokeStyle = 'oklch(0.75 0.128 205 / 32%)'; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  loop.forEach((p,i)=>{ const q = L(p); i ? ctx.lineTo(q[0],q[1]) : ctx.moveTo(q[0],q[1]); });
+  ctx.stroke(); ctx.setLineDash([]);
+  for(let i = 0; i < loop.length-1; i++){
+    const a = L(loop[i]), b = L(loop[i+1]);
+    drawArrow(ctx, (a[0]+b[0])/2, (a[1]+b[1])/2, Math.atan2(b[1]-a[1], b[0]-a[0]), 'oklch(0.75 0.128 205 / 45%)');
+  }
+  if(S.mapLabels){
+    ctx.fillStyle = 'oklch(0.65 0.02 250 / 55%)';
+    ctx.font = '7.5px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const lbl = (t,p) => { const q = L(p); ctx.fillText(t, q[0], q[1]); };
+    lbl('UPWIND', [-0.4,-0.18]); lbl('CROSSWIND', [-1.95, 0.55]); lbl('DOWNWIND', [0.3, 1.34]);
+    lbl('BASE', [2.55, 0.55]); lbl('FINAL', [1.6, -0.18]);
+  }
+  const rw = u * 0.22;
+  ctx.fillStyle = 'oklch(0.28 0.02 254)';
+  ctx.beginPath(); ctx.roundRect(-u, -rw/2, 2*u, rw, 3); ctx.fill();
+  ctx.strokeStyle = 'oklch(0.99 0.01 250 / 25%)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.setLineDash([u*0.12, u*0.09]); ctx.strokeStyle = 'oklch(0.99 0.01 250 / 55%)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-u*0.9, 0); ctx.lineTo(u*0.9, 0); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = 'oklch(0.99 0.01 250 / 70%)';
+  ctx.font = `700 ${Math.round(u*0.22)}px "JetBrains Mono", monospace`;
+  ctx.save(); ctx.translate(u*0.7, 0); ctx.rotate(-Math.PI/2); ctx.fillText(s.rwy, 0, 0); ctx.restore();
+  ctx.save(); ctx.translate(-u*0.7, 0); ctx.rotate(Math.PI/2); ctx.fillText(recip(s.rwy), 0, 0); ctx.restore();
+  const pos = POS[s.pos];
+  const tp = L(pos.p);
+  if(s.pos === 'entering-downwind'){
+    const from = L([-1.95, 1.9]);
+    ctx.setLineDash([4,4]); ctx.strokeStyle = 'oklch(0.79 0.152 74 / 50%)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(from[0], from[1]); ctx.lineTo(tp[0], tp[1]); ctx.stroke(); ctx.setLineDash([]);
+    drawArrow(ctx, tp[0], tp[1], Math.atan2(tp[1]-from[1], tp[0]-from[0]), 'oklch(0.79 0.152 74 / 70%)');
+  }
+  if(s.pos === 'clear-of-runway'){
+    const a = L([0.45, 0]);
+    ctx.strokeStyle = 'oklch(0.99 0.01 250 / 25%)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(tp[0], tp[1]); ctx.stroke();
+  }
+  if(s.pos === 'going-around'){
+    const a = L([0.9, 0]), b = L([-1.5, 0]);
+    ctx.setLineDash([4,4]); ctx.strokeStyle = 'oklch(0.79 0.152 74 / 45%)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
+  }
+  const pu = (Math.sin(now/300) + 1) / 2;
+  ctx.strokeStyle = `oklch(0.79 0.152 74 / ${Math.round(35 + pu*35)}%)`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(tp[0], tp[1], u*(0.16 + pu*0.07), 0, 7); ctx.stroke();
+  TRAFFIC.forEach(tr => {
+    const p = loopPos(loop, mir, u, now/1000 * tr.sp + tr.off);
+    drawPlane(ctx, p[0], p[1], p[2], 'oklch(0.75 0.128 205 / 65%)', false);
+    if(S.mapLabels){
+      ctx.fillStyle = 'oklch(0.75 0.128 205 / 50%)';
+      ctx.font = '7px "JetBrains Mono", monospace'; ctx.textAlign = 'left';
+      ctx.fillText(tr.tag, p[0]+8, p[1]-6);
+    }
+  });
+  /* own ship — ramp → target → hold */
+  const hdg = mir === 1 ? pos.h : (360 - pos.h) % 360;
+  const rp = L([0.6, -0.55]);
+  const rampHdg = mir === 1 ? 270 : 90;
+  let px, py, ph;
+  if(S.plane.state === 'ramp'){
+    px = rp[0]; py = rp[1]; ph = rampHdg;
+  } else if(S.plane.state === 'move'){
+    const f = Math.min(1, (now - S.plane.t0) / 2600);
+    const e = 1 - Math.pow(1 - f, 3);
+    px = rp[0] + (tp[0] - rp[0]) * e;
+    py = rp[1] + (tp[1] - rp[1]) * e;
+    let dh = ((hdg - rampHdg + 540) % 360) - 180;
+    ph = rampHdg + dh * e;
+    if(f >= 1) S.plane.state = 'hold';
+  } else {
+    px = tp[0]; py = tp[1]; ph = hdg;
+  }
+  drawPlane(ctx, px, py, ph, 'oklch(0.79 0.152 74)', true);
+  ctx.restore();
+  /* data block */
+  ctx.fillStyle = 'oklch(0.75 0.128 205 / 75%)';
+  ctx.font = '9px "JetBrains Mono", monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(`${s.ap.toUpperCase()} · CTAF ${S.actFreq || s.ctaf} · RWY ${s.rwy} · ${s.dir.toUpperCase()} TFC`, 10, 16);
+  ctx.fillStyle = 'oklch(0.79 0.152 74 / 75%)';
+  ctx.textAlign = 'right';
+  ctx.fillText(s.cs.toUpperCase(), w - 10, 16);
+}
+
+/* ---------------- radar canvas ---------------- */
+function drawRadar(now){
+  const c = $('radarCanvas');
+  const r = c.getBoundingClientRect();
+  if(r.width < 10) return;
+  const d = Math.min(devicePixelRatio || 1, 2);
+  if(c.width !== Math.round(r.width*d) || c.height !== Math.round(r.height*d)){
+    c.width = Math.round(r.width*d); c.height = Math.round(r.height*d);
+  }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(d,0,0,d,0,0);
+  const w = r.width, h = r.height;
+  ctx.clearRect(0,0,w,h);
+  const res = S.lastRes; if(!res) return;
+  const vals = [res.dims.phraseology, res.dims.brevity, res.dims.phonetics, res.dims.timing, res.dims.completeness];
+  const labels = ['PHR','BRV','PHO','TIM','CMP'];
+  const N = 5, cx = w/2, cy = h/2 + 4, R = Math.min(w,h)/2 - 24;
+  const ang = i => -Math.PI/2 + i * 2*Math.PI/N;
+  const t = Math.min(1, (now - S.radarT0) / 900);
+  const e = 1 - Math.pow(1 - t, 3);
+  for(let ring = 1; ring <= 4; ring++){
+    ctx.beginPath();
+    for(let i = 0; i <= N; i++){
+      const a = ang(i % N), rr = R * ring / 4;
+      const x = cx + Math.cos(a)*rr, y = cy + Math.sin(a)*rr;
+      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+    }
+    ctx.strokeStyle = 'oklch(0.99 0.01 250 / 7%)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+  ctx.font = '8px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for(let i = 0; i < N; i++){
+    const a = ang(i);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx + Math.cos(a)*R, cy + Math.sin(a)*R);
+    ctx.strokeStyle = 'oklch(0.99 0.01 250 / 10%)'; ctx.stroke();
+    ctx.fillStyle = 'oklch(0.65 0.02 250 / 70%)';
+    ctx.fillText(labels[i], cx + Math.cos(a)*(R+13), cy + Math.sin(a)*(R+13));
+  }
+  ctx.beginPath();
+  for(let i = 0; i <= N; i++){
+    const a = ang(i % N), rr = R * (vals[i % N]/100) * e;
+    const x = cx + Math.cos(a)*rr, y = cy + Math.sin(a)*rr;
+    i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'oklch(0.75 0.128 205 / 18%)'; ctx.fill();
+  ctx.strokeStyle = 'oklch(0.75 0.128 205 / 85%)'; ctx.lineWidth = 1.5;
+  ctx.shadowColor = 'oklch(0.75 0.128 205)'; ctx.shadowBlur = 8;
+  ctx.stroke(); ctx.shadowBlur = 0;
+  for(let i = 0; i < N; i++){
+    const a = ang(i), rr = R * (vals[i]/100) * e;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a)*rr, cy + Math.sin(a)*rr, 2.6, 0, 7);
+    ctx.fillStyle = 'oklch(0.79 0.152 74)';
+    ctx.shadowColor = 'oklch(0.79 0.152 74)'; ctx.shadowBlur = 6;
+    ctx.fill(); ctx.shadowBlur = 0;
+  }
+}
+
+/* ---------------- main render loop ---------------- */
+function tick(now){
+  if(S.screen === 'brief' || S.screen === 'live' || S.screen === 'feed') drawMap(now);
+  if(S.screen === 'feed'){
+    drawRadar(now);
+    if(S.scoreTarget != null){
+      const t = Math.min(1, (now - S.scoreT0) / 900);
+      const e = 1 - Math.pow(1 - t, 3);
+      $('scoreBig').textContent = Math.round(S.scoreTarget * e);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---------------- events ---------------- */
+$('muteBtn').addEventListener('click', () => {
+  AU.init();
+  AU.muted = !AU.muted;
+  $('muteBtn').classList.toggle('off', AU.muted);
+  if(AU.muted){
+    if('speechSynthesis' in window) speechSynthesis.cancel();
+    if(AU.staticGain) AU.staticGain.gain.value = 0;
+  } else if(S.screen === 'live'){
+    AU.setStatic(S.sqlOpen);
+  }
+});
+
+$('modeTrain').addEventListener('click', () => {
+  S.mode = 'training';
+  $('modeTrain').classList.add('sel');
+  $('modeCheck').classList.remove('sel');
+  AU.click();
+});
+$('modeCheck').addEventListener('click', () => {
+  S.mode = 'checkride';
+  $('modeCheck').classList.add('sel');
+  $('modeTrain').classList.remove('sel');
+  AU.click();
+});
+
+$('btnStart').addEventListener('click', startCourse);
+$('btnBegin').addEventListener('click', () => { AU.click(); beginLive(); });
+
+$('btnFlip').addEventListener('click', () => {
+  if(S.screen !== 'live') return;
+  AU.click();
+  const tmp = S.actFreq;
+  S.actFreq = S.stbyFreq; S.stbyFreq = tmp;
+  $('freqRead').textContent = S.actFreq;
+  $('stbyRead').textContent = S.stbyFreq;
+  const cd = $('comDisplay');
+  cd.classList.remove('boot'); void cd.offsetWidth; cd.classList.add('boot');
+  if(S.actFreq !== S.sc.ctaf){
+    log(`⚠ ${S.actFreq} is not the CTAF — flip back to ${S.sc.ctaf}`, 'sys');
+    AU.setStatic(false);
+  } else {
+    log(`COM1 active ${S.actFreq}`, 'sys');
+    AU.setStatic(S.sqlOpen);
+  }
+});
+
+$('sqlKnob').addEventListener('click', () => {
+  S.sqlOpen = !S.sqlOpen;
+  $('sqlKnob').style.transform = `rotate(${S.sqlOpen ? 0 : 140}deg)`;
+  AU.click();
+  if(S.screen === 'live' && S.actFreq === S.sc.ctaf) AU.setStatic(S.sqlOpen);
+  log(`squelch ${S.sqlOpen ? 'open' : 'closed'}`, 'sys');
+});
+
+document.querySelectorAll('#modeSeg button').forEach(b =>
+  b.addEventListener('click', () => { AU.click(); setInputMode(b.dataset.m); }));
+
+/* softkeys */
+$('skAtis').addEventListener('click', () => { AU.click(); playAtis(); });
+$('skRply').addEventListener('click', () => {
+  AU.click();
+  if(S.screen === 'feed') speakRef();
+  else if(S.sc) playAtis();
+});
+$('skMap').addEventListener('click', () => {
+  AU.click();
+  S.mapLabels = !S.mapLabels;
+  log(`map labels ${S.mapLabels ? 'on' : 'off'}`, 'sys');
+});
+$('skMsg').addEventListener('click', () => {
+  AU.click();
+  if(!S.sc) return;
+  log(`MSG — ${S.sc.ap.toLowerCase()} ctaf ${S.sc.ctaf} · rwy ${S.sc.rwy} · ${S.sc.dir} traffic · you: ${S.sc.cs.toLowerCase()}`, 'sys');
+});
+
+/* PTT — pointer + spacebar */
+$('pttBtn').addEventListener('pointerdown', e => { e.preventDefault(); pttPress(); });
+window.addEventListener('pointerup', pttRelease);
+$('pttBtn').addEventListener('pointerleave', () => { if(S.pttHeld) pttRelease(); });
+$('pttBtn').addEventListener('contextmenu', e => e.preventDefault());
+
+window.addEventListener('keydown', e => {
+  if(e.code === 'Space' && S.screen === 'live' && S.inputMode === 'say' && !e.repeat){
+    e.preventDefault();
+    pttPress();
+  }
+});
+window.addEventListener('keyup', e => {
+  if(e.code === 'Space' && S.screen === 'live' && S.inputMode === 'say'){
+    e.preventDefault();
+    pttRelease();
+  }
+});
+
+/* typed input */
+$('btnTx').addEventListener('click', () => submitCall($('callInput').value));
+$('callInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') submitCall($('callInput').value);
+});
+
+/* hint */
+$('btnHint').addEventListener('click', () => {
+  if(S.hintUsed) return;
+  S.hintUsed = true;
+  $('hintBox').classList.remove('hidden');
+  $('btnHint').disabled = true;
+  AU.click();
+  log('structure hint used (−10 pts)', 'sys');
+});
+
+/* feedback actions */
+$('btnPlay').addEventListener('click', () => { AU.click(); speakRef(); });
+$('btnRetry').addEventListener('click', () => { AU.click(); beginLive(); });
+$('btnNext').addEventListener('click', () => {
+  AU.click();
+  if(S.pos + 1 >= S.order.length) renderSummary();
+  else loadScenario(S.pos + 1);
+});
+
+/* summary actions */
+$('btnHome').addEventListener('click', () => { AU.click(); showScreen('start'); });
+$('btnAgain').addEventListener('click', () => { AU.click(); startCourse(); });
+
+/* pro waitlist */
+$('proBtn').addEventListener('click', () => {
+  const em = $('proEmail').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){
+    $('proMsg').textContent = '⚠ enter a valid email to join the waitlist';
+    $('proMsg').style.color = 'var(--amber)';
+    return;
+  }
+  $('proMsg').textContent = '✓ on the list — we\'ll call you on the CTAF when Pro launches';
+  $('proMsg').style.color = 'var(--cyan)';
+  $('proEmail').value = '';
+  AU.stinger(true);
+});
+
+/* ---------------- init ---------------- */
+rec = initRec();
+if(!rec){
+  /* no speech recognition — default to TYPE so the app is fully usable */
+  S.inputMode = 'type';
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.m === 'type'));
+}
+if('speechSynthesis' in window){
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+updateRankUI(false);
+updateStartStats();
+showScreen('start');
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

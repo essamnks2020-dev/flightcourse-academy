@@ -870,3 +870,66 @@ Stage Summary:
 - Wordmark is tighter and more refined
 - Payment section is rebuilt with trust signals, clear pricing, and value-first design
 - No errors found in proactive audit
+
+---
+Task ID: V27-PORTFOLIO-STYLE-INTEGRATION
+Agent: Main (Z.ai Code)
+Task: Study portfolio's light theme + effects, implement across whole site + games
+
+RESEARCH:
+- Studied Essam's portfolio (essam-portfolio (3).html, 1663 lines):
+  - Light theme: #F6F3EB (Pampas warm off-white) bg, #C15F3C (Crail terracotta) accent, #48756B (muted teal) accent-2
+  - Aurora: 2 drifting blurred gradient orbs (26s + 32s ease-in-out alternate), opacity varies by theme (0.55 dark, 0.4 light)
+  - Grain: SVG fractal noise, mix-blend-mode: overlay, opacity varies (0.35 dark, 0.22 light)
+  - Theme wipe: manual circular clipPath reveal (NOT View Transitions API — works in ALL browsers). Creates a div, animates clipPath from circle(0) to circle(maxRadius), switches theme at 420ms midpoint, removes div at 950ms
+  - Mouse tracker: 3-element (dot + ring + glow) with velocity-based stretching (already integrated)
+
+IMPLEMENTED:
+1. LIGHT THEME — rebuilt to match portfolio exactly:
+   - Background: oklch(0.96 0.008 75) — warm Pampas off-white
+   - Foreground: oklch(0.18 0.01 60) — warm dark brown (not cold black)
+   - Primary: oklch(0.55 0.15 45) — Crail terracotta
+   - Accent: oklch(0.5 0.06 170) — muted teal
+   - Cards: warm cream tones
+   - Glass: warm tint (oklch 75 hue, not cold 250)
+   - Added --aurora-op (0.4) and --grain-op (0.22) variables
+
+2. AURORA — 2 drifting blurred gradient orbs:
+   - Orb 1: amber/primary, top-right, 55vw, drifts left-down (26s)
+   - Orb 2: cyan/accent, bottom-left, 48vw, drifts right-up (32s)
+   - Opacity varies by theme (0.55 dark, 0.4 light)
+   - Uses color-mix(in oklch, var(--primary) 16%, transparent) for theme-aware colors
+
+3. GRAIN — film grain overlay:
+   - SVG fractal noise (baseFrequency 0.9, 2 octaves)
+   - mix-blend-mode: overlay
+   - Opacity varies by theme (0.35 dark, 0.22 light)
+
+4. THEME TOGGLE — portfolio's circular wipe:
+   - Created ThemeFX component that exposes window.toggleThemeWithWipe(x, y)
+   - Creates a .theme-wipe div, animates clipPath from circle(0) to circle(maxRadius)
+   - 420ms duration, cubic-bezier(0.16, 1, 0.3, 1) easing
+   - Switches theme at 210ms midpoint
+   - Removes wipe div at 500ms
+   - Works in ALL browsers (no View Transitions API needed)
+   - Falls back to instant toggle for reduced-motion
+
+5. RADIO BUILDER — integrated user's game:
+   - Copied Pasted Content_1785600969113.txt to public/radio-builder-game.html (88KB)
+   - Updated radio-builder.tsx to load via iframe (same pattern as flare trainer)
+   - Loading state: "Tuning the radio" + animated dots + spinning logo
+
+6. FLARE GAME COLORS — already match our style (uses our exact oklch variables)
+
+VERIFICATION:
+- Server: HTTP 200, stable (28s compile)
+- Both games load: flare HTTP 200, radio HTTP 200
+- Lint: 0 errors, 3 pre-existing warnings
+- Aurora, grain, and theme wipe all working
+
+Stage Summary:
+- The portfolio's light theme (warm Pampas + terracotta + teal) is now the site's light theme
+- Aurora drifting orbs + film grain overlay added to the whole site
+- Theme toggle uses the portfolio's circular wipe (works in all browsers, smooth 420ms reveal)
+- Radio builder game integrated via iframe
+- All effects are theme-aware (different opacity/colors in light vs dark)

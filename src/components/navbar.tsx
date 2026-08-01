@@ -149,47 +149,17 @@ export function Navbar() {
             </span>
           </button>
 
-          {/* Theme toggle — smooth View Transitions API circular reveal */}
+          {/* Theme toggle — circular wipe reveal (from portfolio) */}
           {mounted && (
             <button
               onClick={(e) => {
-                const next = theme === "dark" ? "light" : "dark";
-                const supportsVT = (document as any).startViewTransition;
-                if (!supportsVT) {
-                  setTheme(next);
-                  return;
-                }
                 const x = e.clientX;
                 const y = e.clientY;
-                const endRadius = Math.hypot(
-                  Math.max(x, window.innerWidth - x),
-                  Math.max(y, window.innerHeight - y)
-                );
-                const transition = (document as any).startViewTransition(() => {
-                  setTheme(next);
-                });
-                document.documentElement.classList.add("vt-active");
-                transition.ready.then(() => {
-                  const isDark = next === "dark";
-                  (document.documentElement as any).animate(
-                    {
-                      clipPath: [
-                        `circle(0px at ${x}px ${y}px)`,
-                        `circle(${endRadius}px at ${x}px ${y}px)`,
-                      ],
-                    },
-                    {
-                      duration: 600,
-                      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-                      pseudoElement: isDark
-                        ? "::view-transition-new(root)"
-                        : "::view-transition-old(root)",
-                    }
-                  );
-                }).catch(() => {});
-                transition.finished.then(() => {
-                  document.documentElement.classList.remove("vt-active");
-                }).catch(() => {});
+                if ((window as any).toggleThemeWithWipe) {
+                  (window as any).toggleThemeWithWipe(x, y);
+                } else {
+                  setTheme(theme === "dark" ? "light" : "dark");
+                }
               }}
               className="flex size-9 items-center justify-center rounded-lg border border-border transition-all hover:border-primary/40 hover:text-primary hover:scale-105 active:scale-95"
               aria-label="Toggle theme"
