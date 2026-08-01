@@ -55,7 +55,7 @@ export function ThemeFX() {
       document.body.appendChild(wipe);
 
       // Force reflow so the initial clip-path is applied
-      wipe.offsetHeight;
+      void wipe.offsetHeight;
 
       // Animate the circle expanding using Web Animations API
       const animation = wipe.animate(
