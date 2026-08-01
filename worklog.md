@@ -820,3 +820,53 @@ Stage Summary:
 - The user's own mouse tracker (3-element dot/ring/glow with velocity stretching) is live
 - The user's own flare trainer game (Short Final Academy) is live via iframe
 - Both preserve the user's exact work
+
+---
+Task ID: V26-LOGO-PAYMENTS-UI-UPGRADE
+Agent: Main (Z.ai Code)
+Task: Deep research + upgrade logo, wordmark, payment section, and fix issues
+
+RESEARCH FINDINGS:
+- Game UI: consistency, cohesion, clear hierarchy, don't clutter the HUD
+- Payments: don't require an account, be upfront about costs, clear progression, mobile-optimized, 30-day refund increases trust
+- Logos: simplicity, versatility, balance/proportion, strong negative space, premium proportions. Less is more — remove unnecessary detail
+- Freemium psychology: value proposition must be clear, don't use dark patterns, let players try before buying, instant access increases conversion
+- Kimi K3 / Fable 5: both produce clean, structured UIs with smooth animations. Key: restraint + cohesion
+
+UPGRADES:
+1. LOGO MARK — rebuilt with premium logo principles:
+   - Simpler: removed wing-tip dots, roll pointer, 10-degree pitch marks, extra tick marks
+   - Stronger negative space: larger inner circle (r=13 vs r=14), more breathing room
+   - Better proportions: bezel r=16 (was 15.5), inner r=14.5 (was 14.5)
+   - Cleaner bank scale: only 0° + ±30° marks (was 0/10/20/30)
+   - Minimal aircraft symbol: center dot + 2 swept wings only (was dot + wings + tail + wing-tip dots)
+   - Subtler pitch ladder: 2 lines only (was 4)
+   - Glass reflection kept for depth
+
+2. WORDMARK — upgraded:
+   - Larger: 1.1rem (was 1.05rem)
+   - Tighter tracking: -0.025em (was -0.02em)
+   - "Academy" label: 0.48rem (was 0.5rem), 0.22em tracking (was 0.18em), font-mono with font-medium
+   - Better gap: 3px between lines
+
+3. PAYMENT SECTION — rebuilt (was missing entirely):
+   - Free tier: $0/forever, "No account required" trust badge, 7 features, fp-outline-btn
+   - Pro tier: $4.99 one-time, glow-primary, "Recommended" badge, trust badges (30-day refund + instant access), 10 features, game icons row, fp-toggle-btn, payment methods line (Stripe · PayPal · Cancel anytime)
+   - Trust line at bottom: "For simulation training only · No subscription required for free tier · 30-day money-back guarantee · Built by a 17-year-old"
+   - Based on research: no account required, upfront costs, clear progression, refund guarantee, instant access
+
+4. PROACTIVE FIXES:
+   - PaidPlanSection was missing (lost in revert) — recreated
+   - All imports resolve correctly
+   - 0 lint errors, 0 runtime errors
+
+VERIFICATION:
+- Server: HTTP 200, stable (29s compile)
+- Lint: 0 errors, 3 pre-existing warnings
+- Logo, wordmark, and pricing section all render
+
+Stage Summary:
+- Logo is simpler and more premium (less detail, stronger negative space, better proportions)
+- Wordmark is tighter and more refined
+- Payment section is rebuilt with trust signals, clear pricing, and value-first design
+- No errors found in proactive audit

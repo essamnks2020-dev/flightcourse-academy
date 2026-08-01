@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 
 /**
- * FlightCourse Academy mark — a detailed attitude indicator (artificial
- * horizon). The dial shows a sky/ground split, a bank-angle scale with tick
- * marks, pitch ladder lines, and a climbing aircraft symbol in amber. The
- * horizon line doubles as a rising flight path — "course" being flown.
+ * FlightCourse Academy mark — a refined attitude indicator (artificial
+ * horizon). Designed with premium logo principles: simplicity, strong
+ * negative space, balanced proportions, scalability.
  *
- * Clean SVG, no animation, one metaphor. Detailed enough to read as a real
- * instrument at small sizes.
+ * The mark is a circle (the instrument bezel) containing a tilted horizon
+ * (sky/ground split), a bank-angle scale, and a minimal aircraft symbol.
+ * Reads as both an attitude indicator AND an abstract "course being flown."
  */
 export function LogoMark({ className, animated = false }: { className?: string; animated?: boolean }) {
   return (
@@ -15,96 +15,75 @@ export function LogoMark({ className, animated = false }: { className?: string; 
       viewBox="0 0 40 40"
       fill="none"
       aria-hidden="true"
-      className={cn("size-9", className)}
+      className={cn("size-9", animated && "logo-draw", className)}
     >
       <defs>
         <clipPath id="fc-dial">
-          <circle cx="20" cy="20" r="14" />
+          <circle cx="20" cy="20" r="13" />
         </clipPath>
         <linearGradient id="fc-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="oklch(0.62 0.11 232)" />
-          <stop offset="100%" stopColor="oklch(0.44 0.08 244)" />
+          <stop offset="0%" stopColor="oklch(0.55 0.10 235)" />
+          <stop offset="100%" stopColor="oklch(0.38 0.07 245)" />
         </linearGradient>
         <linearGradient id="fc-ground" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="oklch(0.44 0.06 60)" />
-          <stop offset="100%" stopColor="oklch(0.28 0.045 55)" />
+          <stop offset="0%" stopColor="oklch(0.42 0.05 60)" />
+          <stop offset="100%" stopColor="oklch(0.26 0.04 55)" />
         </linearGradient>
         <linearGradient id="fc-bezel" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="oklch(0.4 0.03 255)" />
-          <stop offset="50%" stopColor="oklch(0.25 0.02 255)" />
-          <stop offset="100%" stopColor="oklch(0.18 0.02 255)" />
+          <stop offset="0%" stopColor="oklch(0.38 0.03 255)" />
+          <stop offset="50%" stopColor="oklch(0.22 0.02 255)" />
+          <stop offset="100%" stopColor="oklch(0.15 0.02 255)" />
         </linearGradient>
+        <radialGradient id="fc-glass" cx="35%" cy="25%" r="60%">
+          <stop offset="0%" stopColor="oklch(0.99 0.01 250 / 15%)" />
+          <stop offset="100%" stopColor="oklch(0.99 0.01 250 / 0%)" />
+        </radialGradient>
       </defs>
 
-      {/* Outer bezel ring */}
-      <circle cx="20" cy="20" r="15.5" fill="url(#fc-bezel)" />
-      <circle cx="20" cy="20" r="14.5" fill="oklch(0.12 0.02 255)" />
+      {/* Outer bezel ring — premium gradient */}
+      <circle cx="20" cy="20" r="16" fill="url(#fc-bezel)" />
+      <circle cx="20" cy="20" r="14.5" fill="oklch(0.10 0.02 255)" />
 
       {/* Dial face — clipped to inner circle */}
       <g clipPath="url(#fc-dial)">
         {/* Sky */}
         <rect x="0" y="0" width="40" height="40" fill="url(#fc-sky)" />
         {/* Ground — tilted like a banking turn */}
-        <path d="M-6 27 L46 13 L46 46 L-6 46 Z" fill="url(#fc-ground)" />
-        {/* Horizon line — white, the signature element */}
+        <path d="M-6 26 L46 14 L46 46 L-6 46 Z" fill="url(#fc-ground)" />
+        {/* Horizon line — the signature element, clean white */}
         <path
-          d="M-6 27 L46 13"
+          d="M-6 26 L46 14"
           stroke="oklch(0.97 0.01 250)"
-          strokeWidth="1.4"
+          strokeWidth="1.2"
           strokeLinecap="round"
         />
-        {/* Pitch ladder — short lines parallel to horizon */}
-        <path
-          d="M-2 23 L6 21.2 M-2 31 L6 29.2"
-          stroke="oklch(0.97 0.01 250 / 45%)"
-          strokeWidth="0.7"
-          strokeLinecap="round"
-        />
-        <path
-          d="M34 18.8 L42 17 M34 25.8 L42 24"
-          stroke="oklch(0.97 0.01 250 / 45%)"
-          strokeWidth="0.7"
-          strokeLinecap="round"
-        />
+        {/* Pitch ladder — minimal, 2 lines only */}
+        <path d="M0 22 L8 20.5 M0 30 L8 28.5" stroke="oklch(0.97 0.01 250 / 35%)" strokeWidth="0.5" strokeLinecap="round" />
       </g>
 
-      {/* Bank-angle scale — tick marks around the top of the dial */}
-      <g stroke="oklch(0.97 0.01 250 / 55%)" strokeWidth="0.8" strokeLinecap="round">
-        {/* Center top (0°) — longer */}
-        <line x1="20" y1="5.5" x2="20" y2="8" strokeWidth="1.1" />
-        {/* ±10° */}
-        <line x1="13.2" y1="7" x2="13.8" y2="9.2" />
-        <line x1="26.8" y1="7" x2="26.2" y2="9.2" />
-        {/* ±20° */}
-        <line x1="8" y1="10.8" x2="9" y2="12.6" />
-        <line x1="32" y1="10.8" x2="31" y2="12.6" />
-        {/* ±30° (triangle pointers) */}
-        <path d="M5 16 L6.2 14.4 L7.4 16 Z" fill="oklch(0.97 0.01 250 / 55%)" stroke="none" />
-        <path d="M35 16 L33.8 14.4 L32.6 16 Z" fill="oklch(0.97 0.01 250 / 55%)" stroke="none" />
+      {/* Glass reflection */}
+      <circle cx="20" cy="20" r="13" fill="url(#fc-glass)" />
+
+      {/* Bank-angle scale — minimal, only 0° + ±30° marks */}
+      <g stroke="oklch(0.97 0.01 250 / 45%)" strokeLinecap="round">
+        <line x1="20" y1="6" x2="20" y2="8.5" strokeWidth="1" />
+        <path d="M7.5 16 L8.5 14.5 L9.5 16" strokeWidth="0.7" fill="none" />
+        <path d="M30.5 16 L31.5 14.5 L32.5 16" strokeWidth="0.7" fill="none" />
       </g>
 
-      {/* Bank pointer triangle at top center — fixed reference */}
-      <path d="M20 4.5 L18.3 6.8 L21.7 6.8 Z" fill="oklch(0.79 0.152 74)" />
+      {/* Bank pointer — amber triangle at top */}
+      <path d="M20 5 L18.5 7.5 L21.5 7.5 Z" fill="oklch(0.79 0.152 74)" />
 
-      {/* Inner bezel ring */}
-      <circle
-        cx="20"
-        cy="20"
-        r="14"
-        stroke="oklch(0.99 0.01 250 / 22%)"
-        strokeWidth="0.8"
-        fill="none"
-      />
+      {/* Inner bezel ring — subtle */}
+      <circle cx="20" cy="20" r="13" stroke="oklch(0.99 0.01 250 / 15%)" strokeWidth="0.5" fill="none" />
 
-      {/* Aircraft symbol — center dot + swept wings + tail, in amber */}
-      <g stroke="oklch(0.79 0.152 74)" strokeWidth="1.8" strokeLinecap="round" fill="oklch(0.79 0.152 74)">
-        {/* Wings — extend left and right from center, slightly swept up (climbing) */}
-        <line x1="10.5" y1="22.5" x2="16" y2="21.5" />
-        <line x1="24" y1="20.5" x2="29.5" y2="19.5" />
-        {/* Tail — small vertical stabilizer suggestion */}
-        <line x1="20" y1="22" x2="20" y2="24.5" strokeWidth="1.4" />
+      {/* Aircraft symbol — minimal, elegant. Center dot + two swept wings */}
+      <g stroke="oklch(0.79 0.152 74)" strokeWidth="2" strokeLinecap="round" fill="oklch(0.79 0.152 74)">
+        {/* Wings — slightly swept, climbing */}
+        <line x1="11" y1="22.5" x2="17" y2="21.5" />
+        <line x1="23" y1="20.5" x2="29" y2="19.5" />
         {/* Center dot — the aircraft reference */}
-        <circle cx="20" cy="21.5" r="1.4" />
+        <circle cx="20" cy="21" r="1.8" />
       </g>
     </svg>
   );
@@ -123,11 +102,11 @@ export function Logo({
     <span className={cn("flex items-center gap-2.5", className)}>
       <LogoMark animated={animated} className={animated ? "logo-draw" : undefined} />
       {showText ? (
-        <span className="flex flex-col leading-none gap-0.5">
-          <span className="text-[1.05rem] font-semibold tracking-[-0.02em]">
+        <span className="flex flex-col leading-none gap-[3px]">
+          <span className="text-[1.1rem] font-semibold tracking-[-0.025em]">
             FlightCourse
           </span>
-          <span className="label-instrument text-muted-foreground text-[0.5rem] tracking-[0.18em]">
+          <span className="font-mono text-[0.48rem] uppercase tracking-[0.22em] text-muted-foreground font-medium">
             Academy
           </span>
         </span>
