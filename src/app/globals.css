@@ -191,22 +191,18 @@
 ::view-transition-old(root) { z-index: 1; }
 ::view-transition-new(root) { z-index: 9999; }
 
-/* Theme toggle smooth transition for ALL color/visual properties */
+/* Theme toggle smooth transition — only color properties, not transforms/opacity */
 :root {
-  --theme-transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                      color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                      border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                      fill 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                      stroke 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                      box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                      backdrop-filter 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                      outline-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  --theme-transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                      color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                      border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                      fill 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                      stroke 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Apply smooth color transitions to everything */
-*,
-*::before,
-*::after {
+/* Apply ONLY to elements that use theme colors — not every element */
+.glass, .fp-glass, .fp-toggle-btn, .fp-outline-btn, body, header, footer,
+button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   transition: var(--theme-transition);
 }
 

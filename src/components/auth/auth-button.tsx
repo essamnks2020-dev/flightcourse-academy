@@ -94,38 +94,14 @@ export function AuthButton() {
     );
   }
 
-  // Available + not signed in
+  // Available + not signed in — link to sign-in page
   return (
-    <div className="relative">
-      <button
-        onClick={() => setMenuOpen((v) => !v)}
-        className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-all hover:border-primary/40 hover:text-primary hover:scale-105 active:scale-95"
-      >
-        <User className="size-3.5" />
-        <span className="hidden md:inline">Sign in</span>
-      </button>
-      {menuOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-          <div className="glass absolute right-0 top-full mt-2 w-52 rounded-xl p-1.5 shadow-xl z-50">
-            <p className="label-instrument text-muted-foreground px-3 py-1.5">Sign in with</p>
-            <a
-              href="/api/auth/signin/google"
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted"
-            >
-              <Chrome className="size-4 text-accent" />
-              Google
-            </a>
-            <a
-              href="/api/auth/signin/github"
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:bg-muted"
-            >
-              <Github className="size-4 text-foreground" />
-              GitHub
-            </a>
-          </div>
-        </>
-      )}
-    </div>
+    <a
+      href="/sign-in"
+      className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-all hover:border-primary/40 hover:text-primary hover:scale-105 active:scale-95"
+    >
+      <User className="size-3.5" />
+      <span className="hidden md:inline">Sign in</span>
+    </a>
   );
 }

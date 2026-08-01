@@ -252,8 +252,13 @@ export function PilotHelper() {
       {/* Chat panel */}
       {open && (
         <div
-          className="glass animate-fade-up fixed bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[400px] flex-col rounded-2xl shadow-2xl"
-          style={{ maxHeight: "600px" }}
+          className="animate-fade-up fixed bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[400px] flex-col rounded-2xl shadow-2xl"
+          style={{
+            background: "oklch(0.18 0.022 254 / 97%)",
+            backdropFilter: "blur(20px) saturate(140%)",
+            border: "1px solid oklch(0.99 0.01 250 / 10%)",
+            maxHeight: "600px",
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border p-4">
@@ -294,7 +299,9 @@ export function PilotHelper() {
                 {showVoiceMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowVoiceMenu(false)} />
-                    <div className="glass thin-scroll absolute right-0 top-full mt-1 max-h-60 w-56 overflow-y-auto rounded-xl p-1.5 shadow-xl z-50">
+                    <div className="thin-scroll absolute right-0 top-full mt-1 max-h-60 w-56 overflow-y-auto rounded-xl p-1.5 shadow-2xl z-50"
+                      style={{ background: "oklch(0.20 0.025 254 / 97%)", backdropFilter: "blur(20px)", border: "1px solid oklch(0.99 0.01 250 / 15%)" }}
+                    >
                       <p className="label-instrument text-muted-foreground px-2 py-1.5">Voice options</p>
                       {voices.length === 0 ? (
                         <p className="px-2 py-2 text-xs text-muted-foreground">No voices available in this browser</p>

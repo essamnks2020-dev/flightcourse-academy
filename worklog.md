@@ -1306,3 +1306,53 @@ Stage Summary:
 - Auto-submits when you stop speaking
 - Graceful error handling for mic denied, no speech, network error, unsupported browser
 - Games already have their own voice systems (not modified)
+
+---
+Task ID: V36-FIX-LAG-VOICE-SIGNIN
+Agent: Main (Z.ai Code)
+Task: Fix laggy transitions, fix voice menu readability, build sign-in page, upgrade Copilot visuals
+
+FIXES:
+1. LAGGY TRANSITIONS FIXED:
+   - Root cause: CSS `*` selector applied transitions to EVERY element on the page — hundreds of elements transitioning on every frame = laggy
+   - Fix: restricted transitions to only elements that use theme colors (.glass, .fp-toggle-btn, body, header, footer, button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"])
+   - Removed box-shadow + backdrop-filter from the transition list (those are expensive to animate)
+   - Duration: 0.4s (was 0.5s) — snappier
+
+2. VOICE MENU READABILITY FIXED:
+   - Was: .glass class (7% opacity background — too transparent, text hard to see)
+   - Now: solid 97% opacity navy background (oklch 0.20 0.025 254 / 97%) with blur(20px) + 15% border
+   - You can clearly see every voice option now
+
+3. SIGN-IN PAGE BUILT:
+   - Dedicated /sign-in route (not a dropdown anymore)
+   - Full-page layout with:
+     * Back to home button
+     * Background glow (amber radial)
+     * Logo + "Welcome aboard" heading
+     * 4 benefits list with check marks (track progress, earn XP, sync scores, save certificate)
+     * Google sign-in button (warm cream, Chrome icon)
+     * GitHub sign-in button (dark, Github icon)
+     * "Sign-in coming soon" state if env vars missing
+     * "Start without an account" button (goes to module 1)
+     * Privacy policy link
+     * "No account? No problem — first 7 modules are free" text
+   - AuthButton in navbar now links to /sign-in (not a dropdown)
+
+4. COPILOT VISUALS UPGRADED:
+   - Panel: solid 97% opacity navy (was .glass — too transparent)
+   - Less glassy, more solid, easier to read
+   - Voice menu: solid background, clearly visible
+   - Still has: typing animation, voice options, mic input, progress tracking
+
+VERIFICATION:
+- Server: HTTP 200, stable (28s compile)
+- Sign-in page: HTTP 200
+- Lint: 0 errors, 2 warnings (pre-existing)
+- Transitions: smooth, not laggy (restricted to color properties only)
+
+Stage Summary:
+- Lag fixed (CSS transitions restricted to color properties on relevant elements only)
+- Voice menu readable (solid 97% opacity background)
+- Sign-in page built (dedicated /sign-in route with Google/GitHub buttons)
+- Copilot visuals upgraded (solid panel, not glassy)
