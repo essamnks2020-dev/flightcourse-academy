@@ -933,3 +933,42 @@ Stage Summary:
 - Theme toggle uses the portfolio's circular wipe (works in all browsers, smooth 420ms reveal)
 - Radio builder game integrated via iframe
 - All effects are theme-aware (different opacity/colors in light vs dark)
+
+---
+Task ID: V28-PATTERN-PERFECT-INTEGRATION
+Agent: Main (Z.ai Code)
+Task: Integrate the AI-made Pattern Perfect game, clean it up, wire it in
+
+Work Log:
+1. STUDIED the file (2089 lines, self-contained HTML):
+   - Colors already match our style exactly (same OKLCH values: --bg oklch(0.16 0.026 254), --amber oklch(0.79 0.152 74), --cyan oklch(0.75 0.128 205))
+   - Fonts already match (Instrument Sans + JetBrains Mono via Google Fonts)
+   - Glass card style matches (--glass: linear-gradient(160deg, oklch(0.99 0.01 250 / 7%)...))
+   - Has a Canvas2D world renderer, start screen, result screen with score, wind rose, track canvas
+   - Had "by ClickUp Brain" credit badge + skill:chrome comment that needed removal
+
+2. CLEANED UP:
+   - Removed all "ClickUp Brain" credit references (9 lines)
+   - Removed the skill:chrome comment
+   - Removed the design-ui-credit CSS
+   - Removed the IIFE script that injected the credit badge
+   - Removed the print fixes media query
+   - Removed the markEditable/artifact-editable code
+   - Result: 2057 lines (was 2089) — clean, no third-party branding
+
+3. INTEGRATED:
+   - Copied to public/pattern-perfect-game.html (served as static file)
+   - Updated PatternPerfectGame.tsx to load via iframe (same pattern as flare trainer + radio builder)
+   - Loading state: "Entering the pattern" + animated dots + spinning logo
+   - All 3 games now use the same iframe pattern with themed loading states
+
+VERIFICATION:
+- Server: HTTP 200, stable (28s compile)
+- Pattern game loads: HTTP 200
+- Lint: 0 errors, 3 pre-existing warnings
+- All 3 games load via iframe with consistent loading states
+
+Stage Summary:
+- Pattern Perfect game is live, cleaned of all third-party branding
+- Colors and fonts already match our Glass Cockpit style
+- All 3 games (Flare Trainer, Radio Builder, Pattern Perfect) are now integrated via iframe with themed loading states
