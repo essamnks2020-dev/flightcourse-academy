@@ -402,7 +402,7 @@ export function PilotHelper() {
                     )}
                     <div
                       className={cn(
-                        "rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed",
+                        "rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed whitespace-pre-wrap",
                         m.role === "user"
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-foreground"
