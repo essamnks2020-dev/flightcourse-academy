@@ -47,7 +47,7 @@ export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: Qu
   const submitQuiz = useProgress((s) => s.submitQuiz);
   const navigate = useNavStore((s) => s.navigate);
 
-  const score = answers.reduce(
+  const score = answers.reduce<number>(
     (acc, ans, i) => acc + (ans === questions[i].correctIndex ? 1 : 0),
     0
   );

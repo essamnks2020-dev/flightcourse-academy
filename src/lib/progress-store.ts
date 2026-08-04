@@ -226,7 +226,7 @@ export const useProgress = create<ProgressState>()(
 
       getLicenseTier: () => {
         const count = get().getCompletedCount();
-        let tier = LICENSE_TIERS[0];
+        let tier: (typeof LICENSE_TIERS)[number] = LICENSE_TIERS[0];
         for (const t of LICENSE_TIERS) {
           if (count >= t.minModules) tier = t;
         }

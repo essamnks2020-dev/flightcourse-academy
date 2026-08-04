@@ -102,6 +102,13 @@ canvas{display:block}
   border:1px solid var(--line);
   border-radius:var(--r);
 }
+/* no backdrop-filter support: fall back to near-solid panels */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass,.ubtn,#stick,#thrTouch,.tb,#coach{background:oklch(0.16 0.026 254 / 93%);-webkit-backdrop-filter:none;backdrop-filter:none}
+  #pause,#screen-result{background:oklch(0.115 0.022 254 / 96%);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* touch GPUs: cheaper blur */
+@media (pointer:coarse){ :root{--blur:blur(8px) saturate(130%)} }
 
 /* ============ STAGE ============ */
 #stage{position:fixed;inset:0;overflow:hidden;background:var(--bg-deep)}
@@ -823,6 +830,22 @@ const input={pitch:0,roll:0,thrUp:false,thrDn:false,ptt:false};
 const keys=Object.create(null);
 let isTouch=matchMedia('(pointer:coarse)').matches;
 
+/* ---------- game feel: reduced-motion gate, interpolation, shake, fx ---------- */
+const REDUCED_MQ=window.matchMedia('(prefers-reduced-motion: reduce)');
+let REDUCED=REDUCED_MQ.matches;
+const onReducedChange=e=>{ REDUCED=e.matches; };
+if(REDUCED_MQ.addEventListener) REDUCED_MQ.addEventListener('change',onReducedChange);
+else if(REDUCED_MQ.addListener) REDUCED_MQ.addListener(onReducedChange);
+
+const lerpAngle=(a,b,t)=>a+angDelta(a,b)*t;
+const prevP={x:0,y:0,hdg:0,bank:0,trk:0};   // player state snapshot from before this frame's physics steps
+let renderAlpha=1;
+const shake={mag:0,x:0,y:0,rot:0,ph1:Math.random()*6.283,ph2:Math.random()*6.283};
+function addShake(a){ if(REDUCED) return; shake.mag=Math.min(1,shake.mag+a); }
+const rings=[], pops=[];
+function addRing(x,y,crit){ if(REDUCED) return; if(rings.length>5) rings.shift(); rings.push({x,y,t:0,life:0.8,col:crit?C.danger:C.amber}); }
+function addPopup(x,y,txt,col){ if(REDUCED) return; if(pops.length>7) pops.shift(); pops.push({x,y,txt,col,t:0,life:1.4}); }
+
 /* ---------- scenery (generated once) ---------- */
 const scenery={roads:[],river:[],fields:[],trees:[],hangars:[],ramp:null,taxi:[],particles:[]};
 (function buildScenery(){
@@ -1132,6 +1155,7 @@ function transmit(){
   Voice.say(c.say, 1, 1.3);
   Audio_.blip(q>0.85?1320:880, 0.08, 0.04, 'sine');
   G.callIdx++;
+  addPopup(c.pos.x, c.pos.y, q>0.85?'CALL ON TIME':(q>0.4?'CALL LATE':'CALL OVERDUE'), q>0.85?C.good:(q>0.4?C.amber:C.danger));
   if(q>0.85) coach('Good call. On time.');
   else if(q>0.4) coach('A little late on that one.');
   else coach('That call was overdue.');
@@ -1141,6 +1165,7 @@ function missedCheck(){
   if(c&&c.armed&&!c.done&&T-c.armT>c.ideal+c.grace+9){
     c.done=true; c.q=0; c.dt=999;
     radioLog('734TP','(no call made)',true);
+    addPopup(G.p.x,G.p.y,'MISSED CALL',C.danger);
     G.callIdx++;
     coach('You skipped the '+c.id+' call.');
   }
@@ -1182,10 +1207,11 @@ function update(dt){
       ias:p.ias
     };
     Audio_.thump(clamp(Math.abs(fpm)/900,0.05,0.5));
-    if(!onRwy){ coach('Off the runway surface.'); endFlight('offfield'); }
-    else if(fpm<-700||Math.abs(p.bank)>18){ coach('Hard arrival.'); }
-    else if(fpm>-190){ coach('Greaser.'); Voice.say('Nice landing.',1,1.15); }
-    else coach('On the ground.');
+    addShake(clamp(Math.abs(fpm)/900,0.08,0.55));
+    if(!onRwy){ coach('Off the runway surface.'); addPopup(p.x,p.y,'OFF RUNWAY',C.danger); endFlight('offfield'); }
+    else if(fpm<-700||Math.abs(p.bank)>18){ coach('Hard arrival.'); addPopup(p.x,p.y,'HARD ARRIVAL',C.danger); }
+    else if(fpm>-190){ coach('Greaser.'); addPopup(p.x,p.y,'GREASER',C.good); Voice.say('Nice landing.',1,1.15); }
+    else { coach('On the ground.'); addPopup(p.x,p.y,'TOUCHDOWN '+Math.round(Math.abs(fpm))+' FPM',C.amber); }
     p.rollout=true; p.throttle=0; p.gammaCmd=0;
   }
   if(p.onGround){
@@ -1228,11 +1254,13 @@ function update(dt){
   // abeam + 45° triggers
   if(!G.abeamDone && G.leg==='downwind' && p.x<RWY.thrX && p.x>RWY.thrX-900){
     G.abeamDone=true;
+    addPopup(p.x,p.y,'ABEAM · FLAPS 10',C.cyan);
     coach('Abeam the numbers. 1500 RPM, flaps 10, 80 knots.');
     Voice.say('Abeam the numbers. Power fifteen hundred, flaps ten, pitch for eighty.',1,1.16);
   }
   if(!G.fortyFiveDone && G.abeamDone && G.leg==='downwind' && p.x<BASEX+700){
     G.fortyFiveDone=true;
+    addPopup(p.x,p.y,'45° · TURN BASE',C.cyan);
     coach('45° point. Turn base.');
     Voice.say('Forty five degree point. Turn base.',1,1.18);
   }
@@ -1246,9 +1274,13 @@ function update(dt){
     a.coolPlayer=Math.max(0,a.coolPlayer-dt);
     const d=Math.hypot(a.x-p.x,a.y-p.y), dv=Math.abs(a.alt-p.alt);
     a._d=d;
-    if(d<1500&&dv<330&&!p.onGround) hot=true;
+    const isHot=d<1500&&dv<330&&!p.onGround;
+    if(isHot) hot=true;
+    if(isHot&&!a._hot){ addRing(a.x,a.y,false); addShake(0.10); }   // WARN onset
+    a._hot=isHot;
     if(d<1200&&dv<260&&a.coolPlayer<=0&&!p.onGround){
       a.coolPlayer=7; G.score.conflicts++;
+      addRing(a.x,a.y,true); addShake(0.28);                        // CRITICAL
       Audio_.blip(660,0.16,0.05,'square');
       Voice.say('Traffic. Traffic.',1,1.35,true);
     }
@@ -1297,7 +1329,10 @@ function update(dt){
 
   // ---- alerts
   const A=G.alerts;
-  setAlert('stall', fl.stalled && !p.onGround, false);
+  const stallNow=fl.stalled && !p.onGround;
+  if(stallNow&&!G._stallOn) addShake(0.12);   // stall warning onset
+  G._stallOn=stallNow;
+  setAlert('stall', stallNow, false);
   setAlert('traffic', G.trafficHot, false);
   setAlert('flap speed', p.ias>flapObj(p).vfe, true);
   setAlert('sink rate', p.vsFpm<-1000 && p.alt<600 && !p.onGround, false);
@@ -1480,8 +1515,15 @@ function screenAngle(hdg){
   const h=hdg*RAD, dx=Math.sin(h), dy=Math.cos(h), c=Math.cos(cam.rot), s=Math.sin(cam.rot);
   return Math.atan2(dx*s-dy*c, dx*c+dy*s);
 }
+function applyShake(){
+  if(!shake.x&&!shake.y&&!shake.rot) return;
+  ctx.translate(vw/2+shake.x, vh/2+shake.y);
+  if(shake.rot) ctx.rotate(shake.rot);
+  ctx.translate(-vw/2,-vh/2);
+}
 function worldXform(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
+  applyShake();
   ctx.translate(vw/2,vh/2);
   ctx.rotate(cam.rot);
   ctx.scale(cam.s,-cam.s);
@@ -1493,15 +1535,21 @@ function render(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle=C.deep; ctx.fillRect(0,0,vw,vh);
 
+  ctx.save();
   worldXform();
   drawGround();
   drawAirport();
   drawPatternGuide();
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.restore();
+
+  ctx.save();
+  applyShake();
   drawWindParticles();
   drawLabels();
   if(mode!=='menu'){ drawTrail(); drawAircraft(); }
   if(mode==='menu') drawAircraft();
+  drawFx();
+  ctx.restore();
 }
 
 function drawGround(){
@@ -1725,11 +1773,18 @@ function drawAircraft(){
     ctx.fillText(Math.round(a.alt)+'\u2032', X+14, Y+5);
   }
   const p=G.p; if(!p) return;
-  const [X,Y]=toScreen(p.x,p.y);
-  const ang=screenAngle(p.hdg);
+  // interpolate between fixed physics steps so the 90Hz sim doesn't judder on 60Hz displays
+  let px=p.x, py=p.y, ph=p.hdg, pt=p.trk, pb=p.bank;
+  if(mode==='playing'&&renderAlpha<1){
+    px=lerp(prevP.x,p.x,renderAlpha); py=lerp(prevP.y,p.y,renderAlpha);
+    ph=lerpAngle(prevP.hdg,p.hdg,renderAlpha); pt=lerpAngle(prevP.trk,p.trk,renderAlpha);
+    pb=lerp(prevP.bank,p.bank,renderAlpha);
+  }
+  const [X,Y]=toScreen(px,py);
+  const ang=screenAngle(ph);
   // ground track vector (cyan) — shows crab
   if(!p.onGround&&p.gs>15){
-    const tAng=screenAngle(p.trk);
+    const tAng=screenAngle(pt);
     ctx.strokeStyle='rgba(69,189,214,0.6)'; ctx.lineWidth=1.4; ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.moveTo(X,Y);
     ctx.lineTo(X+Math.cos(tAng)*54, Y+Math.sin(tAng)*54); ctx.stroke();
@@ -1741,9 +1796,9 @@ function drawAircraft(){
   ctx.strokeStyle='rgba(242,166,61,0.65)'; ctx.lineWidth=1.2;
   ctx.beginPath(); ctx.moveTo(X,Y); ctx.lineTo(X+Math.cos(ang)*34, Y+Math.sin(ang)*34); ctx.stroke();
   // turn prediction arc
-  if(Math.abs(p.bank)>4&&!p.onGround){
-    const r=Math.max(60,(p.ias*1.68781)**2/(AERO.g*Math.tan(Math.abs(p.bank)*RAD)))*cam.s;
-    const sgn=Math.sign(p.bank);
+  if(Math.abs(pb)>4&&!p.onGround){
+    const r=Math.max(60,(p.ias*1.68781)**2/(AERO.g*Math.tan(Math.abs(pb)*RAD)))*cam.s;
+    const sgn=Math.sign(pb);
     const cx=X+Math.cos(ang+sgn*Math.PI/2)*r, cy=Y+Math.sin(ang+sgn*Math.PI/2)*r;
     const a0=Math.atan2(Y-cy,X-cx);
     ctx.strokeStyle='rgba(242,166,61,0.22)'; ctx.lineWidth=1.1; ctx.setLineDash([3,5]);
@@ -1753,12 +1808,55 @@ function drawAircraft(){
   ctx.save(); ctx.translate(X,Y); ctx.rotate(ang);
   ctx.fillStyle=C.amber;
   ctx.shadowColor='rgba(242,166,61,0.75)'; ctx.shadowBlur=14;
-  planeShape(ctx, 23, 36, 27, p.bank);
+  planeShape(ctx, 23, 36, 27, pb);
   ctx.restore(); ctx.shadowBlur=0;
   // altitude ring while descending
   if(!p.onGround){
     ctx.strokeStyle='rgba(242,166,61,0.18)'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.arc(X,Y, 17+clamp(p.alt/1000,0,1)*8, 0, 6.2832); ctx.stroke();
+  }
+}
+
+/* --- game feel fx: shake decay (ported from pattern/camera.ts) + capped ring/popup pools --- */
+function fxUpdate(dt){
+  if(shake.mag>0){
+    shake.mag=Math.max(0,shake.mag-dt*2.5);
+    shake.ph1+=dt*29; shake.ph2+=dt*23;
+    const amp=shake.mag*60;
+    shake.x=Math.sin(shake.ph1)*amp; shake.y=Math.sin(shake.ph2+1.3)*amp;
+    shake.rot=Math.sin(shake.ph2*0.6)*shake.mag*0.0032;
+  } else { shake.x=shake.y=shake.rot=0; }
+  // in-place compaction, no splice/allocation per frame
+  let n=0;
+  for(let i=0;i<rings.length;i++){ const r=rings[i]; r.t+=dt; if(r.t<r.life) rings[n++]=r; }
+  rings.length=n;
+  n=0;
+  for(let i=0;i<pops.length;i++){ const pp=pops[i]; pp.t+=dt; if(pp.t<pp.life) pops[n++]=pp; }
+  pops.length=n;
+}
+function drawFx(){
+  if(rings.length){
+    ctx.lineWidth=2;
+    for(let i=0;i<rings.length;i++){
+      const r=rings[i], u=r.t/r.life;
+      const [X,Y]=toScreen(r.x,r.y);
+      ctx.globalAlpha=(1-u)*0.85;
+      ctx.strokeStyle=r.col;
+      ctx.beginPath(); ctx.arc(X,Y,14+120*r.t,0,6.2832); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+  if(pops.length){
+    ctx.font='600 12px "JetBrains Mono", monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(let i=0;i<pops.length;i++){
+      const pp=pops[i], u=pp.t/pp.life;
+      const [X,Y]=toScreen(pp.x,pp.y);
+      ctx.globalAlpha=Math.pow(1-u,0.8);
+      ctx.fillStyle=pp.col;
+      ctx.fillText(pp.txt,X,Y-24-30*(1-Math.pow(1-u,3)));
+    }
+    ctx.globalAlpha=1;
   }
 }
 
@@ -1778,6 +1876,37 @@ const el={
 };
 const rose=document.getElementById('windRose'), rctx=rose.getContext('2d');
 let hudAcc=0;
+/* keyed traffic rows: create/remove only when the callsign set changes, patch text in place */
+const tRows=new Map(), tScratch=[], tSeen=new Set();
+let tEmptyEl=null;
+function updateTrafficList(ai,pAlt){
+  tScratch.length=0;
+  for(let i=0;i<ai.length;i++) tScratch.push(ai[i]);
+  tScratch.sort((a,b)=>(a._d||0)-(b._d||0));
+  tSeen.clear();
+  for(let i=0;i<tScratch.length;i++){
+    const a=tScratch[i], key=a.def.cs;
+    tSeen.add(key);
+    let r=tRows.get(key);
+    if(!r){
+      const root=document.createElement('div');
+      const cs=document.createElement('span'); cs.className='cs'; cs.textContent=a.def.short;
+      const lg=document.createElement('span'); lg.className='lg';
+      const ds=document.createElement('span'); ds.className='ds';
+      root.appendChild(cs); root.appendChild(lg); root.appendChild(ds);
+      r={root,lg,ds}; tRows.set(key,r);
+    }
+    r.root.className=(a._d<1500&&Math.abs(a.alt-pAlt)<330)?'trow hot':'trow';
+    const lgTxt=SEGNAME[a.seg]; if(r.lg.textContent!==lgTxt) r.lg.textContent=lgTxt;
+    const dsTxt=((a._d||0)/NM).toFixed(1)+' nm'; if(r.ds.textContent!==dsTxt) r.ds.textContent=dsTxt;
+    el.traffic.appendChild(r.root);   // re-appending existing rows keeps them sorted by distance
+  }
+  for(const [k,r] of tRows){ if(!tSeen.has(k)){ r.root.remove(); tRows.delete(k); } }
+  if(tScratch.length===0){
+    if(!tEmptyEl){ tEmptyEl=document.createElement('div'); tEmptyEl.className='empty'; tEmptyEl.textContent='No traffic in the pattern.'; }
+    if(tEmptyEl.parentNode!==el.traffic) el.traffic.appendChild(tEmptyEl);
+  } else if(tEmptyEl&&tEmptyEl.parentNode) tEmptyEl.parentNode.removeChild(tEmptyEl);
+}
 function updateHUD(dt){
   hudAcc+=dt; if(hudAcc<0.055) return; hudAcc=0;
   const p=G.p; if(!p) return;
@@ -1808,13 +1937,8 @@ function updateHUD(dt){
   el.wH.textContent=(hw>=0?'+':'')+hw.toFixed(0)+' kt';
   drawRose(w.curDir,w.curKt);
 
-  // traffic
-  const rows=(G.ai||[]).slice().sort((a,b)=>a._d-b._d).map(a=>{
-    const hot=a._d<1500&&Math.abs(a.alt-p.alt)<330;
-    return `<div class="trow${hot?' hot':''}"><span class="cs">${a.def.short}</span>
-      <span class="lg">${SEGNAME[a.seg]}</span><span class="ds">${(a._d/NM).toFixed(1)} nm</span></div>`;
-  });
-  el.traffic.innerHTML=rows.length?rows.join(''):'<div class="empty">No traffic in the pattern.</div>';
+  // traffic — keyed rows patched in place (no innerHTML rebuild)
+  updateTrafficList(G.ai||[], p.alt);
 
   // radio
   const c=G.calls[G.callIdx];
@@ -1909,14 +2033,17 @@ function frame(now){
   let dt=(now-last)/1000; last=now;
   if(dt>0.25) dt=0.25;
   if(mode==='playing'){
+    if(G.p){ prevP.x=G.p.x; prevP.y=G.p.y; prevP.hdg=G.p.hdg; prevP.bank=G.p.bank; prevP.trk=G.p.trk; }
     accum+=dt;
     let guard=0;
     while(accum>=STEP && guard++<10){ update(STEP); accum-=STEP; }
+    renderAlpha=clamp(accum/STEP,0,1);
     updateHUD(dt);
   } else if(mode==='menu'){
     accum+=dt; let guard=0;
     while(accum>=STEP && guard++<10){ menuUpdate(STEP); accum-=STEP; }
   }
+  fxUpdate(dt);
   render();
 }
 
@@ -1979,6 +2106,7 @@ function goAround(){
   const p=G.p; if(!p||p.onGround) return;
   p.throttle=1; setFlap(Math.min(p.flap,1)); p.gammaCmd=Math.max(p.gammaCmd,5);
   G.goAround++;
+  addShake(0.15); addPopup(p.x,p.y,'GO-AROUND',C.amber);
   coach('Going around. Full power, flaps 10, climb.');
   radioLog('734TP','going around, runway 9, Riverbend',true);
   Voice.say('Riverbend traffic, Skyhawk seven three four tango papa, going around, runway niner',1,1.3,true);

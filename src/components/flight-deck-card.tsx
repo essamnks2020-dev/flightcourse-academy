@@ -66,7 +66,7 @@ export function FlightDeckCard() {
     }
 
     // Flanking tick scales
-    [["fc-spdTape", 10, 40], ["fc-altTape", 312, 342]].forEach(([id, x0, x1]) => {
+    ([["fc-spdTape", 10, 40], ["fc-altTape", 312, 342]] as [string, number, number][]).forEach(([id, x0, x1]) => {
       const g = document.getElementById(id);
       if (!g) return;
       for (let i = -8; i <= 8; i++) {

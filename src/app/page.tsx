@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useNav } from "@/lib/nav-store";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Navbar } from "@/components/navbar";
@@ -122,7 +122,7 @@ const VIEW_DEPTH: Record<string, number> = {
   module: 2, flare: 2, radio: 2, pattern: 2,
 };
 
-function makePageVariants(reduced: boolean) {
+function makePageVariants(reduced: boolean): Variants {
   return {
     initial: (dir: number) =>
       reduced ? { opacity: 0 } : { opacity: 0, x: dir >= 0 ? 18 : -18 },
