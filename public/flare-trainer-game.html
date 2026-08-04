@@ -79,6 +79,29 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font
 @media (prefers-reduced-motion: reduce){
   #flareCue.on,#stallWarn.on,.panel,#gradeBig.stamp{animation:none!important}
 }
+
+/* ---- Light theme (pushed from the shell via postMessage) ---- */
+html[data-theme="light"]{
+  --bg: oklch(0.96 0.008 75);
+  --amber: oklch(0.60 0.14 55);
+  --cyan: oklch(0.52 0.09 210);
+  --green: oklch(0.55 0.13 155);
+  --red: oklch(0.55 0.19 27);
+  --orange: oklch(0.58 0.14 45);
+  --ink: oklch(0.18 0.01 60);
+  --ink-dim: oklch(0.45 0.012 60);
+  --glass: linear-gradient(160deg, oklch(0.99 0.004 75 / 88%) 0%, oklch(0.97 0.006 75 / 82%) 100%);
+  --glass-b: 1px solid oklch(0.28 0.01 60 / 16%);
+}
+html[data-theme="light"] #thrTrack,html[data-theme="light"] #locTrack,html[data-theme="light"] #gsTrack,html[data-theme="light"] .xpbar{background:oklch(0.28 0.01 60/10%)}
+html[data-theme="light"] .fldots i{background:oklch(0.28 0.01 60/12%)}
+html[data-theme="light"] .key{background:oklch(0.28 0.01 60/6%)}
+html[data-theme="light"] .card{background:oklch(0.99 0.004 75/55%)}
+html[data-theme="light"] .card:hover{background:oklch(0.99 0.004 75/78%)}
+html[data-theme="light"] .rrow{background:oklch(0.28 0.01 60/5%)}
+html[data-theme="light"] .btn.ghost{color:var(--ink)}
+#themeFade{position:fixed;inset:0;background:var(--bg);opacity:0;pointer-events:none;transition:opacity 400ms var(--exo);z-index:60}
+#themeFade.on{opacity:1}
 h1{font-size:clamp(2rem,6vw,3rem);font-weight:700;letter-spacing:-0.02em;line-height:1.05;margin:0.35rem 0 0.2rem}
 h1 em{font-style:normal;color:var(--amber);text-shadow:0 0 24px oklch(0.80 0.14 71/45%)}
 .sub{color:var(--ink-dim);font-size:0.9rem;margin-bottom:1.2rem}
@@ -256,6 +279,7 @@ h1 em{font-style:normal;color:var(--amber);text-shadow:0 0 24px oklch(0.80 0.14 
 </div>
 
 <div id="toast" class="glass"></div>
+<div id="themeFade" aria-hidden="true"></div>
 
 <script>
 'use strict';
@@ -854,6 +878,7 @@ function showResult(){
   }
   saveP();
   if(rankOf(P.xp)!==oldRank)setTimeout(()=>toast('PROMOTED — '+rankOf(P.xp)),600);
+  bridgeXP(gain);
   const gc={S:'var(--green)',A:'var(--green)',B:'var(--cyan)',C:'var(--amber)',D:'var(--orange)',F:'var(--red)'}[grade];
   const gb=$('gradeBig');
   gb.textContent=grade;gb.style.color=gc;gb.style.textShadow='0 0 40px '+gc;
@@ -1882,6 +1907,29 @@ function loop(ts){
     if(hudAcc>=0.055){hudAcc=0;hud();}
   }
 }
+
+// ---------- shell bridge: theme in, XP out ----------
+function bridgeXP(delta){
+  if(!(delta>0))return;
+  try{parent.postMessage({type:'fc-xp',delta:Math.round(delta),source:'flare'},location.origin);}catch(e){}
+}
+(function(){
+  const fade=$('themeFade');
+  let cur='dark';
+  window.addEventListener('message',e=>{
+    if(e.origin!==location.origin)return;
+    const d=e.data;
+    if(!d||typeof d!=='object')return;
+    if(d.type==='fc-theme'&&(d.theme==='light'||d.theme==='dark')&&d.theme!==cur){
+      cur=d.theme;
+      if(REDUCED){document.documentElement.dataset.theme=cur;return;}
+      fade.classList.add('on');
+      setTimeout(()=>{document.documentElement.dataset.theme=cur;},200);
+      setTimeout(()=>{fade.classList.remove('on');},420);
+    }
+  });
+  try{parent.postMessage({type:'fc-ready',game:'flare'},location.origin);}catch(e){}
+})();
 
 // ---------- init ----------
 $('proPrice').textContent=MONETIZATION.proPrice;

@@ -64,6 +64,7 @@ interface ProgressState {
   isModuleCompleted: (moduleId: number) => boolean;
   getModuleProgress: (moduleId: number) => ModuleProgress | undefined;
   touchStreak: () => void;
+  awardGameXP: (delta: number) => void;
   resetProgress: () => void;
   setCertificateName: (name: string) => void;
   getCompletedCount: () => number;
@@ -197,6 +198,12 @@ export const useProgress = create<ProgressState>()(
           currentStreak,
           bestStreak: Math.max(state.bestStreak, currentStreak),
         });
+      },
+
+      awardGameXP: (delta) => {
+        if (!Number.isFinite(delta) || delta <= 0) return;
+        set((state) => ({ xp: state.xp + Math.round(delta) }));
+        get().touchStreak();
       },
 
       resetProgress: () => {

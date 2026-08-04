@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { LogoMark } from "@/components/brand/logo";
+import { attachGameBridge, migrateGameSaves } from "@/lib/game-bridge";
 
 /**
  * FlareTrainer — loads the user-authored Short Final landing game.
@@ -11,6 +12,12 @@ import { LogoMark } from "@/components/brand/logo";
  */
 export function FlareTrainer() {
   const [loaded, setLoaded] = React.useState(false);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  React.useEffect(() => {
+    migrateGameSaves();
+    return attachGameBridge(iframeRef.current, "flare");
+  }, []);
 
   return (
     <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
@@ -36,6 +43,7 @@ export function FlareTrainer() {
         </div>
       )}
       <iframe
+        ref={iframeRef}
         src="/flare-trainer-game.html"
         className="absolute inset-0 h-full w-full border-0"
         title="Flare Trainer — Short Final Academy"
