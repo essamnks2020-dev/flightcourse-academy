@@ -16,6 +16,29 @@ interface QuizComponentProps {
   moduleTitle: string;
 }
 
+/** Ease-out-cubic count-up (900ms) matching the games' score reveal. */
+function useCountUp(target: number, active: boolean, duration = 900): number {
+  const [value, setValue] = React.useState(0);
+  React.useEffect(() => {
+    if (!active) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setValue(target);
+      return;
+    }
+    let raf = 0;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / duration);
+      const e = 1 - Math.pow(1 - k, 3);
+      setValue(Math.round(target * e));
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, active, duration]);
+  return value;
+}
+
 export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: QuizComponentProps) {
   const [answers, setAnswers] = React.useState<(number | null)[]>(
     new Array(questions.length).fill(null)
@@ -28,6 +51,7 @@ export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: Qu
     (acc, ans, i) => acc + (ans === questions[i].correctIndex ? 1 : 0),
     0
   );
+  const displayScore = useCountUp(score, submitted);
   const allAnswered = answers.every((a) => a !== null);
   const passed = score >= 3;
 
@@ -97,20 +121,24 @@ export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: Qu
                   <button
                     key={oi}
                     disabled={submitted}
+                    aria-pressed={isSelected}
                     onClick={() => {
                       const next = [...answers];
                       next[qi] = oi;
                       setAnswers(next);
                     }}
                     className={cn(
-                      "flex items-center gap-3 border px-3 py-2.5 text-left text-sm transition-all",
+                      "flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-all duration-200",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      !submitted && "hover:-translate-y-px active:translate-y-0",
+                      isSelected && !submitted && "scale-[1.01]",
                       stateClass,
                       submitted && "cursor-default"
                     )}
                   >
                     <span
                       className={cn(
-                        "flex size-6 shrink-0 items-center justify-center border text-xs font-semibold",
+                        "flex size-6 shrink-0 items-center justify-center rounded-md border text-xs font-semibold",
                         showResult && isCorrect
                           ? "border-success/60 text-success bg-success/20"
                           : showResult && isSelected && !isCorrect
@@ -165,7 +193,7 @@ export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: Qu
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "mt-6 flex flex-col gap-4 border p-4 sm:flex-row sm:items-center sm:justify-between",
+              "mt-6 flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between",
               passed ? "border-success/40 bg-success/5" : "border-primary/40 bg-primary/5"
             )}
           >
@@ -180,7 +208,7 @@ export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: Qu
               </div>
               <div>
                 <div className="text-lg font-semibold tracking-tight">
-                  {score}/{questions.length} {passed ? "— Passed" : "— Review and retry"}
+                  <span className="nums">{displayScore}</span>/{questions.length} {passed ? "— Passed" : "— Review and retry"}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {passed
