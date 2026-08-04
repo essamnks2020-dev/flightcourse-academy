@@ -434,6 +434,30 @@ header{
   .dim-bar i{transition:none}
 }
 
+/* ---- Light theme (pushed from the shell via postMessage) ----
+   Page chrome goes light; the physical avionics bezel stays dark. */
+html[data-theme="light"]{
+  --bg: oklch(0.96 0.008 75);
+  --amber: oklch(0.60 0.14 55);
+  --amber-dim: oklch(0.60 0.14 55 / 18%);
+  --cyan: oklch(0.52 0.09 210);
+  --cyan-dim: oklch(0.52 0.09 210 / 15%);
+  --red: oklch(0.55 0.19 27);
+  --text: oklch(0.2 0.012 60);
+  --dim: oklch(0.42 0.014 60);
+  --faint: oklch(0.55 0.014 60);
+  --stroke: oklch(0.28 0.01 60 / 14%);
+}
+html[data-theme="light"] body{
+  background-image:
+    radial-gradient(1200px 600px at 70% -10%, oklch(0.52 0.09 210 / 6%), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, oklch(0.60 0.14 55 / 5%), transparent 60%),
+    repeating-linear-gradient(45deg, oklch(0.28 0.01 60 / 2%) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(-45deg, oklch(0.28 0.01 60 / 2%) 0 2px, transparent 2px 5px);
+}
+#themeFade{position:fixed;inset:0;background:var(--bg);opacity:0;pointer-events:none;transition:opacity 400ms var(--ease);z-index:200}
+#themeFade.on{opacity:1}
+
 @media(max-width:860px){
   .feed-grid{grid-template-columns:1fr}
   .mode-grid{grid-template-columns:1fr}
@@ -450,6 +474,7 @@ header{
 </style>
 </head>
 <body>
+<div id="themeFade" aria-hidden="true"></div>
 <div id="app">
 
   <header class="screws">
@@ -1311,6 +1336,7 @@ function renderFeedback(res){
   S.xpAwarded[S.pos] = Math.max(prev, gain);
   const rankBefore = rankFor(S.xp).cur.name;
   S.xp += award;
+  bridgeXP(award);
   S.best = Math.max(S.best, res.overall);
   const rankAfter = rankFor(S.xp).cur.name;
   S.results[S.pos] = {sc:S.sc, overall:res.overall};
@@ -1774,6 +1800,29 @@ if('speechSynthesis' in window){
   speechSynthesis.getVoices();
   speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
 }
+/* ---------------- shell bridge: theme in, XP out ---------------- */
+function bridgeXP(delta){
+  if(!(delta>0))return;
+  try{parent.postMessage({type:'fc-xp',delta:Math.round(delta),source:'radio'},location.origin);}catch(e){}
+}
+(function(){
+  const fade=$('themeFade');
+  let cur='dark';
+  window.addEventListener('message',e=>{
+    if(e.origin!==location.origin)return;
+    const d=e.data;
+    if(!d||typeof d!=='object')return;
+    if(d.type==='fc-theme'&&(d.theme==='light'||d.theme==='dark')&&d.theme!==cur){
+      cur=d.theme;
+      if(REDUCED){document.documentElement.dataset.theme=cur;return;}
+      fade.classList.add('on');
+      setTimeout(()=>{document.documentElement.dataset.theme=cur;},200);
+      setTimeout(()=>{fade.classList.remove('on');},420);
+    }
+  });
+  try{parent.postMessage({type:'fc-ready',game:'radio'},location.origin);}catch(e){}
+})();
+
 updateRankUI(false);
 updateStartStats();
 showScreen('start');
