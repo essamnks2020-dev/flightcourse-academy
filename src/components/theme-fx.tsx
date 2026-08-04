@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
+import { useMounted } from "@/hooks/use-mounted";
 
 /**
  * ThemeFX — atmospheric effects + smooth circular theme wipe.
@@ -17,11 +18,7 @@ import { useTheme } from "next-themes";
  */
 export function ThemeFX() {
   const { setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   React.useEffect(() => {
     if (!mounted) return;

@@ -6,6 +6,7 @@ import { Check, X, RotateCcw, Trophy, ChevronRight } from "lucide-react";
 import type { QuizQuestion } from "@/lib/content-types";
 import { useProgress } from "@/lib/progress-store";
 import { useNav as useNavStore } from "@/lib/nav-store";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -18,13 +19,10 @@ interface QuizComponentProps {
 
 /** Ease-out-cubic count-up (900ms) matching the games' score reveal. */
 function useCountUp(target: number, active: boolean, duration = 900): number {
+  const reducedMotion = useReducedMotion();
   const [value, setValue] = React.useState(0);
   React.useEffect(() => {
-    if (!active) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setValue(target);
-      return;
-    }
+    if (!active || reducedMotion) return;
     let raf = 0;
     const t0 = performance.now();
     const step = (now: number) => {
@@ -35,8 +33,9 @@ function useCountUp(target: number, active: boolean, duration = 900): number {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [target, active, duration]);
-  return value;
+  }, [target, active, duration, reducedMotion]);
+  // Reduced-motion users get the final number immediately, no animation.
+  return reducedMotion && active ? target : value;
 }
 
 export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: QuizComponentProps) {

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTheme } from "next-themes";
 import { useNav } from "@/lib/nav-store";
 import { useProgress } from "@/lib/progress-store";
+import { useMounted } from "@/hooks/use-mounted";
 import type { ViewName } from "@/lib/nav-store";
 import { cn } from "@/lib/utils";
 import { Logo, LogoMark } from "@/components/brand/logo";
@@ -44,15 +45,13 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [gamesOpen, setGamesOpen] = React.useState(false);
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
+  const mounted = useMounted();
   const navigate = useNav((s) => s.navigate);
   const currentView = useNav((s) => s.view);
   const xp = useProgress((s) => s.xp);
   const completedCount = useProgress((s) => s.getCompletedCount());
   const gamesRef = React.useRef<HTMLDivElement>(null);
   const mobileButtonRef = React.useRef<HTMLButtonElement>(null);
-
-  React.useEffect(() => setMounted(true), []);
 
   // Escape closes the mobile menu and returns focus to its trigger.
   React.useEffect(() => {

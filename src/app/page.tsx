@@ -4,6 +4,7 @@ import * as React from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useNav } from "@/lib/nav-store";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMounted } from "@/hooks/use-mounted";
 import { Navbar } from "@/components/navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/footer";
@@ -134,12 +135,6 @@ function SkeletonGridFallback({ label }: { label: string }) {
 
 // Directional page transition — deeper views enter from the right, shallow
 // from the left, so navigation has a sense of place. Fade-only when reduced.
-const VIEW_DEPTH: Record<string, number> = {
-  home: 0,
-  path: 1, cockpit: 1, glossary: 1, checklists: 1, setup: 1, progress: 1, faq: 1,
-  module: 2, flare: 2, radio: 2, pattern: 2,
-};
-
 function makePageVariants(reduced: boolean): Variants {
   return {
     initial: (dir: number) =>
@@ -163,22 +158,13 @@ function makePageVariants(reduced: boolean): Variants {
 export default function Page() {
   const view = useNav((s) => s.view);
   const moduleId = useNav((s) => s.moduleId);
+  const dir = useNav((s) => s.dir);
   const navigate = useNav((s) => s.navigate);
-  const [mounted, setMounted] = React.useState(false);
+  const mounted = useMounted();
   const reduced = useReducedMotion();
   const pageVariants = React.useMemo(() => makePageVariants(reduced), [reduced]);
 
-  // Direction is computed synchronously during render: prevRef still holds
-  // the outgoing view at this point, then catches up after commit.
-  const prevRef = React.useRef(view);
-  const dir = (VIEW_DEPTH[view] ?? 1) >= (VIEW_DEPTH[prevRef.current] ?? 0) ? 1 : -1;
-
   React.useEffect(() => {
-    prevRef.current = view;
-  }, [view]);
-
-  React.useEffect(() => {
-    setMounted(true);
     const handler = (e: PopStateEvent) => {
       const state = e.state as { view?: string; moduleId?: number } | null;
       if (state?.view) {

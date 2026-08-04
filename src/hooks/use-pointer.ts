@@ -11,9 +11,12 @@ export function usePointerCoarse(): boolean {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(pointer: coarse)");
     const update = () => setCoarse(mq.matches);
-    update();
+    const id = requestAnimationFrame(update);
     mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    return () => {
+      mq.removeEventListener("change", update);
+      cancelAnimationFrame(id);
+    };
   }, []);
   return coarse;
 }
@@ -27,6 +30,9 @@ export function usePointerCoarse(): boolean {
  */
 export function useHydrated(): boolean {
   const [h, setH] = React.useState(false);
-  React.useEffect(() => setH(true), []);
+  React.useEffect(() => {
+    const id = requestAnimationFrame(() => setH(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   return h;
 }

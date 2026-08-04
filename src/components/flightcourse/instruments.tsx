@@ -42,18 +42,16 @@ export function AttitudeIndicator({
   const reducedMotion = useReducedMotion();
   React.useEffect(() => {
     if (!ambient) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-    } else {
-      const el = wrapRef.current;
-      if (!el) return;
-      const io = new IntersectionObserver(
-        (entries) => setVisible(entries[0]?.isIntersecting ?? true),
-        { threshold: 0 },
-      );
-      io.observe(el);
-      return () => io.disconnect();
-    }
+    // visible defaults to true; without IntersectionObserver we simply stay on.
+    if (typeof IntersectionObserver === "undefined") return;
+    const el = wrapRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => setVisible(entries[0]?.isIntersecting ?? true),
+      { threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, [ambient]);
   React.useEffect(() => {
     if (!ambient || !visible || reducedMotion) return;

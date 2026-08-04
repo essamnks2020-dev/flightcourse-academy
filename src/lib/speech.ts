@@ -186,20 +186,27 @@ export function useSpeech() {
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    // We support audio playback if either Web Audio or SpeechSynthesis is available
-    const hasWebAudio = !!window.AudioContext || !!(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext;
-    const hasSpeech = "speechSynthesis" in window;
-    setSupported(hasWebAudio || hasSpeech);
+    const id = requestAnimationFrame(() => {
+      // We support audio playback if either Web Audio or SpeechSynthesis is available
+      const hasWebAudio = !!window.AudioContext || !!(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext;
+      const hasSpeech = "speechSynthesis" in window;
+      setSupported(hasWebAudio || hasSpeech);
 
-    if (hasSpeech) {
-      const loadVoices = () => {
-        const v = window.speechSynthesis.getVoices();
-        if (v.length > 0) setVoicesReady(true);
-      };
-      loadVoices();
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-      return () => { window.speechSynthesis.onvoiceschanged = null; };
-    }
+      if (hasSpeech) {
+        const loadVoices = () => {
+          const v = window.speechSynthesis.getVoices();
+          if (v.length > 0) setVoicesReady(true);
+        };
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
   }, []);
 
   /**
