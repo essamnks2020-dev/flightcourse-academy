@@ -13,41 +13,6 @@
 }
 
 </style>
-<script>
-(function () {
-    // Design-ui pages are single compositions, so the whole body is editable.
-    }
-
-    // Credit badge with idle-fade. Hover devices only.
-        if (!matchMedia('(hover: hover)').matches) return;
-
-        var credit = document.createElement('div');
-        credit.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(credit);
-
-        var timer = null;
-        var fade = function (out) { credit.style.opacity = out ? '0' : ''; };
-        fade(true);
-        var show = function () {
-            fade(false);
-            clearTimeout(timer);
-            timer = setTimeout(function () { fade(true); }, 3000);
-        };
-        document.addEventListener('mousemove', show);
-        show();
-    }
-
-    function init() {
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
-
-</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Pattern Perfect — FlightCourse Academy</title>
@@ -109,6 +74,28 @@ canvas{display:block}
 }
 /* touch GPUs: cheaper blur */
 @media (pointer:coarse){ :root{--blur:blur(8px) saturate(130%)} }
+
+/* ---- Light theme (pushed from the shell via postMessage) ---- */
+html[data-theme="light"]{
+  --bg: oklch(0.96 0.008 75);
+  --bg-deep: oklch(0.93 0.014 80);
+  --ink: oklch(0.18 0.01 60);
+  --muted: oklch(0.4 0.016 60);
+  --dim: oklch(0.5 0.016 60);
+  --amber: oklch(0.58 0.14 55);
+  --amber-soft: oklch(0.58 0.14 55 / 16%);
+  --cyan: oklch(0.5 0.09 210);
+  --cyan-soft: oklch(0.5 0.09 210 / 15%);
+  --danger: oklch(0.55 0.19 27);
+  --good: oklch(0.52 0.12 155);
+  --glass: linear-gradient(160deg, oklch(0.99 0.004 75 / 90%) 0%, oklch(0.97 0.006 75 / 84%) 100%);
+  --glass-strong: linear-gradient(160deg, oklch(0.99 0.004 75 / 95%) 0%, oklch(0.97 0.006 75 / 90%) 100%);
+  --line: oklch(0.28 0.01 60 / 16%);
+  --line-soft: oklch(0.28 0.01 60 / 10%);
+}
+html[data-theme="light"] #scan,html[data-theme="light"] #vignette{opacity:0.5}
+#themeFade{position:fixed;inset:0;background:var(--bg);opacity:0;pointer-events:none;transition:opacity 400ms var(--ease);z-index:90}
+#themeFade.on{opacity:1}
 
 /* ============ STAGE ============ */
 #stage{position:fixed;inset:0;overflow:hidden;background:var(--bg-deep)}
@@ -423,6 +410,7 @@ h1 .l2{display:block;color:var(--amber);text-shadow:0 0 70px oklch(0.80 0.14 71/
 </style>
 </head>
 <body>
+<div id="themeFade" aria-hidden="true"></div>
 <div id="stage">
   <canvas id="world"></canvas>
   <div id="scan"></div>
@@ -632,12 +620,20 @@ const angDelta=(f,t)=>{let d=angNorm(t)-angNorm(f);if(d>180)d-=360;if(d<-180)d+=
 const smooth=(a,b,t)=>a+(b-a)*(1-Math.exp(-t));
 
 /* ---------- palette (canvas-safe hex approximations of the oklch tokens) ---------- */
-const C={
+const C_NIGHT={
   deep:'#0b111c', ground:'#131b29', ground2:'#182231', grass:'#152219', water:'#12283b',
   taxi:'#1c2634', asphalt:'#222b39', rwyEdge:'#48566a', mark:'#c6d2e0', markDim:'#7c8a9c',
   amber:'#f2a63d', amberDim:'#a06f2c', cyan:'#45bdd6', cyanDim:'#2a7688',
   ink:'#e8edf4', dim:'#6b788b', danger:'#e8654e', good:'#4fd39a', line:'#2a3546'
 };
+/* day scene for light theme — same layout, VFR daylight colors */
+const C_DAY={
+  deep:'#8fb8d9', ground:'#a9c98b', ground2:'#9abf80', grass:'#8cba76', water:'#74a9d4',
+  taxi:'#98a2ac', asphalt:'#7f8894', rwyEdge:'#59626e', mark:'#f4f7fa', markDim:'#d5dde5',
+  amber:'#9c6a10', amberDim:'#7c5614', cyan:'#176b86', cyanDim:'#2e8296',
+  ink:'#17222e', dim:'#4c5a6b', danger:'#c0442c', good:'#1e7a4e', line:'#7d8b9c'
+};
+let C=C_NIGHT;
 
 /* ---------- airport geometry (feet, x=east y=north) ---------- */
 const RWY={len:3600,w:75,hdg:90,thrX:-1800,endX:1800};
@@ -1423,6 +1419,7 @@ function finish(){
 
   G.result={total,tier,tsub,verdict,geo,wnd,eng,rad,trf,lnd,avgX,avgT,avgS,avgA,lndNote,
     conflicts:s.conflicts,cutoffs:s.cutoffs,calls:G.calls.slice()};
+  bridgeXP(Math.round(total/2));
   showResult();
 }
 function showResult(){
@@ -2175,6 +2172,38 @@ document.getElementById('btnAudio').addEventListener('click',e=>{
 });
 document.getElementById('btnVoice').addEventListener('click',e=>{
   Voice.on=!Voice.on; e.target.classList.toggle('on',Voice.on); if(!Voice.on) Voice.stop();
+});
+
+/* ---------- shell bridge: theme in, XP out ---------- */
+function bridgeXP(delta){
+  if(!(delta>0))return;
+  try{parent.postMessage({type:'fc-xp',delta:Math.round(delta),source:'pattern'},location.origin);}catch(e){}
+}
+(function(){
+  const fade=document.getElementById('themeFade');
+  let cur='dark';
+  window.addEventListener('message',e=>{
+    if(e.origin!==location.origin)return;
+    const d=e.data;
+    if(!d||typeof d!=='object')return;
+    if(d.type==='fc-theme'&&(d.theme==='light'||d.theme==='dark')&&d.theme!==cur){
+      cur=d.theme;
+      const apply=()=>{
+        document.documentElement.dataset.theme=cur;
+        C=(cur==='light')?C_DAY:C_NIGHT;
+      };
+      if(REDUCED){apply();return;}
+      fade.classList.add('on');
+      setTimeout(apply,200);
+      setTimeout(()=>{fade.classList.remove('on');},420);
+    }
+  });
+  try{parent.postMessage({type:'fc-ready',game:'pattern'},location.origin);}catch(e){}
+})();
+
+/* pause the sim + audio when the tab is hidden */
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&mode==='playing')togglePause();
 });
 
 /* ---------- boot ---------- */
