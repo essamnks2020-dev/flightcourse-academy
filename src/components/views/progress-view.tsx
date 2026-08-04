@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Clock, Lock, Medal, Star, Award } from "lucide-react";
+import { ArrowRight, Check, Clock, Flame, Lock, Medal, Star, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNav } from "@/lib/nav-store";
 import { BADGES, useProgress } from "@/lib/progress-store";
@@ -35,6 +35,8 @@ export function ProgressView() {
     resetProgress,
     certificateName,
     setCertificateName,
+    currentStreak,
+    bestStreak,
   } = useProgress();
   const { navigate, openModule } = useNav();
 
@@ -337,6 +339,28 @@ export function ProgressView() {
           <p className="text-sm text-muted-foreground">
             Next up: {nextModule.title}
           </p>
+        </div>
+        <div className="flex items-center gap-2 border-t border-border pt-3">
+          <Flame
+            className={cn(
+              "size-4",
+              currentStreak > 0 ? "text-primary" : "text-muted-foreground"
+            )}
+            aria-hidden="true"
+          />
+          <p className="text-sm">
+            {currentStreak > 0 ? (
+              <>
+                <span className="nums font-semibold text-primary">{currentStreak}</span>
+                {" "}-day study streak
+              </>
+            ) : (
+              "Study today to start a streak"
+            )}
+          </p>
+          <span className="label-instrument ml-auto text-muted-foreground">
+            Best {bestStreak}
+          </span>
         </div>
       </section>
 

@@ -53,6 +53,9 @@ interface ProgressState {
   xp: number;
   badges: string[];
   certificateName: string | null;
+  lastStudyDate: string | null; // local date key YYYY-MM-DD
+  currentStreak: number;
+  bestStreak: number;
 
   // Actions
   startModule: (moduleId: number) => void;
@@ -60,11 +63,17 @@ interface ProgressState {
   isModuleUnlocked: (moduleId: number, prerequisites: number[]) => boolean;
   isModuleCompleted: (moduleId: number) => boolean;
   getModuleProgress: (moduleId: number) => ModuleProgress | undefined;
+  touchStreak: () => void;
   resetProgress: () => void;
   setCertificateName: (name: string) => void;
   getCompletedCount: () => number;
   getLicenseTier: () => (typeof LICENSE_TIERS)[number];
   getTotalXP: () => number;
+}
+
+/** Local calendar-day key — streaks are day-granular in the user's timezone. */
+function localDateKey(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export const useProgress = create<ProgressState>()(
@@ -74,6 +83,9 @@ export const useProgress = create<ProgressState>()(
       xp: 0,
       badges: [],
       certificateName: null,
+      lastStudyDate: null,
+      currentStreak: 0,
+      bestStreak: 0,
 
       startModule: (moduleId) => {
         set((state) => {
@@ -146,6 +158,9 @@ export const useProgress = create<ProgressState>()(
           badges: Array.from(earnedSet),
         });
 
+        // Any quiz attempt counts as studying for the day.
+        get().touchStreak();
+
         return { newBadges, leveledUp: isNowCompleted };
       },
 
@@ -167,8 +182,33 @@ export const useProgress = create<ProgressState>()(
 
       getModuleProgress: (moduleId) => get().moduleProgress[moduleId],
 
+      touchStreak: () => {
+        const state = get();
+        const today = localDateKey();
+        if (state.lastStudyDate === today) return;
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const currentStreak =
+          state.lastStudyDate === localDateKey(yesterdayDate)
+            ? state.currentStreak + 1
+            : 1;
+        set({
+          lastStudyDate: today,
+          currentStreak,
+          bestStreak: Math.max(state.bestStreak, currentStreak),
+        });
+      },
+
       resetProgress: () => {
-        set({ moduleProgress: {}, xp: 0, badges: [], certificateName: null });
+        set({
+          moduleProgress: {},
+          xp: 0,
+          badges: [],
+          certificateName: null,
+          lastStudyDate: null,
+          currentStreak: 0,
+          bestStreak: 0,
+        });
       },
 
       setCertificateName: (name) => set({ certificateName: name }),
