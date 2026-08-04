@@ -274,14 +274,14 @@ export function getAudio(): AudioEngine {
 
 // Re-export methods for components that import them directly
 export function setMuted(m: boolean) { getAudio().setMuted(m) }
-export function playSfx(s: Sfx) { getAudio().play(s) }
-export function playClick() { getAudio().play('click') }
-export function playSnap() { getAudio().play('click') }
-export function playStatic() { getAudio().play('error') }
-export function playSuccess() { getAudio().play('chime') }
-export function playError() { getAudio().play('error') }
-export function playBeep() { getAudio().play('beep') }
-export function playThump() { getAudio().play('thump') }
-export function playCallout() { getAudio().play('callout') }
-export function playChime() { getAudio().play('chime') }
+export function playSfx(s: Sfx) { getAudio().sfx(s) }
+export function playClick() { getAudio().sfx('click') }
+export function playSnap() { getAudio().sfx('click') }
+export function playStatic() { getAudio().sfx('error') }
+export function playSuccess() { getAudio().sfx('chime') }
+export function playError() { getAudio().sfx('error') }
+export function playBeep() { getAudio().sfx('beep') }
+export function playThump() { getAudio().sfx('thump') }
+export function playCallout() { getAudio().sfx('callout') }
+export function playChime() { getAudio().sfx('chime') }
 export function isMuted(): boolean { return getAudio().isMuted() }
