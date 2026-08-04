@@ -49,14 +49,32 @@ export function Navbar() {
   const currentView = useNav((s) => s.view);
   const xp = useProgress((s) => s.xp);
   const completedCount = useProgress((s) => s.getCompletedCount());
+  const gamesRef = React.useRef<HTMLDivElement>(null);
+  const mobileButtonRef = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => setMounted(true), []);
+
+  // Escape closes the mobile menu and returns focus to its trigger.
+  React.useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        mobileButtonRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
 
   const go = (view: ViewName) => {
     navigate(view);
     setMobileOpen(false);
     setGamesOpen(false);
   };
+
+  const FOCUS =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -78,6 +96,7 @@ export function Navbar() {
               onClick={() => go(item.view)}
               className={cn(
                 "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                FOCUS,
                 currentView === item.view
                   ? "text-foreground bg-muted"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -88,12 +107,23 @@ export function Navbar() {
           ))}
 
           {/* Games dropdown */}
-          <div className="relative">
+          <div
+            ref={gamesRef}
+            className="relative"
+            onBlur={(e) => {
+              if (!gamesRef.current?.contains(e.relatedTarget as Node)) {
+                setGamesOpen(false);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setGamesOpen(false);
+            }}
+          >
             <button
               onClick={() => setGamesOpen((v) => !v)}
-              onBlur={() => setTimeout(() => setGamesOpen(false), 150)}
               className={cn(
                 "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                FOCUS,
                 GAMES.some((g) => g.view === currentView)
                   ? "text-foreground bg-muted"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -118,9 +148,10 @@ export function Navbar() {
                   <button
                     key={g.view}
                     role="menuitem"
-                    onMouseDown={() => go(g.view)}
+                    onClick={() => go(g.view)}
                     className={cn(
                       "flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-muted",
+                      FOCUS,
                       currentView === g.view && "bg-muted"
                     )}
                   >
@@ -141,7 +172,10 @@ export function Navbar() {
           {/* XP / progress readout */}
           <button
             onClick={() => go("progress")}
-            className="hidden sm:flex items-center gap-2.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:border-primary/40"
+            className={cn(
+              "hidden sm:flex items-center gap-2.5 rounded-full border border-border px-3 py-1.5 transition-colors hover:border-primary/40",
+              FOCUS
+            )}
           >
             <Gauge className="size-4 text-primary" aria-hidden="true" />
             <span className="flex items-baseline gap-1.5">
@@ -165,7 +199,10 @@ export function Navbar() {
                   setTheme(theme === "dark" ? "light" : "dark");
                 }
               }}
-              className="flex size-9 items-center justify-center rounded-lg border border-border transition-all hover:border-primary/40 hover:text-primary hover:scale-105 active:scale-95"
+              className={cn(
+                "flex size-9 items-center justify-center rounded-lg border border-border transition-all hover:border-primary/40 hover:text-primary hover:scale-105 active:scale-95",
+                FOCUS
+              )}
               aria-label="Toggle theme"
             >
               {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -174,8 +211,12 @@ export function Navbar() {
 
           {/* Mobile menu button */}
           <button
+            ref={mobileButtonRef}
             onClick={() => setMobileOpen((v) => !v)}
-            className="flex size-9 items-center justify-center rounded-lg border border-border md:hidden"
+            className={cn(
+              "flex size-9 items-center justify-center rounded-lg border border-border md:hidden",
+              FOCUS
+            )}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
           >
@@ -195,6 +236,7 @@ export function Navbar() {
                   onClick={() => go(item.view)}
                   className={cn(
                     "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    FOCUS,
                     currentView === item.view
                       ? "bg-muted text-foreground"
                       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -213,6 +255,7 @@ export function Navbar() {
                     onClick={() => go(g.view)}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      FOCUS,
                       currentView === g.view
                         ? "bg-muted text-foreground"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
