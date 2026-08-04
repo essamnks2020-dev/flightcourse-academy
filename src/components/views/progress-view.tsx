@@ -2,6 +2,7 @@
 
 import { ArrowRight, Check, Clock, Flame, Lock, Medal, Star, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { GaugeRing } from "@/components/gauge-ring";
 import { useNav } from "@/lib/nav-store";
 import { BADGES, useProgress } from "@/lib/progress-store";
 import { TOTAL_MODULES, TOTAL_XP, allModules } from "@/lib/data/modules";
@@ -186,7 +187,7 @@ export function ProgressView() {
 
     // ═══ CERTIFICATE TITLE ═══
     ctx.fillStyle = "#E9E7E0";
-    ctx.font = "400 42px Georgia, serif";
+    ctx.font = "600 42px 'Instrument Sans', sans-serif";
     ctx.fillText("Certificate of Completion", cx, 330);
 
     // ═══ "This is to certify that" ═══
@@ -196,7 +197,7 @@ export function ProgressView() {
 
     // ═══ NAME ═══
     ctx.fillStyle = "#F2B134";
-    ctx.font = "600 56px Georgia, serif";
+    ctx.font = "600 56px 'Instrument Sans', sans-serif";
     ctx.fillText(name, cx, 475);
 
     // Underline beneath name
@@ -317,17 +318,18 @@ export function ProgressView() {
         </p>
       </header>
 
-      {/* Top progress card */}
-      <section className="glass mt-8 flex flex-col gap-4 rounded-2xl p-6">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm font-medium">
-            {isMaxed
-              ? "Top rank reached — Captain"
-              : `${TOTAL_XP - xp} XP to next rank`}
-          </p>
-          <span className="nums text-sm text-primary">{xp} XP</span>
-        </div>
-        <Progress value={percentToNextTier} />
+      {/* Top progress cards */}
+      <section className="mt-8 grid gap-4 sm:grid-cols-[1fr_auto]">
+        <div className="glass flex flex-col gap-4 rounded-2xl p-6">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-medium">
+              {isMaxed
+                ? "Top rank reached — Captain"
+                : `${TOTAL_XP - xp} XP to next rank`}
+            </p>
+            <span className="nums text-sm text-primary">{xp} XP</span>
+          </div>
+          <Progress value={percentToNextTier} />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           <button
             onClick={() => navigate("path")}
@@ -361,6 +363,15 @@ export function ProgressView() {
           <span className="label-instrument ml-auto text-muted-foreground">
             Best {bestStreak}
           </span>
+        </div>
+        </div>
+        <div className="glass flex items-center justify-center rounded-2xl p-5">
+          <GaugeRing
+            value={percentComplete}
+            size={128}
+            label={`${completedCount}/${TOTAL_MODULES}`}
+            sublabel="Syllabus"
+          />
         </div>
       </section>
 
@@ -455,15 +466,16 @@ export function ProgressView() {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {BADGES.map((badge) => {
+          {BADGES.map((badge, i) => {
             const has = badges.includes(badge.id);
             return (
               <div
                 key={badge.id}
                 className={cn(
                   "glass flex flex-col gap-1.5 rounded-xl p-4",
-                  has ? "border-primary/40" : "opacity-55"
+                  has ? "border-primary/40 animate-badge-stamp" : "opacity-55"
                 )}
+                style={has ? { animationDelay: `${i * 60}ms` } : undefined}
               >
                 <span
                   className={cn(

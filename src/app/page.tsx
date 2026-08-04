@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNav } from "@/lib/nav-store";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MouseTracker } from "@/components/mouse-tracker";
@@ -113,26 +114,50 @@ function ViewFallback({ label }: { label: string }) {
   );
 }
 
-// Subtle page transition — fade + slight rise.
-const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
-  },
-  exit: {
-    opacity: 0,
-    y: -6,
-    transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
-  },
+// Directional page transition — deeper views enter from the right, shallow
+// from the left, so navigation has a sense of place. Fade-only when reduced.
+const VIEW_DEPTH: Record<string, number> = {
+  home: 0,
+  path: 1, cockpit: 1, glossary: 1, checklists: 1, setup: 1, progress: 1, faq: 1,
+  module: 2, flare: 2, radio: 2, pattern: 2,
 };
+
+function makePageVariants(reduced: boolean) {
+  return {
+    initial: (dir: number) =>
+      reduced ? { opacity: 0 } : { opacity: 0, x: dir >= 0 ? 18 : -18 },
+    animate: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
+    },
+    exit: (dir: number) =>
+      reduced
+        ? { opacity: 0, transition: { duration: 0.15 } }
+        : {
+            opacity: 0,
+            x: dir >= 0 ? -14 : 14,
+            transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
+          },
+  };
+}
 
 export default function Page() {
   const view = useNav((s) => s.view);
   const moduleId = useNav((s) => s.moduleId);
   const navigate = useNav((s) => s.navigate);
   const [mounted, setMounted] = React.useState(false);
+  const reduced = useReducedMotion();
+  const pageVariants = React.useMemo(() => makePageVariants(reduced), [reduced]);
+
+  // Direction is computed synchronously during render: prevRef still holds
+  // the outgoing view at this point, then catches up after commit.
+  const prevRef = React.useRef(view);
+  const dir = (VIEW_DEPTH[view] ?? 1) >= (VIEW_DEPTH[prevRef.current] ?? 0) ? 1 : -1;
+
+  React.useEffect(() => {
+    prevRef.current = view;
+  }, [view]);
 
   React.useEffect(() => {
     setMounted(true);
@@ -159,9 +184,10 @@ export default function Page() {
       <MouseTracker />
       <Navbar />
       <main className="flex-1">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={`${view}-${moduleId}`}
+            custom={dir}
             variants={pageVariants}
             initial="initial"
             animate="animate"
