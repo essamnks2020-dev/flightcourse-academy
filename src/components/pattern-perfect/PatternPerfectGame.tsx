@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { LogoMark } from "@/components/brand/logo";
+import { attachGameBridge } from "@/lib/game-bridge";
 
 /**
  * PatternPerfectGame — loads the Pattern Perfect traffic pattern simulator.
@@ -10,6 +11,9 @@ import { LogoMark } from "@/components/brand/logo";
  */
 export function PatternPerfectGame() {
   const [loaded, setLoaded] = React.useState(false);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  React.useEffect(() => attachGameBridge(iframeRef.current, "pattern"), []);
 
   return (
     <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
@@ -35,6 +39,7 @@ export function PatternPerfectGame() {
         </div>
       )}
       <iframe
+        ref={iframeRef}
         src="/pattern-perfect-game.html"
         className="absolute inset-0 h-full w-full border-0"
         title="Pattern Perfect — FlightCourse Academy"

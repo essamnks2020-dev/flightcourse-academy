@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { LogoMark } from "@/components/brand/logo";
+import { attachGameBridge } from "@/lib/game-bridge";
 
 /**
  * RadioBuilder — loads the user-authored Radio Builder game.
@@ -10,6 +11,9 @@ import { LogoMark } from "@/components/brand/logo";
  */
 export function RadioBuilder() {
   const [loaded, setLoaded] = React.useState(false);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  React.useEffect(() => attachGameBridge(iframeRef.current, "radio"), []);
 
   return (
     <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-background">
@@ -35,6 +39,7 @@ export function RadioBuilder() {
         </div>
       )}
       <iframe
+        ref={iframeRef}
         src="/radio-builder-game.html"
         className="absolute inset-0 h-full w-full border-0"
         title="Radio Builder — FlightCourse Academy"

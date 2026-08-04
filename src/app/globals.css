@@ -396,6 +396,7 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   .animate-fade-up,
   .animate-ai-spin-up,
   .animate-badge-stamp,
+  .animate-pulse,
   .aurora i,
   .copilot-idle,
   .copilot-panel-in,

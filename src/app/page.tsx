@@ -5,6 +5,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useNav } from "@/lib/nav-store";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Navbar } from "@/components/navbar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/footer";
 import { MouseTracker } from "@/components/mouse-tracker";
 import { ThemeFX } from "@/components/theme-fx";
@@ -114,6 +115,23 @@ function ViewFallback({ label }: { label: string }) {
   );
 }
 
+// Content-shaped placeholder for grid views — avoids the hard cut from
+// spinner to a fully-rendered grid once the lazy chunk lands.
+function SkeletonGridFallback({ label }: { label: string }) {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6" aria-busy="true" aria-label={label}>
+      <Skeleton className="h-3.5 w-24" />
+      <Skeleton className="mt-4 h-9 w-2/3 max-w-md" />
+      <Skeleton className="mt-3 h-4 w-full max-w-lg" />
+      <div className="mt-10 grid gap-3 sm:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Directional page transition — deeper views enter from the right, shallow
 // from the left, so navigation has a sense of place. Fade-only when reduced.
 const VIEW_DEPTH: Record<string, number> = {
@@ -195,13 +213,13 @@ export default function Page() {
           >
             {view === "home" && <HomeView />}
             {view === "path" && (
-              <React.Suspense fallback={<ViewFallback label="Loading syllabus" />}><LearningPathView /></React.Suspense>
+              <React.Suspense fallback={<SkeletonGridFallback label="Loading syllabus" />}><LearningPathView /></React.Suspense>
             )}
             {view === "module" && moduleId && (
               <React.Suspense fallback={<ViewFallback label="Loading module" />}><ModuleView moduleId={moduleId} /></React.Suspense>
             )}
             {view === "glossary" && (
-              <React.Suspense fallback={<ViewFallback label="Loading glossary" />}><GlossaryView /></React.Suspense>
+              <React.Suspense fallback={<SkeletonGridFallback label="Loading glossary" />}><GlossaryView /></React.Suspense>
             )}
             {view === "cockpit" && (
               <React.Suspense fallback={<ViewFallback label="Loading cockpit" />}><CockpitExplorerView /></React.Suspense>

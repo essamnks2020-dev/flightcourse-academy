@@ -6,6 +6,7 @@ import { useNav } from "@/lib/nav-store";
 import { useProgress } from "@/lib/progress-store";
 import { allModules, TOTAL_MODULES, TOTAL_XP } from "@/lib/data/modules";
 import type { ModuleContent } from "@/lib/content-types";
+import { useRevealChildren } from "@/hooks/use-reveal";
 import { cn } from "@/lib/utils";
 
 interface Stage {
@@ -25,6 +26,7 @@ export function LearningPathView() {
   const openModule = useNav((s) => s.openModule);
   const isModuleCompleted = useProgress((s) => s.isModuleCompleted);
   const isModuleUnlocked = useProgress((s) => s.isModuleUnlocked);
+  const stagesRef = useRevealChildren<HTMLDivElement>(50);
 
   const moduleById = useMemo(() => {
     const map = new Map<number, ModuleContent>();
@@ -69,7 +71,7 @@ export function LearningPathView() {
       </div>
 
       {/* Stages */}
-      <div className="mt-12 flex flex-col gap-12">
+      <div ref={stagesRef} className="mt-12 flex flex-col gap-12">
         {STAGES.map((stage, stageIdx) => {
           const stageNum = String(stageIdx + 1).padStart(2, "0");
           const modules = stage.ids
@@ -96,7 +98,7 @@ export function LearningPathView() {
                       onClick={() => openModule(mod.id)}
                       aria-label={`Open module ${mod.id}: ${mod.title}`}
                       className={cn(
-                        "glass hover:border-primary/40 flex h-full flex-col gap-2 rounded-xl p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                        "reveal glass hover:border-primary/40 flex h-full flex-col gap-2 rounded-xl p-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                         completed && "border-primary/40",
                         locked && "opacity-55"
                       )}
