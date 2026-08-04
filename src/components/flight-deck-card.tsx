@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 /**
  * FlightDeckCard — a "living glass cockpit" for the hero section.
@@ -30,6 +31,7 @@ export function FlightDeckCard() {
   const spdTapeRef = React.useRef<SVGGElement | null>(null);
   const altTapeRef = React.useRef<SVGGElement | null>(null);
   const stepRefs = React.useRef<(HTMLLIElement | null)[]>([]);
+  const reducedMotion = useReducedMotion();
   const SVGNS = "http://www.w3.org/2000/svg";
 
   // Build static geometry on mount
@@ -93,6 +95,19 @@ export function FlightDeckCard() {
 
   // Animation loop
   React.useEffect(() => {
+    // Reduced motion: freeze the instruments, keep only a 1Hz Zulu clock.
+    if (reducedMotion) {
+      const tick = () => {
+        if (clkRef.current) {
+          const d = new Date();
+          clkRef.current.textContent = [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()].map(n => String(n).padStart(2, "0")).join(":") + "Z";
+        }
+      };
+      tick();
+      const id = setInterval(tick, 1000);
+      return () => clearInterval(id);
+    }
+
     let raf = 0;
     let A = 4520, I = 108, F = 78.4, tA = A, tI = I, tF = F;
     let lastPhase = -1;
@@ -178,7 +193,7 @@ export function FlightDeckCard() {
       clearInterval(interval);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [reducedMotion]);
 
   const STEPS = [
     { icon: "power", label: "Engine start", ts: "T+00:00" },
