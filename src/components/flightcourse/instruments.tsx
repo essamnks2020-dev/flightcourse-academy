@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 /**
  * Round to 2 decimal places — prevents SSR hydration mismatches caused
@@ -38,23 +39,22 @@ export function AttitudeIndicator({
   const [t, setT] = React.useState<number | null>(null);
   const wrapRef = React.useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = React.useState(true);
+  const reducedMotion = useReducedMotion();
   React.useEffect(() => {
     if (!ambient) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-    } else {
-      const el = wrapRef.current;
-      if (!el) return;
-      const io = new IntersectionObserver(
-        (entries) => setVisible(entries[0]?.isIntersecting ?? true),
-        { threshold: 0 },
-      );
-      io.observe(el);
-      return () => io.disconnect();
-    }
+    // visible defaults to true; without IntersectionObserver we simply stay on.
+    if (typeof IntersectionObserver === "undefined") return;
+    const el = wrapRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => setVisible(entries[0]?.isIntersecting ?? true),
+      { threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, [ambient]);
   React.useEffect(() => {
-    if (!ambient || !visible) return;
+    if (!ambient || !visible || reducedMotion) return;
     let raf = 0;
     let timeout: ReturnType<typeof setTimeout>;
     const start = performance.now();
@@ -71,7 +71,7 @@ export function AttitudeIndicator({
       clearTimeout(timeout);
       cancelAnimationFrame(raf);
     };
-  }, [ambient, visible]);
+  }, [ambient, visible, reducedMotion]);
 
   // gentle ambient bank/pitch breathing (only after mount when t is set)
   const bBank = t !== null ? r2(bank + Math.sin(t * 0.6) * 2.4) : bank;

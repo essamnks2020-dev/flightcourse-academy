@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useNav } from "@/lib/nav-store";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useMounted } from "@/hooks/use-mounted";
 import { Navbar } from "@/components/navbar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/footer";
 import { MouseTracker } from "@/components/mouse-tracker";
 import { ThemeFX } from "@/components/theme-fx";
@@ -113,29 +116,55 @@ function ViewFallback({ label }: { label: string }) {
   );
 }
 
-// Subtle page transition — fade + slight rise.
-const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
-  },
-  exit: {
-    opacity: 0,
-    y: -6,
-    transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
-  },
-};
+// Content-shaped placeholder for grid views — avoids the hard cut from
+// spinner to a fully-rendered grid once the lazy chunk lands.
+function SkeletonGridFallback({ label }: { label: string }) {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6" aria-busy="true" aria-label={label}>
+      <Skeleton className="h-3.5 w-24" />
+      <Skeleton className="mt-4 h-9 w-2/3 max-w-md" />
+      <Skeleton className="mt-3 h-4 w-full max-w-lg" />
+      <div className="mt-10 grid gap-3 sm:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Directional page transition — deeper views enter from the right, shallow
+// from the left, so navigation has a sense of place. Fade-only when reduced.
+function makePageVariants(reduced: boolean): Variants {
+  return {
+    initial: (dir: number) =>
+      reduced ? { opacity: 0 } : { opacity: 0, x: dir >= 0 ? 18 : -18 },
+    animate: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
+    },
+    exit: (dir: number) =>
+      reduced
+        ? { opacity: 0, transition: { duration: 0.15 } }
+        : {
+            opacity: 0,
+            x: dir >= 0 ? -14 : 14,
+            transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
+          },
+  };
+}
 
 export default function Page() {
   const view = useNav((s) => s.view);
   const moduleId = useNav((s) => s.moduleId);
+  const dir = useNav((s) => s.dir);
   const navigate = useNav((s) => s.navigate);
-  const [mounted, setMounted] = React.useState(false);
+  const mounted = useMounted();
+  const reduced = useReducedMotion();
+  const pageVariants = React.useMemo(() => makePageVariants(reduced), [reduced]);
 
   React.useEffect(() => {
-    setMounted(true);
     const handler = (e: PopStateEvent) => {
       const state = e.state as { view?: string; moduleId?: number } | null;
       if (state?.view) {
@@ -159,9 +188,10 @@ export default function Page() {
       <MouseTracker />
       <Navbar />
       <main className="flex-1">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={`${view}-${moduleId}`}
+            custom={dir}
             variants={pageVariants}
             initial="initial"
             animate="animate"
@@ -169,13 +199,13 @@ export default function Page() {
           >
             {view === "home" && <HomeView />}
             {view === "path" && (
-              <React.Suspense fallback={<ViewFallback label="Loading syllabus" />}><LearningPathView /></React.Suspense>
+              <React.Suspense fallback={<SkeletonGridFallback label="Loading syllabus" />}><LearningPathView /></React.Suspense>
             )}
             {view === "module" && moduleId && (
               <React.Suspense fallback={<ViewFallback label="Loading module" />}><ModuleView moduleId={moduleId} /></React.Suspense>
             )}
             {view === "glossary" && (
-              <React.Suspense fallback={<ViewFallback label="Loading glossary" />}><GlossaryView /></React.Suspense>
+              <React.Suspense fallback={<SkeletonGridFallback label="Loading glossary" />}><GlossaryView /></React.Suspense>
             )}
             {view === "cockpit" && (
               <React.Suspense fallback={<ViewFallback label="Loading cockpit" />}><CockpitExplorerView /></React.Suspense>

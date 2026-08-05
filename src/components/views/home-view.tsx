@@ -29,6 +29,7 @@ import { glossary } from "@/lib/data/glossary";
 import { checklists } from "@/lib/data/checklists";
 import { PaidPlanSection } from "@/components/paid-plan-section";
 import { FlightDeckCard } from "@/components/flight-deck-card";
+import { useRevealChildren } from "@/hooks/use-reveal";
 
 const totalMinutes = allModules.reduce((sum, m) => sum + m.estimatedMinutes, 0);
 const totalQuizQuestions = allModules.reduce((sum, m) => sum + m.quiz.length, 0);
@@ -115,6 +116,9 @@ const GAMES = [
 export function HomeView() {
   const navigate = useNav((s) => s.navigate);
   const topFaqs = faqItems.slice(0, 6);
+  const featuresRef = useRevealChildren();
+  const syllabusRef = useRevealChildren();
+  const gamesRef = useRevealChildren();
 
   return (
     <div className="flex flex-col">
@@ -197,12 +201,12 @@ export function HomeView() {
             </h2>
           </div>
 
-          <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div ref={featuresRef} className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((feature) => (
               <button
                 key={feature.title}
                 onClick={() => navigate(feature.view)}
-                className="glass hover:border-primary/40 focus-visible:ring-ring flex h-full flex-col gap-3 rounded-xl p-6 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="reveal glass hover:border-primary/40 focus-visible:ring-ring flex h-full flex-col gap-3 rounded-xl p-6 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
               >
                 <feature.icon className="text-primary size-5" aria-hidden="true" />
                 <h3 className="font-semibold tracking-tight">{feature.title}</h3>
@@ -230,7 +234,7 @@ export function HomeView() {
             </p>
           </div>
 
-          <div className="mt-12 flex flex-col gap-10">
+          <div ref={syllabusRef} className="mt-12 flex flex-col gap-10">
             {STAGES.map((stage, stageIndex) => (
               <div key={stage.name} className="flex flex-col gap-5">
                 <div className="flex flex-wrap items-baseline gap-3">
@@ -246,7 +250,7 @@ export function HomeView() {
                     const mod = allModules.find((m) => m.id === id);
                     if (!mod) return null;
                     return (
-                      <li key={mod.id}>
+                      <li key={mod.id} className="reveal">
                         <button
                           onClick={() => navigate("module", mod.id)}
                           className="glass hover:border-primary/40 focus-visible:ring-ring flex h-full flex-col gap-2 rounded-xl p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
@@ -304,9 +308,9 @@ export function HomeView() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-4 md:grid-cols-3">
+          <div ref={gamesRef} className="mt-12 grid gap-4 md:grid-cols-3">
             {GAMES.map((game) => (
-              <div key={game.title} className="glass flex h-full flex-col gap-3 rounded-xl p-6">
+              <div key={game.title} className="reveal glass flex h-full flex-col gap-3 rounded-xl p-6">
                 <button
                   onClick={() => navigate(game.view)}
                   className="flex h-full flex-col gap-3 text-left transition-colors hover:text-primary"

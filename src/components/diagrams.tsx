@@ -24,13 +24,15 @@ function DiagramFrame({ children, caption }: { children: React.ReactNode; captio
   );
 }
 
-const SKY = "#3E92CC";
-const NAVY = "#0B1D3A";
-const GOLD = "#F2B134";
-const SLATE = "#5B6B79";
-const CLOUD = "#F7F9FC";
-const GREEN = "#3BA55D";
-const RED = "#D64545";
+// Diagram colors resolve through the Glass Cockpit tokens so every figure
+// follows the active theme instead of staying locked to the legacy palette.
+const SKY = "var(--accent)";
+const NAVY = "var(--background)";
+const GOLD = "var(--primary)";
+const SLATE = "var(--muted-foreground)";
+const CLOUD = "var(--foreground)";
+const GREEN = "var(--success)";
+const RED = "var(--destructive)";
 
 // ===== SIM COMPARISON (Module 1) =====
 function SimComparisonDiagram() {
@@ -41,14 +43,14 @@ function SimComparisonDiagram() {
   ];
   return (
     <svg viewBox="0 0 430 200" className="w-full max-w-md">
-      <text x="215" y="20" textAnchor="middle" fill="currentColor" fontSize="11" fontFamily="var(--font-jetbrains)" opacity="0.6">REALISM vs ACCESSIBILITY</text>
+      <text x="215" y="20" textAnchor="middle" fill="currentColor" fontSize="11" fontFamily="var(--font-mono)" opacity="0.6">REALISM vs ACCESSIBILITY</text>
       {platforms.map((p, i) => (
         <g key={i}>
           <rect x={p.x} y={40} width={p.w} height={120} fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2" rx="4" />
           <rect x={p.x + 8} y={50} width={p.w - 16} height={p.realism} fill={p.color} opacity="0.85" rx="2" />
           <rect x={p.x + 8} y={50 + p.realism} width={p.w - 16} height={p.access * 0.6} fill={p.color} opacity="0.35" rx="0" />
-          <text x={p.x + p.w / 2} y={175} textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="600" fontFamily="var(--font-sora)">{p.name}</text>
-          <text x={p.x + p.w / 2} y={190} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">{p.realism}% realism</text>
+          <text x={p.x + p.w / 2} y={175} textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="600" fontFamily="var(--font-sans)">{p.name}</text>
+          <text x={p.x + p.w / 2} y={190} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">{p.realism}% realism</text>
         </g>
       ))}
     </svg>
@@ -92,7 +94,7 @@ function SixPackDiagram() {
           {/* Specialized content per instrument */}
           {inst.name === "ASI" && (
             <>
-              <text x={inst.cx} y={inst.cy - 5} textAnchor="middle" fill={SKY} fontSize="16" fontFamily="var(--font-jetbrains)" fontWeight="700">120</text>
+              <text x={inst.cx} y={inst.cy - 5} textAnchor="middle" fill={SKY} fontSize="16" fontFamily="var(--font-mono)" fontWeight="700">120</text>
               <text x={inst.cx} y={inst.cy + 12} textAnchor="middle" fill="currentColor" fontSize="7" opacity="0.5">KNOTS</text>
               <line x1={inst.cx} y1={inst.cy + 5} x2={inst.cx + 20} y2={inst.cy} stroke={GOLD} strokeWidth="2" strokeLinecap="round" />
             </>
@@ -107,7 +109,7 @@ function SixPackDiagram() {
           )}
           {inst.name === "ALT" && (
             <>
-              <text x={inst.cx} y={inst.cy + 5} textAnchor="middle" fill={SKY} fontSize="14" fontFamily="var(--font-jetbrains)" fontWeight="700">3500</text>
+              <text x={inst.cx} y={inst.cy + 5} textAnchor="middle" fill={SKY} fontSize="14" fontFamily="var(--font-mono)" fontWeight="700">3500</text>
               <text x={inst.cx} y={inst.cy + 18} textAnchor="middle" fill="currentColor" fontSize="6" opacity="0.5">FT</text>
               <line x1={inst.cx} y1={inst.cy} x2={inst.cx + 10} y2={inst.cy - 20} stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
               <line x1={inst.cx} y1={inst.cy} x2={inst.cx - 15} y2={inst.cy + 10} stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
@@ -137,12 +139,12 @@ function SixPackDiagram() {
           )}
           {inst.name === "VSI" && (
             <>
-              <text x={inst.cx} y={inst.cy + 4} textAnchor="middle" fill={SKY} fontSize="11" fontFamily="var(--font-jetbrains)" fontWeight="700">+500</text>
+              <text x={inst.cx} y={inst.cy + 4} textAnchor="middle" fill={SKY} fontSize="11" fontFamily="var(--font-mono)" fontWeight="700">+500</text>
               <text x={inst.cx} y={inst.cy + 16} textAnchor="middle" fill="currentColor" fontSize="6" opacity="0.5">FPM</text>
               <line x1={inst.cx} y1={inst.cy} x2={inst.cx + 15} y2={inst.cy - 15} stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
             </>
           )}
-          <text x={inst.cx} y={inst.cy + 66} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-sora)" opacity="0.6">{inst.label}</text>
+          <text x={inst.cx} y={inst.cy + 66} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-sans)" opacity="0.6">{inst.label}</text>
         </g>
       ))}
     </svg>
@@ -169,22 +171,22 @@ function FourForcesDiagram() {
       {/* Lift arrow (up) */}
       <g>
         <line x1="200" y1="100" x2="200" y2="40" stroke={SKY} strokeWidth="3" markerEnd="url(#arrowSky)" />
-        <text x="210" y="60" fill={SKY} fontSize="13" fontWeight="600" fontFamily="var(--font-sora)">Lift</text>
+        <text x="210" y="60" fill={SKY} fontSize="13" fontWeight="600" fontFamily="var(--font-sans)">Lift</text>
       </g>
       {/* Weight arrow (down) */}
       <g>
         <line x1="200" y1="160" x2="200" y2="220" stroke={RED} strokeWidth="3" markerEnd="url(#arrowRed)" />
-        <text x="210" y="210" fill={RED} fontSize="13" fontWeight="600" fontFamily="var(--font-sora)">Weight</text>
+        <text x="210" y="210" fill={RED} fontSize="13" fontWeight="600" fontFamily="var(--font-sans)">Weight</text>
       </g>
       {/* Thrust arrow (forward/right) */}
       <g>
         <line x1="210" y1="130" x2="300" y2="130" stroke={GOLD} strokeWidth="3" markerEnd="url(#arrowGold)" />
-        <text x="260" y="120" fill={GOLD} fontSize="13" fontWeight="600" fontFamily="var(--font-sora)">Thrust</text>
+        <text x="260" y="120" fill={GOLD} fontSize="13" fontWeight="600" fontFamily="var(--font-sans)">Thrust</text>
       </g>
       {/* Drag arrow (backward/left) */}
       <g>
         <line x1="190" y1="130" x2="100" y2="130" stroke={SLATE} strokeWidth="3" markerEnd="url(#arrowSlate)" />
-        <text x="120" y="120" fill={SLATE} fontSize="13" fontWeight="600" fontFamily="var(--font-sora)">Drag</text>
+        <text x="120" y="120" fill={SLATE} fontSize="13" fontWeight="600" fontFamily="var(--font-sans)">Drag</text>
       </g>
       <defs>
         <marker id="arrowSky" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill={SKY} /></marker>
@@ -202,15 +204,15 @@ function AngleOfAttackDiagram() {
     <svg viewBox="0 0 400 220" className="w-full max-w-md">
       {/* Relative wind arrow */}
       <line x1="30" y1="150" x2="200" y2="150" stroke={SLATE} strokeWidth="2" strokeDasharray="6,4" markerEnd="url(#arrowSlate2)" />
-      <text x="40" y="140" fill={SLATE} fontSize="11" fontFamily="var(--font-jetbrains)">Relative Wind</text>
+      <text x="40" y="140" fill={SLATE} fontSize="11" fontFamily="var(--font-mono)">Relative Wind</text>
       {/* Wing (airfoil cross-section) */}
       <path d="M 200 150 Q 230 110 300 140 Q 340 155 360 155 Q 320 160 280 162 Q 240 163 200 150 Z" fill={SKY} opacity="0.3" stroke={SKY} strokeWidth="2" />
       {/* Chord line */}
       <line x1="200" y1="150" x2="360" y2="155" stroke={GOLD} strokeWidth="1.5" strokeDasharray="4,3" />
-      <text x="300" y="175" fill={GOLD} fontSize="10" fontFamily="var(--font-jetbrains)">Chord Line</text>
+      <text x="300" y="175" fill={GOLD} fontSize="10" fontFamily="var(--font-mono)">Chord Line</text>
       {/* AoA arc */}
       <path d="M 210 150 A 30 30 0 0 0 225 128" fill="none" stroke={GOLD} strokeWidth="2" />
-      <text x="235" y="135" fill={GOLD} fontSize="12" fontWeight="600" fontFamily="var(--font-sora)">α (AoA)</text>
+      <text x="235" y="135" fill={GOLD} fontSize="12" fontWeight="600" fontFamily="var(--font-sans)">α (AoA)</text>
       <defs><marker id="arrowSlate2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill={SLATE} /></marker></defs>
     </svg>
   );
@@ -228,13 +230,13 @@ function ControlAxesDiagram() {
       </g>
       {/* Pitch axis (lateral, through wings) */}
       <line x1="80" y1="130" x2="320" y2="130" stroke={GOLD} strokeWidth="2" strokeDasharray="2,2" opacity="0.5" />
-      <text x="330" y="134" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Pitch</text>
+      <text x="330" y="134" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Pitch</text>
       {/* Roll axis (longitudinal, through nose-tail) */}
       <line x1="200" y1="60" x2="200" y2="200" stroke={SKY} strokeWidth="2" strokeDasharray="2,2" opacity="0.5" />
-      <text x="210" y="55" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Roll</text>
+      <text x="210" y="55" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Roll</text>
       {/* Yaw axis (vertical) */}
       <circle cx="200" cy="130" r="4" fill={RED} opacity="0.6" />
-      <text x="210" y="150" fill={RED} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Yaw ↕</text>
+      <text x="210" y="150" fill={RED} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Yaw ↕</text>
       {/* Arrows showing rotation */}
       <path d="M 140 110 Q 120 95 140 80" fill="none" stroke={GOLD} strokeWidth="2" markerEnd="url(#arrG)" />
       <path d="M 250 100 Q 270 115 250 130" fill="none" stroke={SKY} strokeWidth="2" markerEnd="url(#arrS)" />
@@ -260,14 +262,14 @@ function AileronRollDiagram() {
         <path d="M 14 -2 L 110 -8 L 110 12 L 14 8 Z" fill="none" stroke="currentColor" strokeWidth="2" />
         {/* Left aileron down */}
         <path d="M -110 -8 L -90 -8 L -90 12 L -110 12 Z" fill={SKY} opacity="0.4" stroke={SKY} strokeWidth="1.5" />
-        <text x="-100" y="-15" textAnchor="middle" fill={SKY} fontSize="9" fontFamily="var(--font-jetbrains)">DOWN</text>
+        <text x="-100" y="-15" textAnchor="middle" fill={SKY} fontSize="9" fontFamily="var(--font-mono)">DOWN</text>
         {/* Right aileron up */}
         <path d="M 90 -8 L 110 -8 L 110 12 L 90 12 Z" fill={GOLD} opacity="0.4" stroke={GOLD} strokeWidth="1.5" />
-        <text x="100" y="28" textAnchor="middle" fill={GOLD} fontSize="9" fontFamily="var(--font-jetbrains)">UP</text>
+        <text x="100" y="28" textAnchor="middle" fill={GOLD} fontSize="9" fontFamily="var(--font-mono)">UP</text>
       </g>
       {/* Roll arrow */}
       <path d="M 280 80 A 40 40 0 0 1 280 120" fill="none" stroke={SKY} strokeWidth="2" markerEnd="url(#arrRoll)" />
-      <text x="300" y="105" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Rolls right</text>
+      <text x="300" y="105" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Rolls right</text>
       <defs><marker id="arrRoll" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill={SKY} /></marker></defs>
     </svg>
   );
@@ -284,13 +286,13 @@ function AdverseYawDiagram() {
         {/* Left aileron down — more drag */}
         <path d="M -100 -4 L -82 -4 L -82 10 L -100 10 Z" fill={SKY} opacity="0.3" stroke={SKY} />
         <line x1="-91" y1="10" x2="-91" y2="35" stroke={RED} strokeWidth="2" markerEnd="url(#arrDrag)" />
-        <text x="-91" y="48" textAnchor="middle" fill={RED} fontSize="8" fontFamily="var(--font-jetbrains)">More drag</text>
+        <text x="-91" y="48" textAnchor="middle" fill={RED} fontSize="8" fontFamily="var(--font-mono)">More drag</text>
         {/* Right aileron up — less drag */}
         <path d="M 82 -4 L 100 -4 L 100 10 L 82 10 Z" fill={GOLD} opacity="0.3" stroke={GOLD} />
         <line x1="91" y1="10" x2="91" y2="28" stroke="currentColor" strokeWidth="1.5" markerEnd="url(#arrDrag2)" opacity="0.4" />
-        <text x="91" y="40" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">Less drag</text>
+        <text x="91" y="40" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">Less drag</text>
       </g>
-      <text x="200" y="180" textAnchor="middle" fill={RED} fontSize="11" fontFamily="var(--font-sora)" fontWeight="500">Nose yaws LEFT (unwanted) → use rudder to coordinate</text>
+      <text x="200" y="180" textAnchor="middle" fill={RED} fontSize="11" fontFamily="var(--font-sans)" fontWeight="500">Nose yaws LEFT (unwanted) → use rudder to coordinate</text>
       <defs>
         <marker id="arrDrag" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill={RED} /></marker>
         <marker id="arrDrag2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor" /></marker>
@@ -315,21 +317,21 @@ function CesnaPanelDiagram() {
       ].map((g, i) => (
         <g key={i}>
           <circle cx={g.cx} cy={g.cy} r="24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.4" />
-          <text x={g.cx} y={g.cy + 4} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">{g.label}</text>
+          <text x={g.cx} y={g.cy + 4} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">{g.label}</text>
         </g>
       ))}
       {/* Radio stack */}
       <rect x="260" y="35" width="50" height="130" fill="none" stroke={SKY} strokeWidth="1.5" opacity="0.5" rx="3" />
-      <text x="285" y="28" textAnchor="middle" fill={SKY} fontSize="8" fontFamily="var(--font-jetbrains)">RADIOS</text>
+      <text x="285" y="28" textAnchor="middle" fill={SKY} fontSize="8" fontFamily="var(--font-mono)">RADIOS</text>
       {[45, 70, 95, 120, 145].map((y, i) => (
         <g key={i}>
           <rect x="267" y={y} width="36" height="18" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.3" rx="2" />
-          <text x="285" y={y + 12} textAnchor="middle" fill={GREEN} fontSize="7" fontFamily="var(--font-jetbrains)">122.7</text>
+          <text x="285" y={y + 12} textAnchor="middle" fill={GREEN} fontSize="7" fontFamily="var(--font-mono)">122.7</text>
         </g>
       ))}
       {/* Switches */}
       <rect x="330" y="35" width="75" height="60" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3" rx="3" />
-      <text x="367" y="28" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">SWITCHES</text>
+      <text x="367" y="28" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">SWITCHES</text>
       {[42, 54, 66, 78].map((y, i) => (
         <g key={i}>
           <rect x="345" y={y} width="4" height="14" fill={i < 2 ? GOLD : SLATE} opacity="0.6" />
@@ -338,13 +340,13 @@ function CesnaPanelDiagram() {
       ))}
       {/* Throttle quadrant */}
       <rect x="330" y="110" width="75" height="55" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3" rx="3" />
-      <text x="367" y="105" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">THROTTLE</text>
+      <text x="367" y="105" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">THROTTLE</text>
       <rect x="345" y="120" width="8" height="35" fill={GOLD} opacity="0.6" rx="2" />
       <rect x="360" y="125" width="8" height="30" fill={SLATE} opacity="0.5" rx="2" />
       <rect x="375" y="130" width="8" height="25" fill={SLATE} opacity="0.4" rx="2" />
       {/* Yoke */}
       <rect x="20" y="175" width="240" height="15" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2" rx="3" />
-      <text x="140" y="186" textAnchor="middle" fill="currentColor" fontSize="7" fontFamily="var(--font-jetbrains)" opacity="0.4">YOKE / CONTROL COLUMN</text>
+      <text x="140" y="186" textAnchor="middle" fill="currentColor" fontSize="7" fontFamily="var(--font-mono)" opacity="0.4">YOKE / CONTROL COLUMN</text>
     </svg>
   );
 }
@@ -362,10 +364,10 @@ function HoldShortLineDiagram() {
       <line x1="176" y1="20" x2="176" y2="70" stroke={GOLD} strokeWidth="3" />
       <line x1="182" y1="20" x2="182" y2="70" stroke={GOLD} strokeWidth="3" strokeDasharray="5,4" />
       <line x1="188" y1="20" x2="188" y2="70" stroke={GOLD} strokeWidth="3" strokeDasharray="5,4" />
-      <text x="80" y="50" textAnchor="middle" fill={SKY} fontSize="13" fontWeight="600" fontFamily="var(--font-sora)">Taxiway</text>
-      <text x="80" y="65" textAnchor="middle" fill={SKY} fontSize="9" fontFamily="var(--font-jetbrains)">(this side = safe)</text>
-      <text x="290" y="130" textAnchor="middle" fill={RED} fontSize="13" fontWeight="600" fontFamily="var(--font-sora)">Runway</text>
-      <text x="290" y="145" textAnchor="middle" fill={RED} fontSize="9" fontFamily="var(--font-jetbrains)">(DO NOT cross without clearance)</text>
+      <text x="80" y="50" textAnchor="middle" fill={SKY} fontSize="13" fontWeight="600" fontFamily="var(--font-sans)">Taxiway</text>
+      <text x="80" y="65" textAnchor="middle" fill={SKY} fontSize="9" fontFamily="var(--font-mono)">(this side = safe)</text>
+      <text x="290" y="130" textAnchor="middle" fill={RED} fontSize="13" fontWeight="600" fontFamily="var(--font-sans)">Runway</text>
+      <text x="290" y="145" textAnchor="middle" fill={RED} fontSize="9" fontFamily="var(--font-mono)">(DO NOT cross without clearance)</text>
       {/* Direction arrow */}
       <text x="179" y="90" textAnchor="middle" fill={GOLD} fontSize="16">← STOP</text>
     </svg>
@@ -389,14 +391,14 @@ function TakeoffRollDiagram() {
         <line x1="-6" y1="-18" x2="6" y2="-18" stroke={GOLD} strokeWidth="2" />
       </g>
       {/* Speed building */}
-      <text x="120" y="120" textAnchor="middle" fill={SKY} fontSize="11" fontFamily="var(--font-jetbrains)">0 → 55 KIAS</text>
+      <text x="120" y="120" textAnchor="middle" fill={SKY} fontSize="11" fontFamily="var(--font-mono)">0 → 55 KIAS</text>
       {/* Arrow showing acceleration */}
       <line x1="140" y1="135" x2="220" y2="135" stroke={GOLD} strokeWidth="2" markerEnd="url(#arrAcc)" />
-      <text x="180" y="125" textAnchor="middle" fill={GOLD} fontSize="10" fontFamily="var(--font-sora)">accelerate</text>
+      <text x="180" y="125" textAnchor="middle" fill={GOLD} fontSize="10" fontFamily="var(--font-sans)">accelerate</text>
       {/* Rotate point */}
       <circle cx="300" cy="130" r="3" fill={GOLD} />
-      <text x="300" y="115" textAnchor="middle" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Vr = 55 kt</text>
-      <text x="300" y="100" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">rotate here</text>
+      <text x="300" y="115" textAnchor="middle" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Vr = 55 kt</text>
+      <text x="300" y="100" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">rotate here</text>
       <defs><marker id="arrAcc" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill={GOLD} /></marker></defs>
     </svg>
   );
@@ -416,14 +418,14 @@ function InitialClimbDiagram() {
         <ellipse cx="0" cy="0" rx="28" ry="6" fill="none" stroke="currentColor" strokeWidth="2" />
         <line x1="-6" y1="-18" x2="6" y2="-18" stroke={GOLD} strokeWidth="2" />
       </g>
-      <text x="320" y="85" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Vy = 74 kt</text>
-      <text x="320" y="100" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">best climb</text>
+      <text x="320" y="85" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Vy = 74 kt</text>
+      <text x="320" y="100" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">best climb</text>
       {/* Altitude markers */}
-      <text x="50" y="165" fill={SLATE} fontSize="9" fontFamily="var(--font-jetbrains)">0 ft</text>
-      <text x="200" y="110" fill={SLATE} fontSize="9" fontFamily="var(--font-jetbrains)">500 ft</text>
-      <text x="360" y="55" fill={SLATE} fontSize="9" fontFamily="var(--font-jetbrains)">1000 ft</text>
+      <text x="50" y="165" fill={SLATE} fontSize="9" fontFamily="var(--font-mono)">0 ft</text>
+      <text x="200" y="110" fill={SLATE} fontSize="9" fontFamily="var(--font-mono)">500 ft</text>
+      <text x="360" y="55" fill={SLATE} fontSize="9" fontFamily="var(--font-mono)">1000 ft</text>
       {/* Pitch reference */}
-      <text x="200" y="190" textAnchor="middle" fill={SKY} fontSize="10" fontFamily="var(--font-sora)">Pitch up ~10° — hold heading with rudder</text>
+      <text x="200" y="190" textAnchor="middle" fill={SKY} fontSize="10" fontFamily="var(--font-sans)">Pitch up ~10° — hold heading with rudder</text>
     </svg>
   );
 }
@@ -441,11 +443,11 @@ function StraightLevelDiagram() {
         <ellipse cx="0" cy="0" rx="8" ry="20" fill="none" stroke="currentColor" strokeWidth="2" />
         <ellipse cx="0" cy="0" rx="35" ry="7" fill="none" stroke="currentColor" strokeWidth="2" />
       </g>
-      <text x="210" y="40" textAnchor="middle" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Straight</text>
-      <text x="210" y="55" textAnchor="middle" fill={SKY} fontSize="9" fontFamily="var(--font-jetbrains)">wings level</text>
-      <text x="210" y="135" textAnchor="middle" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Level</text>
-      <text x="210" y="150" textAnchor="middle" fill={GOLD} fontSize="9" fontFamily="var(--font-jetbrains)">constant altitude</text>
-      <text x="210" y="170" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">Pitch + Power = Performance</text>
+      <text x="210" y="40" textAnchor="middle" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Straight</text>
+      <text x="210" y="55" textAnchor="middle" fill={SKY} fontSize="9" fontFamily="var(--font-mono)">wings level</text>
+      <text x="210" y="135" textAnchor="middle" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Level</text>
+      <text x="210" y="150" textAnchor="middle" fill={GOLD} fontSize="9" fontFamily="var(--font-mono)">constant altitude</text>
+      <text x="210" y="170" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">Pitch + Power = Performance</text>
     </svg>
   );
 }
@@ -474,8 +476,8 @@ function StandardRateTurnDiagram() {
       <rect x="120" y="148" width="60" height="14" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.4" rx="7" />
       <line x1="150" y1="148" x2="150" y2="162" stroke="currentColor" strokeWidth="1" opacity="0.3" />
       <circle cx="145" cy="155" r="4" fill={CLOUD} stroke="currentColor" strokeWidth="0.5" />
-      <text x="150" y="195" textAnchor="middle" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Standard Rate = 3°/sec</text>
-      <text x="150" y="210" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">2 minutes for full 360°</text>
+      <text x="150" y="195" textAnchor="middle" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Standard Rate = 3°/sec</text>
+      <text x="150" y="210" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">2 minutes for full 360°</text>
     </svg>
   );
 }
@@ -487,27 +489,27 @@ function TrafficPatternDiagram() {
       {/* Runway */}
       <rect x="160" y="140" width="80" height="180" fill={NAVY} opacity="0.2" rx="2" />
       <line x1="200" y1="145" x2="200" y2="315" stroke={CLOUD} strokeWidth="1.5" strokeDasharray="8,6" opacity="0.5" />
-      <text x="200" y="335" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">RUNWAY 36</text>
+      <text x="200" y="335" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">RUNWAY 36</text>
       {/* Pattern legs */}
       {/* Upwind */}
       <line x1="200" y1="140" x2="200" y2="70" stroke={SKY} strokeWidth="2" markerEnd="url(#pat1)" />
-      <text x="210" y="100" fill={SKY} fontSize="10" fontFamily="var(--font-sora)" fontWeight="600">Upwind</text>
+      <text x="210" y="100" fill={SKY} fontSize="10" fontFamily="var(--font-sans)" fontWeight="600">Upwind</text>
       {/* Crosswind */}
       <line x1="200" y1="70" x2="320" y2="70" stroke={GOLD} strokeWidth="2" markerEnd="url(#pat2)" />
-      <text x="250" y="60" fill={GOLD} fontSize="10" fontFamily="var(--font-sora)" fontWeight="600">Crosswind</text>
+      <text x="250" y="60" fill={GOLD} fontSize="10" fontFamily="var(--font-sans)" fontWeight="600">Crosswind</text>
       {/* Downwind */}
       <line x1="320" y1="70" x2="320" y2="230" stroke={SKY} strokeWidth="2" markerEnd="url(#pat3)" />
-      <text x="330" y="150" fill={SKY} fontSize="10" fontFamily="var(--font-sora)" fontWeight="600">Downwind</text>
-      <text x="330" y="162" fill={SKY} fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.6">1000 ft AGL</text>
+      <text x="330" y="150" fill={SKY} fontSize="10" fontFamily="var(--font-sans)" fontWeight="600">Downwind</text>
+      <text x="330" y="162" fill={SKY} fontSize="8" fontFamily="var(--font-mono)" opacity="0.6">1000 ft AGL</text>
       {/* Base */}
       <line x1="320" y1="230" x2="240" y2="230" stroke={GOLD} strokeWidth="2" markerEnd="url(#pat4)" />
-      <text x="265" y="222" fill={GOLD} fontSize="10" fontFamily="var(--font-sora)" fontWeight="600">Base</text>
+      <text x="265" y="222" fill={GOLD} fontSize="10" fontFamily="var(--font-sans)" fontWeight="600">Base</text>
       {/* Final */}
       <line x1="240" y1="230" x2="210" y2="190" stroke={RED} strokeWidth="2.5" markerEnd="url(#pat5)" />
-      <text x="170" y="215" fill={RED} fontSize="10" fontFamily="var(--font-sora)" fontWeight="600">Final</text>
+      <text x="170" y="215" fill={RED} fontSize="10" fontFamily="var(--font-sans)" fontWeight="600">Final</text>
       {/* 45° entry */}
       <line x1="370" y1="45" x2="325" y2="80" stroke="currentColor" strokeWidth="1" strokeDasharray="3,3" opacity="0.4" />
-      <text x="350" y="35" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.4">45° entry</text>
+      <text x="350" y="35" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.4">45° entry</text>
       <defs>
         <marker id="pat1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill={SKY} /></marker>
         <marker id="pat2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill={GOLD} /></marker>
@@ -525,7 +527,7 @@ function VorConeDiagram() {
     <svg viewBox="0 0 400 240" className="w-full max-w-md">
       {/* VOR station */}
       <circle cx="200" cy="120" r="8" fill={GOLD} />
-      <text x="200" y="145" textAnchor="middle" fill={GOLD} fontSize="10" fontFamily="var(--font-jetbrains)">VOR</text>
+      <text x="200" y="145" textAnchor="middle" fill={GOLD} fontSize="10" fontFamily="var(--font-mono)">VOR</text>
       {/* Radials */}
       {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg, i) => {
         const rad = ((deg - 90) * Math.PI) / 180;
@@ -541,10 +543,10 @@ function VorConeDiagram() {
       <g transform="translate(260, 75)">
         <polygon points="0,-8 -5,6 5,6" fill={SKY} />
       </g>
-      <text x="275" y="78" fill={SKY} fontSize="9" fontFamily="var(--font-jetbrains)">You</text>
-      <text x="275" y="90" fill={SKY} fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.6">inbound</text>
-      <text x="100" y="40" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">030° Radial</text>
-      <text x="100" y="55" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">"From" the station</text>
+      <text x="275" y="78" fill={SKY} fontSize="9" fontFamily="var(--font-mono)">You</text>
+      <text x="275" y="90" fill={SKY} fontSize="8" fontFamily="var(--font-mono)" opacity="0.6">inbound</text>
+      <text x="100" y="40" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">030° Radial</text>
+      <text x="100" y="55" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">"From" the station</text>
     </svg>
   );
 }
@@ -562,11 +564,11 @@ function RadioCallStructureDiagram() {
       {parts.map((p, i) => (
         <g key={i} transform={`translate(10, ${30 + i * 35})`}>
           <rect x="0" y="0" width="130" height="26" fill={p.color} opacity="0.12" stroke={p.color} strokeWidth="1" rx="3" />
-          <text x="8" y="17" fill={p.color} fontSize="9" fontFamily="var(--font-jetbrains)" fontWeight="600">{p.label}</text>
-          <text x="145" y="17" fill="currentColor" fontSize="12" fontFamily="var(--font-jetbrains)">"{p.text}"</text>
+          <text x="8" y="17" fill={p.color} fontSize="9" fontFamily="var(--font-mono)" fontWeight="600">{p.label}</text>
+          <text x="145" y="17" fill="currentColor" fontSize="12" fontFamily="var(--font-mono)">"{p.text}"</text>
         </g>
       ))}
-      <text x="10" y="175" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">Four parts. Always in this order. Keep it short.</text>
+      <text x="10" y="175" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">Four parts. Always in this order. Keep it short.</text>
     </svg>
   );
 }
@@ -586,7 +588,7 @@ function MetarBreakdownDiagram() {
   ];
   return (
     <svg viewBox="0 0 420 160" className="w-full max-w-lg">
-      <text x="10" y="25" fill="currentColor" fontSize="13" fontFamily="var(--font-jetbrains)" fontWeight="600">METAR KSEA 151755Z 22012G20KT 6SM -RA OVC025 15/12 A2992</text>
+      <text x="10" y="25" fill="currentColor" fontSize="13" fontFamily="var(--font-mono)" fontWeight="600">METAR KSEA 151755Z 22012G20KT 6SM -RA OVC025 15/12 A2992</text>
       {parts.map((p, i) => {
         const widths = [50, 50, 65, 85, 38, 35, 65, 42, 50];
         let xPos = 10;
@@ -595,8 +597,8 @@ function MetarBreakdownDiagram() {
           <g key={i}>
             <line x1={xPos + widths[i] / 2} y1="32" x2={xPos + widths[i] / 2} y2="55" stroke={p.color} strokeWidth="1" opacity="0.5" />
             <line x1={xPos} y1="60" x2={xPos + widths[i]} y2="60" stroke={p.color} strokeWidth="2" />
-            <text x={xPos + widths[i] / 2} y="75" textAnchor="middle" fill={p.color} fontSize="8" fontFamily="var(--font-jetbrains)">{p.note}</text>
-            <text x={xPos + widths[i] / 2} y="88" textAnchor="middle" fill="currentColor" fontSize="7" fontFamily="var(--font-jetbrains)" opacity="0.5">
+            <text x={xPos + widths[i] / 2} y="75" textAnchor="middle" fill={p.color} fontSize="8" fontFamily="var(--font-mono)">{p.note}</text>
+            <text x={xPos + widths[i] / 2} y="88" textAnchor="middle" fill="currentColor" fontSize="7" fontFamily="var(--font-mono)" opacity="0.5">
               {p.text === "22012G20KT" ? "220° @ 12kt, gust 20" :
                p.text === "OVC025" ? "overcast 2500ft" :
                p.text === "151755Z" ? "15th, 17:55Z" :
@@ -606,7 +608,7 @@ function MetarBreakdownDiagram() {
           </g>
         );
       })}
-      <text x="10" y="140" fill={GOLD} fontSize="10" fontFamily="var(--font-sora)" fontWeight="600">Decoded: Wind 220° at 12 gusting 20 kt, 6 SM vis, light rain, overcast at 2500 ft</text>
+      <text x="10" y="140" fill={GOLD} fontSize="10" fontFamily="var(--font-sans)" fontWeight="600">Decoded: Wind 220° at 12 gusting 20 kt, 6 SM vis, light rain, overcast at 2500 ft</text>
     </svg>
   );
 }
@@ -627,10 +629,10 @@ function EngineFailureFlowDiagram() {
           <g key={i}>
             {i < 3 && <line x1={x + 80} y1="45" x2={x + 95} y2="45" stroke="currentColor" strokeWidth="1.5" opacity="0.3" markerEnd="url(#flowArr)" />}
             <circle cx={x + 40} cy="25" r="12" fill={s.color} opacity="0.15" stroke={s.color} strokeWidth="2" />
-            <text x={x + 40} y="30" textAnchor="middle" fill={s.color} fontSize="14" fontWeight="700" fontFamily="var(--font-sora)">{s.num}</text>
-            <text x={x + 40} y="55" textAnchor="middle" fill={s.color} fontSize="12" fontWeight="700" fontFamily="var(--font-sora)">{s.text}</text>
+            <text x={x + 40} y="30" textAnchor="middle" fill={s.color} fontSize="14" fontWeight="700" fontFamily="var(--font-sans)">{s.num}</text>
+            <text x={x + 40} y="55" textAnchor="middle" fill={s.color} fontSize="12" fontWeight="700" fontFamily="var(--font-sans)">{s.text}</text>
             {s.sub.split("\n").map((line, j) => (
-              <text key={j} x={x + 40} y={72 + j * 12} textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.6">{line}</text>
+              <text key={j} x={x + 40} y={72 + j * 12} textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.6">{line}</text>
             ))}
           </g>
         );
@@ -649,19 +651,19 @@ function XcNavLogDiagram() {
   ];
   return (
     <svg viewBox="0 0 420 140" className="w-full max-w-lg">
-      <text x="10" y="20" fill="currentColor" fontSize="10" fontFamily="var(--font-jetbrains)" opacity="0.5">FROM    TO       HDG      DIST      ALT</text>
+      <text x="10" y="20" fill="currentColor" fontSize="10" fontFamily="var(--font-mono)" opacity="0.5">FROM    TO       HDG      DIST      ALT</text>
       <line x1="10" y1="25" x2="410" y2="25" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
       {rows.map((r, i) => (
         <g key={i} transform={`translate(10, ${45 + i * 28})`}>
-          <text x="0" y="0" fill={SKY} fontSize="11" fontFamily="var(--font-jetbrains)" fontWeight="600">{r.from}</text>
-          <text x="70" y="0" fill={SKY} fontSize="11" fontFamily="var(--font-jetbrains)" fontWeight="600">{r.to}</text>
-          <text x="150" y="0" fill={GOLD} fontSize="11" fontFamily="var(--font-jetbrains)">{r.hdg}</text>
-          <text x="230" y="0" fill="currentColor" fontSize="11" fontFamily="var(--font-jetbrains)" opacity="0.7">{r.dist}</text>
-          <text x="310" y="0" fill="currentColor" fontSize="11" fontFamily="var(--font-jetbrains)" opacity="0.7">{r.alt} ft</text>
+          <text x="0" y="0" fill={SKY} fontSize="11" fontFamily="var(--font-mono)" fontWeight="600">{r.from}</text>
+          <text x="70" y="0" fill={SKY} fontSize="11" fontFamily="var(--font-mono)" fontWeight="600">{r.to}</text>
+          <text x="150" y="0" fill={GOLD} fontSize="11" fontFamily="var(--font-mono)">{r.hdg}</text>
+          <text x="230" y="0" fill="currentColor" fontSize="11" fontFamily="var(--font-mono)" opacity="0.7">{r.dist}</text>
+          <text x="310" y="0" fill="currentColor" fontSize="11" fontFamily="var(--font-mono)" opacity="0.7">{r.alt} ft</text>
           <line x1="0" y1="8" x2="380" y2="8" stroke="currentColor" strokeWidth="0.3" opacity="0.15" />
         </g>
       ))}
-      <text x="10" y="130" fill={GOLD} fontSize="9" fontFamily="var(--font-sora)">Total: 45 nm · ~30 min · fuel: 1.5 hr reserve</text>
+      <text x="10" y="130" fill={GOLD} fontSize="9" fontFamily="var(--font-sans)">Total: 45 nm · ~30 min · fuel: 1.5 hr reserve</text>
     </svg>
   );
 }
@@ -683,11 +685,11 @@ function IlsApproachDiagram() {
         <ellipse cx="0" cy="0" rx="6" ry="15" fill="none" stroke="currentColor" strokeWidth="2" />
         <ellipse cx="0" cy="0" rx="22" ry="5" fill="none" stroke="currentColor" strokeWidth="2" />
       </g>
-      <text x="60" y="180" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Localizer</text>
-      <text x="60" y="193" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">lateral guidance</text>
-      <text x="200" y="55" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Glideslope</text>
-      <text x="200" y="68" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">3° vertical path</text>
-      <text x="350" y="160" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.5">RUNWAY</text>
+      <text x="60" y="180" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Localizer</text>
+      <text x="60" y="193" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">lateral guidance</text>
+      <text x="200" y="55" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Glideslope</text>
+      <text x="200" y="68" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">3° vertical path</text>
+      <text x="350" y="160" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">RUNWAY</text>
     </svg>
   );
 }
@@ -698,8 +700,8 @@ function C172VsPa28Diagram() {
     <svg viewBox="0 0 420 180" className="w-full max-w-lg">
       {/* C172 — high wing */}
       <g transform="translate(105, 80)">
-        <text x="0" y="-35" textAnchor="middle" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Cessna 172</text>
-        <text x="0" y="-22" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">HIGH wing</text>
+        <text x="0" y="-35" textAnchor="middle" fill={SKY} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Cessna 172</text>
+        <text x="0" y="-22" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">HIGH wing</text>
         {/* Fuselage */}
         <ellipse cx="0" cy="10" rx="10" ry="40" fill="none" stroke={SKY} strokeWidth="2" />
         {/* High wing */}
@@ -717,8 +719,8 @@ function C172VsPa28Diagram() {
       </g>
       {/* PA28 — low wing */}
       <g transform="translate(315, 80)">
-        <text x="0" y="-35" textAnchor="middle" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sora)">Piper PA-28</text>
-        <text x="0" y="-22" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-jetbrains)" opacity="0.5">LOW wing</text>
+        <text x="0" y="-35" textAnchor="middle" fill={GOLD} fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Piper PA-28</text>
+        <text x="0" y="-22" textAnchor="middle" fill="currentColor" fontSize="8" fontFamily="var(--font-mono)" opacity="0.5">LOW wing</text>
         <ellipse cx="0" cy="10" rx="10" ry="40" fill="none" stroke={GOLD} strokeWidth="2" />
         <ellipse cx="0" cy="25" rx="60" ry="8" fill={GOLD} opacity="0.15" stroke={GOLD} strokeWidth="2" />
         <line x1="0" y1="-30" x2="0" y2="-45" stroke={GOLD} strokeWidth="2" />
@@ -728,7 +730,7 @@ function C172VsPa28Diagram() {
       </g>
       {/* VS divider */}
       <line x1="210" y1="20" x2="210" y2="150" stroke="currentColor" strokeWidth="0.5" opacity="0.2" strokeDasharray="3,3" />
-      <text x="210" y="170" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-jetbrains)" opacity="0.4">both ~160 HP · 4 seats · 110 kt cruise</text>
+      <text x="210" y="170" textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.4">both ~160 HP · 4 seats · 110 kt cruise</text>
     </svg>
   );
 }

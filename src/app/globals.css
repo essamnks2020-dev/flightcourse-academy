@@ -193,11 +193,18 @@
 
 /* Theme toggle smooth transition — only color properties, not transforms/opacity */
 :root {
-  --theme-transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                      color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                      border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                      fill 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                      stroke 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Motion tokens — one brand curve + a duration scale. Use these everywhere. */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 150ms;
+  --dur-med: 300ms;
+  --dur-slow: 600ms;
+
+  --theme-transition: background-color 0.4s var(--ease-expo),
+                      color 0.4s var(--ease-expo),
+                      border-color 0.4s var(--ease-expo),
+                      fill 0.4s var(--ease-expo),
+                      stroke 0.4s var(--ease-expo);
 }
 
 /* Apply ONLY to elements that use theme colors — not every element */
@@ -277,6 +284,28 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
     font-feature-settings: "tnum";
   }
 
+  /* Shared interactive affordance: subtle hover lift + guaranteed focus ring.
+     Apply to cards, rows, pills, and options that respond to pointer/keyboard. */
+  .interactive {
+    transition:
+      transform 0.2s var(--ease-expo),
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      box-shadow 0.15s ease,
+      color 0.15s ease;
+  }
+  .interactive:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in oklch, var(--primary) 40%, transparent);
+  }
+  .interactive:active {
+    transform: translateY(0);
+  }
+  .interactive:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
   /* Hide scrollbar on horizontal rails. */
   .no-scrollbar {
     scrollbar-width: none;
@@ -327,19 +356,61 @@ button, input, a, [class*="border-"], [class*="bg-"], [class*="text-"] {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Logo / loader entrance — spins up like a gyro */
+@keyframes ai-spin-up {
+  0% { opacity: 0; transform: scale(0.6) rotate(-100deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* Badge earn moment — stamps onto the card like a logbook endorsement */
+@keyframes badge-stamp {
+  0% { opacity: 0; transform: scale(2.2) rotate(-8deg); }
+  60% { opacity: 1; transform: scale(0.94) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
 .animate-sweep { animation: sweep 6s linear infinite; }
 .animate-drift { animation: drift 9s ease-in-out infinite; }
 .animate-pulse-ring { animation: pulse-ring 2.4s cubic-bezier(0.24, 0.8, 0.36, 1) infinite; }
 .animate-marquee { animation: marquee 38s linear infinite; }
 .animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-ai-spin-up { animation: ai-spin-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-badge-stamp { animation: badge-stamp 0.52s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Scroll reveal — pair with IntersectionObserver, stagger via transition-delay */
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s var(--ease-expo), transform 0.5s var(--ease-expo);
+}
+.reveal.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-sweep,
   .animate-drift,
   .animate-pulse-ring,
   .animate-marquee,
-  .animate-fade-up {
+  .animate-fade-up,
+  .animate-ai-spin-up,
+  .animate-badge-stamp,
+  .animate-pulse,
+  .aurora i,
+  .copilot-idle,
+  .copilot-panel-in,
+  .msg-in,
+  .typing-dot,
+  .header-glow,
+  .mic-pulse,
+  .wave-bar {
     animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
   html { scroll-behavior: auto; }
 }

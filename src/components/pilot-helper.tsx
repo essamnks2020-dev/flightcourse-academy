@@ -53,10 +53,12 @@ export function PilotHelper() {
 
   // Check if speech recognition is supported
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+    const id = requestAnimationFrame(() => {
       const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       setMicSupported(!!SR);
-    }
+    });
+    return () => cancelAnimationFrame(id);
   }, []);
 
   // Voice input — start/stop listening
@@ -400,7 +402,7 @@ export function PilotHelper() {
                     )}
                     <div
                       className={cn(
-                        "rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed",
+                        "rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed whitespace-pre-wrap",
                         m.role === "user"
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-foreground"

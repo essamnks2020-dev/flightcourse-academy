@@ -41,17 +41,17 @@ export function AuthButton() {
     );
   }
 
-  // Unavailable — show disabled button
+  // Unavailable — still route to the sign-in page, which explains the state
   if (state === "unavailable") {
     return (
-      <button
-        disabled
-        className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground opacity-50 cursor-not-allowed transition-all"
-        title="Sign-in coming soon"
+      <a
+        href="/sign-in"
+        className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/40 hover:text-primary"
+        title="Sign-in options"
       >
         <User className="size-3.5" />
         <span className="hidden md:inline">Sign in</span>
-      </button>
+      </a>
     );
   }
 

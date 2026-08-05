@@ -370,7 +370,7 @@ header{
 .dim-row{display:flex;align-items:center;gap:10px;margin-top:8px;text-align:left}
 .dim-row .lcd-label{width:92px;flex:none}
 .dim-bar{flex:1;height:5px;border-radius:3px;background:oklch(0.99 0.01 250 / 8%);overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
-.dim-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg, oklch(0.75 0.128 205 / 70%), var(--cyan));border-radius:3px;transition:width 1s var(--ease);box-shadow:0 0 6px oklch(0.75 0.128 205 / 60%)}
+.dim-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg, oklch(0.75 0.128 205 / 70%), var(--cyan));border-radius:3px;transition:width .9s var(--ease);box-shadow:0 0 6px oklch(0.75 0.128 205 / 60%)}
 .dim-row b{font-family:var(--mono);font-size:11px;width:30px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
 .xp-gain{margin-top:16px;color:var(--amber);font-size:13px;letter-spacing:.08em;text-shadow:0 0 10px oklch(0.80 0.14 71 / 45%)}
 .diff-card .lcd-label{margin:16px 0 8px}
@@ -423,6 +423,41 @@ header{
 .sum-actions{display:flex;gap:10px;margin-top:20px}
 .sum-actions button{flex:1;margin:0!important;padding:14px}
 
+/* stop looping/pulsing motion; everything stays visible and legible */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .adi-ball{animation:none}
+  .sigmeter i{animation:none}
+  .ptt-ring.beckon::after{animation:none;opacity:0}
+  .lcd.boot{animation:none}
+  .perfect{animation:none}
+  .dim-bar i{transition:none}
+}
+
+/* ---- Light theme (pushed from the shell via postMessage) ----
+   Page chrome goes light; the physical avionics bezel stays dark. */
+html[data-theme="light"]{
+  --bg: oklch(0.96 0.008 75);
+  --amber: oklch(0.60 0.14 55);
+  --amber-dim: oklch(0.60 0.14 55 / 18%);
+  --cyan: oklch(0.52 0.09 210);
+  --cyan-dim: oklch(0.52 0.09 210 / 15%);
+  --red: oklch(0.55 0.19 27);
+  --text: oklch(0.2 0.012 60);
+  --dim: oklch(0.42 0.014 60);
+  --faint: oklch(0.55 0.014 60);
+  --stroke: oklch(0.28 0.01 60 / 14%);
+}
+html[data-theme="light"] body{
+  background-image:
+    radial-gradient(1200px 600px at 70% -10%, oklch(0.52 0.09 210 / 6%), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, oklch(0.60 0.14 55 / 5%), transparent 60%),
+    repeating-linear-gradient(45deg, oklch(0.28 0.01 60 / 2%) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(-45deg, oklch(0.28 0.01 60 / 2%) 0 2px, transparent 2px 5px);
+}
+#themeFade{position:fixed;inset:0;background:var(--bg);opacity:0;pointer-events:none;transition:opacity 400ms var(--ease);z-index:200}
+#themeFade.on{opacity:1}
+
 @media(max-width:860px){
   .feed-grid{grid-template-columns:1fr}
   .mode-grid{grid-template-columns:1fr}
@@ -439,6 +474,7 @@ header{
 </style>
 </head>
 <body>
+<div id="themeFade" aria-hidden="true"></div>
 <div id="app">
 
   <header class="screws">
@@ -668,6 +704,7 @@ header{
    FlightCourse Academy · built on FAA AC 90-66C
    ============================================================ */
 const $ = id => document.getElementById(id);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const DIGIT = {0:'zero',1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',8:'eight',9:'nine'};
 const PHON_L = ['alpha','bravo','charlie','delta','echo','foxtrot','golf','hotel'];
 
@@ -762,7 +799,7 @@ const S = {
   pttHeld:false, sayDone:true, transcript:'', recError:null,
   plane:{state:'ramp',t0:0},
   lastRes:null, radarT0:0, scoreT0:0, scoreTarget:null,
-  ambientInt:null, sqlOpen:true,
+  sqlOpen:true,
   actFreq:null, stbyFreq:null, mapLabels:true,
   beckonT:null,
 };
@@ -786,11 +823,24 @@ const AU = {
     this.staticGain = this.ctx.createGain(); this.staticGain.gain.value = 0;
     src.connect(bp); bp.connect(this.staticGain); this.staticGain.connect(this.master);
     src.start();
+    this._startCrackle();
+  },
+  _startCrackle(){
+    if(this.crackleInt || !this.ctx) return;
     this.crackleInt = setInterval(()=>{
       if(!this.ctx || this.muted) return;
       const base = this._staticTarget || 0;
       if(base > 0) this.staticGain.gain.setTargetAtTime(base*(0.6+Math.random()*0.8), this.ctx.currentTime, 0.06);
     }, 260);
+  },
+  pauseBeds(){
+    if(this.crackleInt){ clearInterval(this.crackleInt); this.crackleInt = null; }
+    if(this.ctx && this.ctx.state === 'running') this.ctx.suspend();
+  },
+  resumeBeds(){
+    if(!this.ctx) return;
+    if(this.ctx.state === 'suspended') this.ctx.resume();
+    this._startCrackle();
   },
   setStatic(on){
     if(!this.ctx) return;
@@ -1046,18 +1096,37 @@ function flashRx(){
   $('ledRx').classList.add('on');
   setTimeout(()=>$('ledRx').classList.remove('on'), 900);
 }
+/* single scheduler for timed ambience — one queue, one live timeout, items run sequentially */
+const SCHED = {
+  q: [], t: null,
+  add(delay, fn){ this.q.push({delay, fn}); if(!this.t) this._step(); },
+  _step(){
+    const item = this.q[0];
+    if(!item){ this.t = null; return; }
+    this.t = setTimeout(() => {
+      this.t = null;
+      this.q.shift();
+      item.fn();
+      if(this.q.length) this._step();
+    }, item.delay);
+  },
+  clear(){ this.q.length = 0; if(this.t){ clearTimeout(this.t); this.t = null; } },
+};
 function startAmbient(){
   stopAmbient();
-  const tick = () => {
-    const pool = CHATTER[S.sc.ap] || [];
-    const line = pool[Math.floor(Math.random()*pool.length)];
-    AU.squelch(); flashRx();
-    setTimeout(()=>log('◂ ' + line, 'rx'), 180);
-    S.ambientInt = setTimeout(tick, 7000 + Math.random()*6000);
+  const chatter = () => {
+    const pool = (S.sc && CHATTER[S.sc.ap]) || [];
+    /* skip the burst while an utterance (ATIS / reference) is still speaking */
+    if(pool.length && !('speechSynthesis' in window && speechSynthesis.speaking)){
+      const line = pool[Math.floor(Math.random()*pool.length)];
+      AU.squelch(); flashRx();
+      SCHED.add(180, () => log('◂ ' + line, 'rx'));
+    }
+    SCHED.add(7000 + Math.random()*6000, chatter);
   };
-  S.ambientInt = setTimeout(tick, 3500 + Math.random()*3000);
+  SCHED.add(3500 + Math.random()*3000, chatter);
 }
-function stopAmbient(){ if(S.ambientInt){ clearTimeout(S.ambientInt); S.ambientInt = null; } }
+function stopAmbient(){ SCHED.clear(); }
 
 /* ---------------- screens ---------------- */
 function showScreen(name){
@@ -1072,7 +1141,8 @@ function showScreen(name){
   if(name !== 'feed' && 'speechSynthesis' in window) speechSynthesis.cancel();
   if(name !== 'live'){ clearTimeout(S.beckonT); $('pttRing').classList.remove('beckon'); }
   if(name === 'start') updateStartStats();
-  window.scrollTo({top:0, behavior:'smooth'});
+  window.scrollTo({top:0, behavior: REDUCED ? 'auto' : 'smooth'});
+  startLoop();
 }
 
 function startCourse(){
@@ -1119,6 +1189,15 @@ function loadScenario(i){
   showScreen('brief');
 }
 
+function startTimer(){
+  clearInterval(S.timerInt);
+  S.timerInt = setInterval(()=>{
+    const t = (performance.now() - S.t0) / 1000;
+    $('timer').textContent = t.toFixed(1) + 's';
+    $('timer').classList.toggle('hot', t > 12);
+  }, 100);
+}
+
 function beginLive(){
   showScreen('live');
   S.hintUsed = false; S.transcript = ''; S.sayDone = true; S.recError = null;
@@ -1142,12 +1221,7 @@ function beginLive(){
   startAmbient();
   $('timer').textContent = '0.0s';
   $('timer').classList.remove('hot');
-  clearInterval(S.timerInt);
-  S.timerInt = setInterval(()=>{
-    const t = (performance.now() - S.t0) / 1000;
-    $('timer').textContent = t.toFixed(1) + 's';
-    $('timer').classList.toggle('hot', t > 12);
-  }, 100);
+  startTimer();
   /* UPGRADE: beckon the PTT if the pilot freezes */
   clearTimeout(S.beckonT);
   S.beckonT = setTimeout(()=>{
@@ -1262,22 +1336,32 @@ function renderFeedback(res){
   S.xpAwarded[S.pos] = Math.max(prev, gain);
   const rankBefore = rankFor(S.xp).cur.name;
   S.xp += award;
+  bridgeXP(award);
   S.best = Math.max(S.best, res.overall);
   const rankAfter = rankFor(S.xp).cur.name;
   S.results[S.pos] = {sc:S.sc, overall:res.overall};
   $('xpGain').textContent = '+' + award + ' XP' + (S.streak > 1 && res.overall >= 75 ? ` · STREAK ×${S.streak}` : '');
   $('btnNext').textContent = S.pos + 1 >= S.order.length ? 'SEE RESULTS ▸' : 'NEXT ▸';
   showScreen('feed');
-  S.radarT0 = performance.now(); S.scoreT0 = performance.now(); S.scoreTarget = res.overall;
-  $('scoreBig').textContent = '0';
+  S.radarT0 = performance.now();
+  if(REDUCED){
+    S.scoreTarget = null;
+    $('scoreBig').textContent = String(res.overall);
+  } else {
+    S.scoreT0 = S.radarT0; S.scoreTarget = res.overall;
+    $('scoreBig').textContent = '0';
+  }
   requestAnimationFrame(()=>{
-    document.querySelectorAll('.dim-bar i').forEach(el => el.style.width = el.dataset.w + '%');
+    document.querySelectorAll('.dim-bar i').forEach((el, i) => {
+      el.style.transitionDelay = (REDUCED ? 0 : 60 + i*70) + 'ms';
+      el.style.width = el.dataset.w + '%';
+    });
   });
   updateRankUI(rankBefore !== rankAfter);
   updateStartStats();
   if(rankBefore !== rankAfter){ AU.stinger(true); log(`RANK UP — ${rankAfter.toUpperCase()}`, 'sys'); }
   else AU.stinger(res.overall >= 75);
-  setTimeout(speakRef, 800);
+  SCHED.add(800, speakRef);
 }
 
 /* ---------------- summary ---------------- */
@@ -1418,7 +1502,7 @@ function drawMap(now){
     ctx.setLineDash([4,4]); ctx.strokeStyle = 'oklch(0.80 0.14 71 / 45%)'; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
   }
-  const pu = (Math.sin(now/300) + 1) / 2;
+  const pu = REDUCED ? 0.5 : (Math.sin(now/300) + 1) / 2;
   ctx.strokeStyle = `oklch(0.80 0.14 71 / ${Math.round(35 + pu*35)}%)`;
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(tp[0], tp[1], u*(0.16 + pu*0.07), 0, 7); ctx.stroke();
@@ -1439,7 +1523,7 @@ function drawMap(now){
   if(S.plane.state === 'ramp'){
     px = rp[0]; py = rp[1]; ph = rampHdg;
   } else if(S.plane.state === 'move'){
-    const f = Math.min(1, (now - S.plane.t0) / 2600);
+    const f = REDUCED ? 1 : Math.min(1, (now - S.plane.t0) / 2600);
     const e = 1 - Math.pow(1 - f, 3);
     px = rp[0] + (tp[0] - rp[0]) * e;
     py = rp[1] + (tp[1] - rp[1]) * e;
@@ -1478,7 +1562,7 @@ function drawRadar(now){
   const labels = ['PHR','BRV','PHO','TIM','CMP'];
   const N = 5, cx = w/2, cy = h/2 + 4, R = Math.min(w,h)/2 - 24;
   const ang = i => -Math.PI/2 + i * 2*Math.PI/N;
-  const t = Math.min(1, (now - S.radarT0) / 900);
+  const t = REDUCED ? 1 : Math.min(1, (now - S.radarT0) / 700);
   const e = 1 - Math.pow(1 - t, 3);
   for(let ring = 1; ring <= 4; ring++){
     ctx.beginPath();
@@ -1519,18 +1603,53 @@ function drawRadar(now){
 }
 
 /* ---------------- main render loop ---------------- */
+/* the loop only lives while a canvas screen is up and the page is visible */
+function needsCanvas(name){ return name === 'brief' || name === 'live' || name === 'feed'; }
+let rafId = null;
+function startLoop(){
+  if(rafId != null || document.hidden || !needsCanvas(S.screen)) return;
+  rafId = requestAnimationFrame(tick);
+}
+function stopLoop(){
+  if(rafId != null){ cancelAnimationFrame(rafId); rafId = null; }
+}
 function tick(now){
-  if(S.screen === 'brief' || S.screen === 'live' || S.screen === 'feed') drawMap(now);
-  if(S.screen === 'feed'){
+  rafId = null;
+  const scr = S.screen;
+  if(scr === 'brief' || scr === 'live' || scr === 'feed') drawMap(now);
+  if(scr === 'feed'){
     drawRadar(now);
     if(S.scoreTarget != null){
       const t = Math.min(1, (now - S.scoreT0) / 900);
       const e = 1 - Math.pow(1 - t, 3);
       $('scoreBig').textContent = Math.round(S.scoreTarget * e);
+      if(t >= 1) S.scoreTarget = null;
     }
   }
-  requestAnimationFrame(tick);
+  if(needsCanvas(scr) && !document.hidden) rafId = requestAnimationFrame(tick);
 }
+
+/* pause clocks, loops and audio beds while the tab is hidden; resume on return */
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){
+    hiddenAt = performance.now();
+    stopLoop();
+    SCHED.clear();
+    clearInterval(S.timerInt); S.timerInt = null;
+    AU.pauseBeds();
+    if('speechSynthesis' in window) speechSynthesis.cancel();
+  } else {
+    const dt = performance.now() - hiddenAt;
+    if(S.screen === 'live'){
+      S.t0 += dt; /* hidden time must not count against the response clock */
+      if(S.plane.state === 'move') S.plane.t0 += dt;
+      if(!scoring){ startTimer(); startAmbient(); }
+    }
+    startLoop();
+    AU.resumeBeds();
+  }
+});
 
 /* ---------------- events ---------------- */
 $('muteBtn').addEventListener('click', () => {
@@ -1681,10 +1800,33 @@ if('speechSynthesis' in window){
   speechSynthesis.getVoices();
   speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
 }
+/* ---------------- shell bridge: theme in, XP out ---------------- */
+function bridgeXP(delta){
+  if(!(delta>0))return;
+  try{parent.postMessage({type:'fc-xp',delta:Math.round(delta),source:'radio'},location.origin);}catch(e){}
+}
+(function(){
+  const fade=$('themeFade');
+  let cur='dark';
+  window.addEventListener('message',e=>{
+    if(e.origin!==location.origin)return;
+    const d=e.data;
+    if(!d||typeof d!=='object')return;
+    if(d.type==='fc-theme'&&(d.theme==='light'||d.theme==='dark')&&d.theme!==cur){
+      cur=d.theme;
+      if(REDUCED){document.documentElement.dataset.theme=cur;return;}
+      fade.classList.add('on');
+      setTimeout(()=>{document.documentElement.dataset.theme=cur;},200);
+      setTimeout(()=>{fade.classList.remove('on');},420);
+    }
+  });
+  try{parent.postMessage({type:'fc-ready',game:'radio'},location.origin);}catch(e){}
+})();
+
 updateRankUI(false);
 updateStartStats();
 showScreen('start');
-requestAnimationFrame(tick);
+startLoop();
 </script>
 </body>
 </html>

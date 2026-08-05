@@ -60,8 +60,9 @@ export function ChecklistsView() {
           <button
             key={c.id}
             onClick={() => setSelectedIdx(idx)}
+            aria-pressed={idx === selectedIdx}
             className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              "rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               idx === selectedIdx
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border text-muted-foreground hover:text-foreground"
@@ -117,7 +118,8 @@ export function ChecklistsView() {
                   <li key={key}>
                     <button
                       onClick={() => toggleItem(sectionIdx, itemIdx)}
-                      className="flex w-full items-start gap-3 text-left"
+                      aria-pressed={isChecked}
+                      className="flex w-full items-start gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span
                         className={cn(
