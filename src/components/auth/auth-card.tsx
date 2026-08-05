@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { ArrowLeft, Check, Chrome, Github, Plane, ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
@@ -35,12 +36,20 @@ const OAUTH_ERRORS: Record<string, string> = {
 function ProviderButton({ id, name }: { id: string; name: string }) {
   const isGoogle = id === "google";
   const isGitHub = id === "github";
+  const [pending, setPending] = React.useState(false);
   return (
-    <a
-      href={`/api/auth/signin/${id}`}
+    <button
+      disabled={pending}
+      onClick={() => {
+        setPending(true);
+        // POST-based flow (CSRF-protected) — a plain GET link bounces back
+        // to the custom sign-in page with ?error=<provider>.
+        signIn(id, { callbackUrl: "/" }).catch(() => setPending(false));
+      }}
       className={cn(
-        "interactive flex items-center justify-center gap-3 rounded-xl px-5 py-3 text-sm font-medium",
+        "interactive flex w-full items-center justify-center gap-3 rounded-xl px-5 py-3 text-sm font-medium",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        pending && "opacity-60 pointer-events-none",
         isGoogle
           ? "bg-foreground text-background border border-border"
           : "bg-muted/60 text-foreground border border-border"
@@ -48,8 +57,8 @@ function ProviderButton({ id, name }: { id: string; name: string }) {
     >
       {isGoogle && <Chrome className="size-5 text-accent" aria-hidden="true" />}
       {isGitHub && <Github className="size-5" aria-hidden="true" />}
-      Continue with {name}
-    </a>
+      {pending ? "Contacting Google…" : `Continue with ${name}`}
+    </button>
   );
 }
 
