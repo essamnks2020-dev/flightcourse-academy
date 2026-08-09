@@ -136,17 +136,6 @@ export default function Page() {
 
   React.useEffect(() => {
     setMounted(true);
-    // #region agent log
-    fetch('http://127.0.0.1:7776/ingest/79d6226d-44e3-4f93-bd52-c6e714dcc783',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'24a902'},body:JSON.stringify({sessionId:'24a902',runId:'pre-fix',hypothesisId:'H2',location:'page.tsx:mount',message:'Page mounted',data:{view, moduleId, href: typeof location!=='undefined'?location.href:''},timestamp:Date.now()})}).catch(()=>{});
-    const onWinErr = (e: ErrorEvent) => {
-      fetch('http://127.0.0.1:7776/ingest/79d6226d-44e3-4f93-bd52-c6e714dcc783',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'24a902'},body:JSON.stringify({sessionId:'24a902',runId:'pre-fix',hypothesisId:'H2',location:'page.tsx:window.error',message:'window error',data:{msg:String(e.message||'').slice(0,400),file:e.filename,line:e.lineno},timestamp:Date.now()})}).catch(()=>{});
-    };
-    const onRej = (e: PromiseRejectionEvent) => {
-      fetch('http://127.0.0.1:7776/ingest/79d6226d-44e3-4f93-bd52-c6e714dcc783',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'24a902'},body:JSON.stringify({sessionId:'24a902',runId:'pre-fix',hypothesisId:'H2',location:'page.tsx:unhandledrejection',message:'unhandled rejection',data:{reason:String(e.reason||'').slice(0,400)},timestamp:Date.now()})}).catch(()=>{});
-    };
-    window.addEventListener('error', onWinErr);
-    window.addEventListener('unhandledrejection', onRej);
-    // #endregion
     const handler = (e: PopStateEvent) => {
       const state = e.state as { view?: string; moduleId?: number } | null;
       if (state?.view) {
@@ -157,13 +146,7 @@ export default function Page() {
     };
     window.addEventListener("popstate", handler);
     window.history.replaceState({ view: "home" }, "", "/");
-    return () => {
-      window.removeEventListener("popstate", handler);
-      // #region agent log
-      window.removeEventListener('error', onWinErr);
-      window.removeEventListener('unhandledrejection', onRej);
-      // #endregion
-    };
+    return () => window.removeEventListener("popstate", handler);
   }, [navigate]);
 
   if (!mounted) {

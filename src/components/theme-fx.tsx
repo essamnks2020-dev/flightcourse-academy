@@ -46,9 +46,6 @@ export function ThemeFX() {
       });
       const all = [...nodes, ...candidates];
       all.forEach((n) => n.remove());
-      if (all.length) {
-        fetch('http://127.0.0.1:7776/ingest/79d6226d-44e3-4f93-bd52-c6e714dcc783',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'24a902'},body:JSON.stringify({sessionId:'24a902',runId:'pre-fix',hypothesisId:'H1',location:'theme-fx.tsx:killWatermarks',message:'Removed watermark nodes',data:{count:all.length},timestamp:Date.now()})}).catch(()=>{});
-      }
     };
     killWatermarks();
     const mo = new MutationObserver(() => killWatermarks());
