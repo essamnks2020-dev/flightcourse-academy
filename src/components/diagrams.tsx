@@ -41,18 +41,40 @@ function SimComparisonDiagram() {
     { name: "X-Plane", x: 175, w: 100, realism: 92, access: 75, color: GOLD },
     { name: "DCS", x: 310, w: 100, realism: 98, access: 45, color: SLATE },
   ];
+  // Grouped bar chart: two bars per platform, both anchored to a shared baseline.
+  const BASELINE = 150; // common floor for every bar
+  const MAX_BAR_H = 95; // pixel height for a 100% value
+  const BAR_W = 30;
+  const GAP = 14; // space between the realism and accessibility bar in a group
+  const scale = (v: number) => (v / 100) * MAX_BAR_H;
   return (
-    <svg viewBox="0 0 430 200" className="w-full max-w-md">
-      <text x="215" y="20" textAnchor="middle" fill="currentColor" fontSize="11" fontFamily="var(--font-mono)" opacity="0.6">REALISM vs ACCESSIBILITY</text>
-      {platforms.map((p, i) => (
-        <g key={i}>
-          <rect x={p.x} y={40} width={p.w} height={120} fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2" rx="4" />
-          <rect x={p.x + 8} y={50} width={p.w - 16} height={p.realism} fill={p.color} opacity="0.85" rx="2" />
-          <rect x={p.x + 8} y={50 + p.realism} width={p.w - 16} height={p.access * 0.6} fill={p.color} opacity="0.35" rx="0" />
-          <text x={p.x + p.w / 2} y={175} textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="600" fontFamily="var(--font-sans)">{p.name}</text>
-          <text x={p.x + p.w / 2} y={190} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">{p.realism}% realism</text>
-        </g>
-      ))}
+    <svg viewBox="0 0 430 210" className="w-full max-w-md">
+      <text x="215" y="18" textAnchor="middle" fill="currentColor" fontSize="11" fontFamily="var(--font-mono)" opacity="0.6">REALISM vs ACCESSIBILITY</text>
+      {/* Shared baseline the bars sit on */}
+      <line x1="24" y1={BASELINE} x2="406" y2={BASELINE} stroke="currentColor" strokeWidth="1" opacity="0.25" />
+      {platforms.map((p, i) => {
+        const center = p.x + p.w / 2;
+        const realismX = center - GAP / 2 - BAR_W;
+        const accessX = center + GAP / 2;
+        const realismH = scale(p.realism);
+        const accessH = scale(p.access);
+        return (
+          <g key={i}>
+            <rect x={realismX} y={BASELINE - realismH} width={BAR_W} height={realismH} fill={p.color} opacity="0.85" rx="2" />
+            <text x={realismX + BAR_W / 2} y={BASELINE - realismH - 5} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.7">{p.realism}</text>
+            <rect x={accessX} y={BASELINE - accessH} width={BAR_W} height={accessH} fill={p.color} opacity="0.35" rx="2" />
+            <text x={accessX + BAR_W / 2} y={BASELINE - accessH - 5} textAnchor="middle" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.5">{p.access}</text>
+            <text x={center} y={BASELINE + 20} textAnchor="middle" fill="currentColor" fontSize="14" fontWeight="600" fontFamily="var(--font-sans)">{p.name}</text>
+          </g>
+        );
+      })}
+      {/* Legend */}
+      <g transform="translate(120, 188)">
+        <rect x="0" y="0" width="11" height="11" fill="currentColor" opacity="0.85" rx="2" />
+        <text x="17" y="9" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.6">Realism</text>
+        <rect x="90" y="0" width="11" height="11" fill="currentColor" opacity="0.35" rx="2" />
+        <text x="107" y="9" fill="currentColor" fontSize="9" fontFamily="var(--font-mono)" opacity="0.6">Accessibility</text>
+      </g>
     </svg>
   );
 }
