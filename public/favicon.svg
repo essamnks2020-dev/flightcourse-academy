@@ -1,0 +1,40 @@
+<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="dial"><circle cx="20" cy="20" r="14"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3E92CC"/>
+      <stop offset="100%" stop-color="#1a4d7a"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6b5b3d"/>
+      <stop offset="100%" stop-color="#3d3525"/>
+    </linearGradient>
+    <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a5568"/>
+      <stop offset="50%" stop-color="#2d3748"/>
+      <stop offset="100%" stop-color="#1a202c"/>
+    </linearGradient>
+  </defs>
+  <circle cx="20" cy="20" r="15.5" fill="url(#bezel)"/>
+  <circle cx="20" cy="20" r="14.5" fill="#0f172a"/>
+  <g clip-path="url(#dial)">
+    <rect x="0" y="0" width="40" height="40" fill="url(#sky)"/>
+    <path d="M-6 27 L46 13 L46 46 L-6 46 Z" fill="url(#ground)"/>
+    <path d="M-6 27 L46 13" stroke="#f7fafc" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <g stroke="#f7fafc" stroke-opacity="0.55" stroke-width="0.8" stroke-linecap="round">
+    <line x1="20" y1="5.5" x2="20" y2="8" stroke-width="1.1"/>
+    <line x1="13.2" y1="7" x2="13.8" y2="9.2"/>
+    <line x1="26.8" y1="7" x2="26.2" y2="9.2"/>
+    <line x1="8" y1="10.8" x2="9" y2="12.6"/>
+    <line x1="32" y1="10.8" x2="31" y2="12.6"/>
+  </g>
+  <path d="M20 4.5 L18.3 6.8 L21.7 6.8 Z" fill="#F2B134"/>
+  <circle cx="20" cy="20" r="14" stroke="#f7fafc" stroke-opacity="0.22" stroke-width="0.8" fill="none"/>
+  <g stroke="#F2B134" stroke-width="1.8" stroke-linecap="round" fill="#F2B134">
+    <line x1="10.5" y1="22.5" x2="16" y2="21.5"/>
+    <line x1="24" y1="20.5" x2="29.5" y2="19.5"/>
+    <line x1="20" y1="22" x2="20" y2="24.5" stroke-width="1.4"/>
+    <circle cx="20" cy="21.5" r="1.4"/>
+  </g>
+</svg>

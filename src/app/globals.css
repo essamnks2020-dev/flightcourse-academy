@@ -678,3 +678,37 @@ html { scrollbar-gutter: stable; }
   50% { height: 14px; }
 }
 .wave-bar { animation: wave-bar 0.4s ease-in-out infinite; }
+
+/* ===========================================================================
+   Kill residual Z.ai / design-ui watermarks (black "Z" badge, credit lines).
+   Never part of FlightCourse UI — hide wherever a host or leftover script injects them.
+   =========================================================================== */
+.design-ui-credit,
+[class*="design-ui-credit"],
+[class*="zai-"],
+[id*="zai-"],
+[id*="z-ai"],
+a[href*="space-z.ai"],
+a[href*="chatglm.cn"],
+a[href*="z.ai/"][style*="position: fixed"],
+a[href*="z.ai/"][style*="position:fixed"],
+iframe[src*="space-z.ai"],
+iframe[src*="z.ai/"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Exact Z.ai-style floating badge shapes (defensive — hide if ever injected) */
+div.fixed.bottom-4.left-4.rounded-full,
+div.fixed.bottom-4.left-4[class*="z-"],
+div.fixed.bottom-4.left-4[class*="z-[9999]"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}

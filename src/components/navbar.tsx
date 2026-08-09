@@ -87,11 +87,14 @@ export function Navbar() {
             </button>
           ))}
 
-          {/* Games dropdown */}
-          <div className="relative">
+          {/* Games dropdown — kept open with focus-within so menu clicks don't lose the panel */}
+          <div
+            className="relative"
+            onMouseLeave={() => setGamesOpen(false)}
+          >
             <button
+              type="button"
               onClick={() => setGamesOpen((v) => !v)}
-              onBlur={() => setTimeout(() => setGamesOpen(false), 150)}
               className={cn(
                 "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                 GAMES.some((g) => g.view === currentView)
@@ -117,8 +120,9 @@ export function Navbar() {
                 {GAMES.map((g) => (
                   <button
                     key={g.view}
+                    type="button"
                     role="menuitem"
-                    onMouseDown={() => go(g.view)}
+                    onClick={() => go(g.view)}
                     className={cn(
                       "flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-muted",
                       currentView === g.view && "bg-muted"

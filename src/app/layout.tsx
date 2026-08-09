@@ -28,6 +28,11 @@ export const metadata: Metadata = {
     default: "FlightCourse Academy — Learn to fly in a flight simulator",
     template: "%s | FlightCourse Academy",
   },
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: ["/favicon.svg"],
+    apple: [{ url: "/favicon.svg" }],
+  },
   description:
     "A structured 16-module flight training course for flight simulator pilots. Ground school to IFR, with quizzes, checklists, a cockpit explorer and progress tracking.",
   keywords: [

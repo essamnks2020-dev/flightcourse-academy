@@ -21,6 +21,40 @@ export function ThemeFX() {
 
   React.useEffect(() => {
     setMounted(true);
+    // #region agent log
+    // Strip any leftover Z.ai / design-ui watermark nodes injected into the DOM.
+    const killWatermarks = () => {
+      const sel = [
+        '.design-ui-credit',
+        '[class*="design-ui-credit"]',
+        'a[href*="space-z.ai"]',
+        'a[href*="chatglm.cn"]',
+        'iframe[src*="space-z.ai"]',
+        'iframe[src*="z.ai/"]',
+      ].join(',');
+      const nodes = Array.from(document.querySelectorAll(sel));
+      // Also catch fixed bottom-left black circular "Z" badges without relying on class names
+      const candidates = Array.from(document.querySelectorAll('a,div,button,span')).filter((el) => {
+        const style = window.getComputedStyle(el);
+        if (style.position !== 'fixed') return false;
+        const r = el.getBoundingClientRect();
+        if (r.width < 20 || r.width > 72 || r.height < 20 || r.height > 72) return false;
+        if (r.bottom < window.innerHeight - 96 || r.left > 96) return false;
+        const t = (el.textContent || '').trim();
+        const href = (el as HTMLAnchorElement).href || '';
+        return t === 'Z' || t === 'z' || /z\.ai|space-z|chatglm/i.test(href);
+      });
+      const all = [...nodes, ...candidates];
+      all.forEach((n) => n.remove());
+      if (all.length) {
+        fetch('http://127.0.0.1:7776/ingest/79d6226d-44e3-4f93-bd52-c6e714dcc783',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'24a902'},body:JSON.stringify({sessionId:'24a902',runId:'pre-fix',hypothesisId:'H1',location:'theme-fx.tsx:killWatermarks',message:'Removed watermark nodes',data:{count:all.length},timestamp:Date.now()})}).catch(()=>{});
+      }
+    };
+    killWatermarks();
+    const mo = new MutationObserver(() => killWatermarks());
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+    return () => mo.disconnect();
+    // #endregion
   }, []);
 
   React.useEffect(() => {

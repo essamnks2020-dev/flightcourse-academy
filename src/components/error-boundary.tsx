@@ -22,6 +22,9 @@ export class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("FlightCourse error:", error, errorInfo);
+    // #region agent log
+    fetch('http://127.0.0.1:7776/ingest/79d6226d-44e3-4f93-bd52-c6e714dcc783',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'24a902'},body:JSON.stringify({sessionId:'24a902',runId:'pre-fix',hypothesisId:'H2',location:'error-boundary.tsx:componentDidCatch',message:'React error boundary caught',data:{name:error?.name,msg:String(error?.message||'').slice(0,400),stack:String(error?.stack||'').slice(0,600),componentStack:String(errorInfo?.componentStack||'').slice(0,400)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   }
 
   render() {
