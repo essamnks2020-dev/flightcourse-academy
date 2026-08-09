@@ -52,6 +52,26 @@ export function Navbar() {
 
   React.useEffect(() => setMounted(true), []);
 
+  // Close Games menu on outside click / Escape (no hover-leave — that
+  // fights the mt-2 gap between the button and the panel).
+  React.useEffect(() => {
+    if (!gamesOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      const t = e.target as Element | null;
+      if (t?.closest?.("[data-fc-games-menu]")) return;
+      setGamesOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setGamesOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [gamesOpen]);
+
   const go = (view: ViewName) => {
     navigate(view);
     setMobileOpen(false);
@@ -87,11 +107,8 @@ export function Navbar() {
             </button>
           ))}
 
-          {/* Games dropdown — kept open with focus-within so menu clicks don't lose the panel */}
-          <div
-            className="relative"
-            onMouseLeave={() => setGamesOpen(false)}
-          >
+          {/* Games dropdown */}
+          <div className="relative" data-fc-games-menu>
             <button
               type="button"
               onClick={() => setGamesOpen((v) => !v)}

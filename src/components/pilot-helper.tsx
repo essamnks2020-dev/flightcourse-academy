@@ -238,23 +238,27 @@ export function PilotHelper() {
         onClick={() => setOpen(v => !v)}
         aria-label={open ? "Close Copilot" : "Open Copilot"}
         className={cn(
-          "fixed bottom-5 right-5 z-50 flex size-12 items-center justify-center rounded-full",
-          "bg-primary text-primary-foreground relative overflow-visible",
+          // Keep `fixed` last so tailwind-merge doesn't drop it for `relative`
+          "bottom-5 right-5 z-50 flex size-12 items-center justify-center rounded-full",
+          "bg-primary text-primary-foreground overflow-visible",
           "ring-1 ring-primary/30",
           "transition-all duration-300 hover:scale-110 active:scale-90",
           !open && "copilot-idle",
-          open && "rotate-90"
+          open && "rotate-90",
+          "fixed"
         )}
       >
-        {open ? <X className="size-5 relative z-10" /> : <Headphones className="size-5 relative z-10" />}
-        {/* Ripple on click */}
-        {open && <span className="copilot-ripple" />}
+        <span className="relative z-10 flex size-full items-center justify-center">
+          {open ? <X className="size-5" /> : <Headphones className="size-5" />}
+          {/* Ripple on click */}
+          {open && <span className="copilot-ripple" />}
+        </span>
       </button>
 
       {/* Chat panel */}
       {open && (
         <div
-          className="copilot-panel-in fixed bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[400px] flex-col rounded-2xl shadow-2xl"
+          className="copilot-panel-in bottom-20 right-5 z-50 flex w-[calc(100vw-2.5rem)] max-w-[400px] flex-col rounded-2xl shadow-2xl fixed"
           style={{
             background: "oklch(0.18 0.022 254 / 97%)",
             backdropFilter: "blur(20px) saturate(140%)",
