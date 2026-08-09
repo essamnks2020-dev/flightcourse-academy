@@ -239,7 +239,7 @@ export function PilotHelper() {
         aria-label={open ? "Close Copilot" : "Open Copilot"}
         className={cn(
           "fixed bottom-5 right-5 z-50 flex size-12 items-center justify-center rounded-full",
-          "bg-primary text-primary-foreground relative overflow-visible",
+          "bg-primary text-primary-foreground overflow-visible",
           "ring-1 ring-primary/30",
           "transition-all duration-300 hover:scale-110 active:scale-90",
           !open && "copilot-idle",
