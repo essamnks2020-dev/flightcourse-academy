@@ -436,6 +436,14 @@ header{
   .freq{font-size:27px}
   .freq.stby{font-size:19px}
 }
+/* Live element checklist — real-time guidance while typing a call (training only) */
+.live-els{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:2px 0 8px}
+.live-els .lel{display:inline-flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.02em;
+  padding:4px 9px;border-radius:999px;border:1px solid oklch(0.72 0.03 235 / 35%);
+  color:var(--muted,#8FA6BC);background:oklch(0.20 0.03 244 / 55%);transition:all .2s var(--ease,ease)}
+.live-els .lel b{font-size:11px;line-height:1;opacity:.85}
+.live-els .lel.ok{border-color:oklch(0.62 0.16 150 / 70%);color:oklch(0.86 0.12 155);background:oklch(0.62 0.16 150 / 14%)}
+.live-els .lel.mid{border-color:var(--amber,#F2B134);color:var(--amber,#F2B134);background:oklch(0.80 0.14 71 / 14%)}
 </style>
 </head>
 <body>
@@ -601,6 +609,7 @@ header{
           <div class="ptt-ring" id="pttRing"><button id="pttBtn"><span>PTT</span><small>HOLD TO TALK</small></button></div>
           <div class="ptt-hint">or hold SPACE</div>
         </div>
+        <div id="liveEls" class="live-els hidden" aria-hidden="true"></div>
         <div id="typeRow" class="hidden">
           <input id="callInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="riverside traffic, cessna one seven two bravo…">
           <button id="btnTx" class="primary">TRANSMIT ▸</button>
@@ -1169,6 +1178,25 @@ function setInputMode(m){
   $('typeRow').classList.toggle('hidden', m !== 'type');
   if(m !== 'say'){ clearTimeout(S.beckonT); $('pttRing').classList.remove('beckon'); }
   if(m === 'type' && S.screen === 'live') $('callInput').focus();
+  renderLiveEls();
+}
+
+/* Live element checklist — reflects which required call elements are present as
+   the pilot types. Training only (hidden on checkrides to preserve the exam). */
+function renderLiveEls(){
+  const box = $('liveEls');
+  if(!box) return;
+  const show = S.inputMode === 'type' && S.mode !== 'checkride' && !!S.sc && S.screen === 'live';
+  box.classList.toggle('hidden', !show);
+  if(!show){ box.innerHTML = ''; return; }
+  const els = buildReq(S.sc);
+  const tokens = tokenize($('callInput').value || '');
+  const res = checkElements(tokens, els);
+  box.innerHTML = res.map(e => {
+    const cls = e.ok ? 'ok' : (e.outOfOrder ? 'mid' : '');
+    const mark = e.ok ? '✓' : (e.outOfOrder ? '~' : '○');
+    return `<span class="lel ${cls}"><b>${mark}</b>${e.label}</span>`;
+  }).join('');
 }
 
 /* ---------------- PTT ---------------- */
@@ -1629,6 +1657,7 @@ window.addEventListener('keyup', e => {
 
 /* typed input */
 $('btnTx').addEventListener('click', () => submitCall($('callInput').value));
+$('callInput').addEventListener('input', renderLiveEls);
 $('callInput').addEventListener('keydown', e => {
   if(e.key === 'Enter') submitCall($('callInput').value);
 });
