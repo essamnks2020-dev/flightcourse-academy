@@ -59,10 +59,13 @@ function expandForSpeech(text: string): string {
   return out;
 }
 
-const digitWord: Record<string, string> = {
-  "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
-  "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "niner",
-};
+function digitWord(d: string): string {
+  const words: Record<string, string> = {
+    "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
+    "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "niner",
+  };
+  return words[d] ?? d;
+}
 
 const NATO: Record<string, string> = {
   A: "Alpha", B: "Bravo", C: "Charlie", D: "Delta", E: "Echo",

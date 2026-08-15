@@ -138,7 +138,7 @@ export const useProgressStore = create<ProgressState>()(
       consumePlay: () => {
         const s = get()
         if (s.unlimitedUnlocked) {
-          track.gameStart(s.freePlays, true, s.crosswind)
+          track.gameStart(s.freePlays, true, s.scenario === 'crosswind')
           set({ totalFlights: s.totalFlights + 1 })
           return true
         }
@@ -152,7 +152,7 @@ export const useProgressStore = create<ProgressState>()(
           freePlaysUsed: s.freePlaysUsed + 1,
           totalFlights: s.totalFlights + 1,
         })
-        track.gameStart(remaining, s.unlimitedUnlocked, s.crosswind)
+        track.gameStart(remaining, s.unlimitedUnlocked, s.scenario === 'crosswind')
         return true
       },
 
@@ -367,7 +367,7 @@ export const useProgressStore = create<ProgressState>()(
           if (s.reducedMotion === undefined) s.reducedMotion = false
           if (s.colorblindMode === undefined) s.colorblindMode = false
         }
-        return s as ProgressState
+        return s as unknown as ProgressState
       },
     },
   ),

@@ -25,7 +25,7 @@ export function QuizComponent({ moduleId, xpReward, questions, moduleTitle }: Qu
   const navigate = useNavStore((s) => s.navigate);
 
   const score = answers.reduce(
-    (acc, ans, i) => acc + (ans === questions[i].correctIndex ? 1 : 0),
+    (acc: number, ans, i) => acc + (ans === questions[i].correctIndex ? 1 : 0),
     0
   );
   const allAnswered = answers.every((a) => a !== null);

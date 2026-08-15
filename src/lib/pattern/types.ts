@@ -22,6 +22,7 @@ export interface RunwayConfig {
   runwayHeading: number; // landing heading, e.g. 270 for runway 27
   runwayNumber: string; // "27"
   runwaySpoken: string; // "two-seven"
+  runwayReciprocal: string; // "09" for runway 27
   lengthFt: number; // 5000
   trafficDirection: TrafficDirection;
 }

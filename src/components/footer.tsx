@@ -36,7 +36,8 @@ export function Footer() {
   const navigate = useNav((s) => s.navigate);
 
   return (
-    <footer className="mt-auto border-t border-border bg-background">
+    <footer className="mt-auto border-t border-border bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}

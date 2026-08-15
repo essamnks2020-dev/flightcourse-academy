@@ -126,23 +126,23 @@ export function HomeView() {
         <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:flex-row lg:items-center lg:gap-12 lg:py-28">
           {/* Left column */}
           <div className="flex min-w-0 flex-1 flex-col items-start gap-6 lg:flex-[3]">
-            <span className="glass label-instrument text-primary inline-flex items-center gap-2 rounded-full px-3 py-1.5">
+            <span className="glass hero-chip label-instrument text-primary animate-rise">
               <PlaneTakeoff className="size-3.5" aria-hidden="true" />
               Ground school to IFR
             </span>
 
-            <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-balance heading-tape text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl animate-rise delay-1">
               Learn to actually fly the aircraft in your{" "}
               <span className="text-primary text-shadow-glow">simulator</span>.
             </h1>
 
-            <p className="text-muted-foreground max-w-xl text-base leading-relaxed sm:text-lg">
+            <p className="text-muted-foreground max-w-xl text-base leading-relaxed sm:text-lg animate-rise delay-2">
               Sixteen structured modules that take you from a cold, dark cockpit to an
               instrument approach in weather. Real procedures, plain English, quizzes that
               check you understood — not a playlist of videos.
             </p>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row animate-rise delay-3">
               <button
                 onClick={() => navigate("module", 1)}
                 className="fp-toggle-btn px-5 py-3 text-sm"
@@ -179,7 +179,7 @@ export function HomeView() {
           </div>
 
           {/* Right column — living flight deck (React component, theme-aware) */}
-          <div className="min-w-0 w-full lg:flex-[2] lg:max-w-sm">
+          <div className="min-w-0 w-full lg:flex-[2] lg:max-w-sm animate-rise delay-4">
             <FlightDeckCard />
           </div>
         </div>
@@ -191,18 +191,18 @@ export function HomeView() {
       <section className="border-border border-t">
         <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
           <div className="flex flex-col gap-3 animate-fade-up">
-            <p className="label-instrument text-primary">What you get</p>
+            <p className="label-instrument text-primary section-kicker">What you get</p>
             <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
               A training course, not a video library
             </h2>
           </div>
 
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((feature) => (
+            {FEATURES.map((feature, i) => (
               <button
                 key={feature.title}
                 onClick={() => navigate(feature.view)}
-                className="glass hover:border-primary/40 focus-visible:ring-ring flex h-full flex-col gap-3 rounded-xl p-6 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className={`glass panel-cut hover-sheen focus-visible:ring-ring flex h-full flex-col gap-3 p-6 text-left focus-visible:ring-2 focus-visible:outline-none animate-rise delay-${Math.min(i + 1, 6)}`}
               >
                 <feature.icon className="text-primary size-5" aria-hidden="true" />
                 <h3 className="font-semibold tracking-tight">{feature.title}</h3>
@@ -220,7 +220,7 @@ export function HomeView() {
       <section className="border-border border-t">
         <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
           <div className="flex flex-col gap-3 animate-fade-up">
-            <p className="label-instrument text-primary">The syllabus</p>
+            <p className="label-instrument text-primary section-kicker">The syllabus</p>
             <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
               Four stages, sixteen modules, in flying order
             </h2>
@@ -249,7 +249,7 @@ export function HomeView() {
                       <li key={mod.id}>
                         <button
                           onClick={() => navigate("module", mod.id)}
-                          className="glass hover:border-primary/40 focus-visible:ring-ring flex h-full flex-col gap-2 rounded-xl p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          className="glass panel-cut hover-sheen focus-visible:ring-ring flex h-full flex-col gap-2 p-4 text-left focus-visible:ring-2 focus-visible:outline-none"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <p className="font-medium leading-snug">
@@ -295,7 +295,7 @@ export function HomeView() {
       <section className="border-border border-t">
         <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
           <div className="flex flex-col gap-3 animate-fade-up">
-            <p className="label-instrument text-primary">Practice</p>
+            <p className="label-instrument text-primary section-kicker">Practice</p>
             <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
               Three training games, built in
             </h2>
@@ -304,9 +304,9 @@ export function HomeView() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-4 md:grid-cols-3">
-            {GAMES.map((game) => (
-              <div key={game.title} className="glass flex h-full flex-col gap-3 rounded-xl p-6">
+          <div className="mt-12 grid gap-4 md:grid-cols-5">
+            {GAMES.map((game, i) => (
+              <div key={game.title} className={`glass panel-cut hover-sheen flex h-full flex-col gap-3 p-6 ${i === 0 ? "md:col-span-3 md:min-h-[240px]" : "md:col-span-2"}`}>
                 <button
                   onClick={() => navigate(game.view)}
                   className="flex h-full flex-col gap-3 text-left transition-colors hover:text-primary"
@@ -337,7 +337,7 @@ export function HomeView() {
       <section className="border-border border-t">
         <div className="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6">
           <div className="flex flex-col gap-3">
-            <p className="label-instrument text-primary">Questions</p>
+            <p className="label-instrument text-primary section-kicker">Questions</p>
             <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
               Before you start the engine
             </h2>

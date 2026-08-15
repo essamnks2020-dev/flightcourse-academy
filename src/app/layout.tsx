@@ -20,18 +20,13 @@ const instrument = JetBrains_Mono({
   display: "swap",
 });
 
-const siteUrl = "https://flightcourse.academy";
+const siteUrl = "https://flightcourse-academy.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: "FlightCourse Academy — Learn to fly in a flight simulator",
     template: "%s | FlightCourse Academy",
-  },
-  icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    shortcut: ["/favicon.svg"],
-    apple: [{ url: "/favicon.svg" }],
   },
   description:
     "A structured 16-module flight training course for flight simulator pilots. Ground school to IFR, with quizzes, checklists, a cockpit explorer and progress tracking.",

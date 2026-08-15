@@ -67,5 +67,5 @@ export const track = {
 }
 
 export function trackFunnel(event: string, data?: Record<string, unknown>) {
-  track.event(event, data)
+  emit({ event: event as FunnelEvent["event"], ...(data ?? {}) } as FunnelEvent)
 }

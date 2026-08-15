@@ -52,26 +52,6 @@ export function Navbar() {
 
   React.useEffect(() => setMounted(true), []);
 
-  // Close Games menu on outside click / Escape (no hover-leave — that
-  // fights the mt-2 gap between the button and the panel).
-  React.useEffect(() => {
-    if (!gamesOpen) return;
-    const onPointer = (e: MouseEvent) => {
-      const t = e.target as Element | null;
-      if (t?.closest?.("[data-fc-games-menu]")) return;
-      setGamesOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setGamesOpen(false);
-    };
-    document.addEventListener("mousedown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [gamesOpen]);
-
   const go = (view: ViewName) => {
     navigate(view);
     setMobileOpen(false);
@@ -79,7 +59,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/78 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4 sm:px-6">
         {/* Logo */}
         <button
@@ -97,10 +77,10 @@ export function Navbar() {
               key={item.view}
               onClick={() => go(item.view)}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                "px-3 py-1.5 text-sm font-medium transition-colors",
                 currentView === item.view
-                  ? "text-foreground bg-muted"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  ? "text-foreground bg-muted/80"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
               {item.label}
@@ -108,10 +88,10 @@ export function Navbar() {
           ))}
 
           {/* Games dropdown */}
-          <div className="relative" data-fc-games-menu>
+          <div className="relative">
             <button
-              type="button"
               onClick={() => setGamesOpen((v) => !v)}
+              onBlur={() => setTimeout(() => setGamesOpen(false), 150)}
               className={cn(
                 "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                 GAMES.some((g) => g.view === currentView)
@@ -137,9 +117,8 @@ export function Navbar() {
                 {GAMES.map((g) => (
                   <button
                     key={g.view}
-                    type="button"
                     role="menuitem"
-                    onClick={() => go(g.view)}
+                    onMouseDown={() => go(g.view)}
                     className={cn(
                       "flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-muted",
                       currentView === g.view && "bg-muted"

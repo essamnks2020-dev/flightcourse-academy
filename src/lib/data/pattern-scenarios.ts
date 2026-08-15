@@ -26,10 +26,13 @@ export interface ScenarioConfig {
 function runwayFromAirport(key: keyof typeof AIRPORTS): RunwayConfig {
   const a = AIRPORTS[key];
   const heading = (parseInt(a.runway, 10) % 36) * 10;
+  const num = parseInt(a.runway, 10);
+  const recip = ((num + 18 - 1) % 36) + 1;
   return {
     runwayHeading: heading === 0 ? 360 : heading,
     runwayNumber: a.runway,
     runwaySpoken: a.runwaySpoken ?? speakRunway(a.runway),
+    runwayReciprocal: String(recip).padStart(2, "0"),
     lengthFt: 5000,
     trafficDirection: a.trafficDirection,
   };
